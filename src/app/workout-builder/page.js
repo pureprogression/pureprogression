@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import WorkoutBuilder from "@/components/WorkoutBuilder";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function WorkoutBuilderPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -25,15 +27,35 @@ export default function WorkoutBuilderPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleSaveWorkout = (workout) => {
-    // TODO: Сохранить тренировку в Firebase
-    console.log("Сохранение тренировки:", workout);
+  const handleSaveWorkout = async (workout) => {
+    setIsSaving(true);
     
-    // Пока просто показываем уведомление
-    alert(`Тренировка "${workout.name}" сохранена!`);
-    
-    // Перенаправляем в профиль или меню
-    router.push('/profile');
+    try {
+      // Добавляем информацию о пользователе и время создания
+      const workoutData = {
+        ...workout,
+        userId: user.uid,
+        userEmail: user.email,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      // Сохраняем в коллекцию 'workouts' в Firebase
+      const docRef = await addDoc(collection(db, 'workouts'), workoutData);
+      
+      console.log("Тренировка сохранена с ID:", docRef.id);
+      
+      // Показываем уведомление об успехе
+      alert(`Тренировка "${workout.name}" успешно сохранена!`);
+      
+      // Перенаправляем в профиль
+      router.push('/profile');
+    } catch (error) {
+      console.error("Ошибка при сохранении тренировки:", error);
+      alert("Ошибка при сохранении тренировки. Попробуйте еще раз.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -58,6 +80,7 @@ export default function WorkoutBuilderPage() {
       <WorkoutBuilder 
         onSave={handleSaveWorkout}
         onCancel={handleCancel}
+        isSaving={isSaving}
       />
     </>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { exercises } from "@/data/exercises";
 
-export default function WorkoutBuilder({ onSave, onCancel }) {
+export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [workoutName, setWorkoutName] = useState("");
   const [workoutDescription, setWorkoutDescription] = useState("");
   const [selectedExercises, setSelectedExercises] = useState([]);
@@ -488,10 +488,10 @@ export default function WorkoutBuilder({ onSave, onCancel }) {
                     <div className="flex justify-center">
                       <button
                         onClick={handleSave}
-                        disabled={!workoutName.trim() || selectedExercises.length === 0}
+                        disabled={!workoutName.trim() || selectedExercises.length === 0 || isSaving}
                         className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-300"
                       >
-                        Сохранить тренировку
+                        {isSaving ? "Сохранение..." : "Сохранить тренировку"}
                       </button>
                     </div>
                   </>
