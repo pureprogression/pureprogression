@@ -10,7 +10,7 @@ import ViewToggle from "@/components/ViewToggle";
 export default function FavoritesPage() {
   const [user, setUser] = useState(null);
   const [favorites, setFavorites] = useState(null);
-  const [viewMode, setViewMode] = useState("slider");
+  const [viewMode, setViewMode] = useState("grid");
 
   useEffect(() => {
     let unsubscribe = null;
@@ -54,7 +54,8 @@ export default function FavoritesPage() {
   return (
     <>
       <Navigation currentPage="favorites" user={user} />
-      <div className="max-w-[1200px] mx-auto p-4">
+      <div className="pt-16">
+        <div className="max-w-[1200px] mx-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Избранные упражнения</h2>
           <ViewToggle
@@ -76,6 +77,7 @@ export default function FavoritesPage() {
             showToggle={false}
           />
         )}
+        </div>
       </div>
     </>
   );

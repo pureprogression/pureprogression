@@ -47,6 +47,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
   };
 
   const handleWorkoutHistoryClick = () => {
+    console.log("🔍 Переход на страницу истории тренировок");
     router.push('/workout-history');
     setIsMenuOpen(false);
   };

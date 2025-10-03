@@ -55,7 +55,8 @@ export default function WorkoutHistoryPage() {
   return (
     <>
       <Navigation currentPage="workout-history" user={user} />
-      <div className="max-w-[1200px] mx-auto p-4">
+      <div className="pt-16">
+        <div className="max-w-[1200px] mx-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">История тренировок</h2>
         </div>
@@ -107,39 +108,9 @@ export default function WorkoutHistoryPage() {
                     <div className="text-green-400 text-sm font-medium">
                       ✓ Завершено
                     </div>
-                    <div className="text-gray-500 text-xs">
-                      {session.duration ? `${session.duration} мин` : 'Время не указано'}
-                    </div>
                   </div>
                 </div>
 
-                {/* Статистика выполнения */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-white/10 rounded-lg p-3 text-center">
-                    <div className="text-white text-lg font-semibold">
-                      {session.exercises?.length || 0}
-                    </div>
-                    <div className="text-gray-400 text-xs">Упражнений</div>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-3 text-center">
-                    <div className="text-white text-lg font-semibold">
-                      {session.totalSets || 0}
-                    </div>
-                    <div className="text-gray-400 text-xs">Подходов</div>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-3 text-center">
-                    <div className="text-white text-lg font-semibold">
-                      {session.totalReps || 0}
-                    </div>
-                    <div className="text-gray-400 text-xs">Повторений</div>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-3 text-center">
-                    <div className="text-white text-lg font-semibold">
-                      {session.caloriesBurned || 0}
-                    </div>
-                    <div className="text-gray-400 text-xs">Ккал</div>
-                  </div>
-                </div>
 
                 {/* Превью упражнений */}
                 {session.exercises && session.exercises.length > 0 && (
@@ -170,6 +141,7 @@ export default function WorkoutHistoryPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </>
   );
