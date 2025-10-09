@@ -29,6 +29,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Оптимизация производительности */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ускорение анимаций */
+.motion-div {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
 /* Анимации для конструктора тренировок */
 @keyframes fadeIn {
   from {

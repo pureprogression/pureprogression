@@ -5,10 +5,12 @@ import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function WorkoutHistoryPage() {
   const [user, setUser] = useState(null);
   const [workoutHistory, setWorkoutHistory] = useState(null);
+  const { language } = useLanguage();
 
   useEffect(() => {
     let unsubscribe = null;
@@ -51,7 +53,7 @@ export default function WorkoutHistoryPage() {
   if (!user)
     return <p className="text-center mt-10">Please sign in to your account</p>;
   if (workoutHistory === null)
-    return <p className="text-center mt-10">{TEXTS.en.common.loading}</p>;
+    return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
 
   return (
     <>
@@ -59,27 +61,27 @@ export default function WorkoutHistoryPage() {
       <div className="pt-20">
         <div className="max-w-[1200px] mx-auto p-4">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white">{TEXTS.en.workoutHistory.title}</h2>
+          <h2 className="text-2xl font-bold text-white">{TEXTS[language].workoutHistory.title}</h2>
         </div>
 
         {workoutHistory.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">{TEXTS.en.workoutHistory.noHistory}</div>
+            <div className="text-gray-400 text-lg mb-4">{TEXTS[language].workoutHistory.noHistory}</div>
             <div className="text-gray-500 text-sm mb-6">
-              {TEXTS.en.workoutHistory.completeFirstWorkout}
+              {TEXTS[language].workoutHistory.completeFirstWorkout}
             </div>
             <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-lg p-6 max-w-md mx-auto">
               <div className="text-blue-400 text-sm font-medium mb-2">
                 🏃‍♂️ Start Training
               </div>
               <div className="text-gray-300 text-sm mb-4">
-                {TEXTS.en.workoutHistory.completeFirstWorkout}
+                {TEXTS[language].workoutHistory.completeFirstWorkout}
               </div>
               <button 
                 onClick={() => window.location.href = '/workout-builder'}
                 className="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-400 hover:to-purple-400 transition-all duration-300"
               >
-                {TEXTS.en.workoutHistory.createWorkout}
+                {TEXTS[language].workoutHistory.createWorkout}
               </button>
             </div>
           </div>

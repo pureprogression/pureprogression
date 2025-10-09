@@ -138,7 +138,7 @@ export const TEXTS = {
     }
   },
 
-  // Russian translations (keeping original for future use)
+  // Russian translations
   ru: {
     navigation: {
       home: "Главная",
@@ -149,7 +149,120 @@ export const TEXTS = {
       profile: "Профиль",
       logout: "Выйти"
     },
-    // ... (Russian translations can be added here when needed)
+
+    auth: {
+      signIn: "Вход",
+      signUp: "Регистрация", 
+      email: "Email",
+      password: "Пароль",
+      confirmPassword: "Подтвердите пароль",
+      signInWithGoogle: "Войти через Google",
+      signUpWithGoogle: "Зарегистрироваться через Google",
+      alreadyHaveAccount: "Уже есть аккаунт?",
+      dontHaveAccount: "Нет аккаунта?",
+      signInHere: "Войти здесь",
+      signUpHere: "Зарегистрироваться здесь"
+    },
+
+    home: {
+      hero: {
+        title: "Создайте идеальную тренировку",
+        subtitle: "Создавайте персональные тренировки с видео упражнениями и отслеживайте прогресс",
+        getStarted: "Начать"
+      },
+      features: {
+        title: "Почему PureP?",
+        createWorkouts: {
+          title: "Создание тренировок",
+          description: "Создавайте кастомные тренировки из нашей библиотеки упражнений"
+        },
+        trackProgress: {
+          title: "Отслеживание прогресса", 
+          description: "Следите за своим фитнес-путешествием и достижениями"
+        },
+        videoGuides: {
+          title: "Видео-руководства",
+          description: "Изучайте правильную технику с профессиональными видео упражнений"
+        }
+      }
+    },
+
+    workouts: {
+      myWorkouts: "Мои тренировки",
+      noWorkouts: "У вас пока нет тренировок",
+      createFirstWorkout: "Создайте свою первую тренировку с помощью конструктора",
+      createWorkout: "Создать тренировку",
+      startWorkout: "Начать тренировку",
+      editWorkout: "Редактировать тренировку", 
+      deleteWorkout: "Удалить тренировку",
+      confirmDelete: "Удалить тренировку?",
+      workoutWillBeDeleted: "Тренировка будет удалена навсегда.",
+      cancel: "Отмена",
+      delete: "Удалить",
+      estimatedDuration: "Примерная длительность",
+      minutes: "минут"
+    },
+
+    workoutBuilder: {
+      title: "Конструктор тренировок",
+      workoutName: "Название тренировки",
+      workoutDescription: "Описание тренировки (необязательно)",
+      addExercises: "Добавить упражнения",
+      selectExercises: "Выберите упражнения для тренировки",
+      selectedExercises: "Выбранные упражнения",
+      noExercisesSelected: "Упражнения не выбраны",
+      removeExercise: "Удалить упражнение",
+      saveWorkout: "Сохранить тренировку",
+      cancel: "Отмена",
+      estimatedDuration: "Примерная длительность",
+      minutes: "минут"
+    },
+
+    profile: {
+      title: "Профиль",
+      user: "Пользователь",
+      freePlan: "Бесплатный план",
+      limitedFeatures: "Ограниченные возможности",
+      upgrade: "Апгрейд",
+      activity: "Активность",
+      completedWorkouts: "Выполнено тренировок",
+      completedExercises: "Выполнено упражнений"
+    },
+
+    workoutHistory: {
+      title: "История тренировок",
+      noHistory: "У вас пока нет истории тренировок",
+      startTraining: "Начните тренироваться",
+      completeFirstWorkout: "Выполните свою первую тренировку, чтобы отслеживать прогресс",
+      createWorkout: "Создать тренировку"
+    },
+
+    favorites: {
+      title: "Избранные упражнения",
+      noFavorites: "Нет избранных упражнений",
+      addToFavorites: "Добавьте упражнения в избранное, чтобы видеть их здесь"
+    },
+
+    exercises: {
+      australianPullups: "Австралийские подтягивания",
+      bandMuscleUps: "Подтягивания на резине", 
+      lPullups: "L-подтягивания",
+      corePullups: "Подтягивания на пресс"
+    },
+
+    common: {
+      loading: "Загрузка...",
+      error: "Ошибка",
+      success: "Успешно",
+      save: "Сохранить",
+      cancel: "Отмена",
+      delete: "Удалить",
+      edit: "Редактировать",
+      close: "Закрыть",
+      back: "Назад",
+      next: "Далее",
+      previous: "Назад"
+    }
   }
 };
 

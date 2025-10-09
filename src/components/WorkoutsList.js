@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function WorkoutsList({ workouts, user }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState(null);
   const [swipedWorkout, setSwipedWorkout] = useState(null);
+  const { language } = useLanguage();
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [swipeOpacity, setSwipeOpacity] = useState(1);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -260,9 +262,9 @@ export default function WorkoutsList({ workouts, user }) {
                 </svg>
               </div>
               
-              <h3 className="text-white text-lg font-semibold mb-2">{TEXTS.en.workouts.confirmDelete}</h3>
+              <h3 className="text-white text-lg font-semibold mb-2">{TEXTS[language].workouts.confirmDelete}</h3>
               <p className="text-gray-300 text-sm mb-6">
-                {TEXTS.en.workouts.workoutWillBeDeleted}
+                {TEXTS[language].workouts.workoutWillBeDeleted}
               </p>
               
               <div className="flex gap-3">
@@ -270,13 +272,13 @@ export default function WorkoutsList({ workouts, user }) {
                   onClick={cancelDelete}
                   className="flex-1 bg-white/10 text-white py-3 px-4 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
                 >
-                  {TEXTS.en.common.cancel}
+                  {TEXTS[language].common.cancel}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="flex-1 bg-red-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-600 transition-all duration-300"
                 >
-                  {TEXTS.en.common.delete}
+                  {TEXTS[language].common.delete}
                 </button>
               </div>
             </div>

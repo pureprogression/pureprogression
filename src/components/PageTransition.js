@@ -5,26 +5,20 @@ import { usePathname } from "next/navigation";
 
 const pageVariants = {
   initial: {
-    opacity: 0,
-    y: 20,
-    scale: 0.98
+    opacity: 0
   },
   in: {
-    opacity: 1,
-    y: 0,
-    scale: 1
+    opacity: 1
   },
   out: {
-    opacity: 0,
-    y: -20,
-    scale: 1.02
+    opacity: 0
   }
 };
 
 const pageTransition = {
   type: "tween",
-  ease: "easeInOut",
-  duration: 0.6
+  ease: "easeOut",
+  duration: 0.3
 };
 
 

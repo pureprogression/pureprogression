@@ -7,11 +7,13 @@ import {
   signInWithEmailAndPassword 
 } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false); // переключение между входом и регистрацией
+  const { language } = useLanguage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,11 +40,11 @@ export default function AuthForm() {
         className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-sm"
       >
         <h2 className="text-white text-2xl font-bold mb-6 text-center">
-          {isSignUp ? TEXTS.en.auth.signUp : TEXTS.en.auth.signIn}
+          {isSignUp ? TEXTS[language].auth.signUp : TEXTS[language].auth.signIn}
         </h2>
         <input
           type="email"
-          placeholder={TEXTS.en.auth.email}
+          placeholder={TEXTS[language].auth.email}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -50,7 +52,7 @@ export default function AuthForm() {
         />
         <input
           type="password"
-          placeholder={TEXTS.en.auth.password}
+          placeholder={TEXTS[language].auth.password}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -63,13 +65,13 @@ export default function AuthForm() {
           {isSignUp ? "Sign Up" : "Sign In"}
         </button>
         <p className="text-white text-sm mt-4 text-center">
-          {isSignUp ? TEXTS.en.auth.alreadyHaveAccount : "Don't have an account?"}{" "}
+          {isSignUp ? TEXTS[language].auth.alreadyHaveAccount : "Don't have an account?"}{" "}
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-blue-400 underline"
           >
-            {isSignUp ? TEXTS.en.auth.signInHere : TEXTS.en.auth.signUpHere}
+            {isSignUp ? TEXTS[language].auth.signInHere : TEXTS[language].auth.signUpHere}
           </button>
         </p>
       </form>

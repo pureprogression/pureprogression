@@ -7,11 +7,13 @@ import WorkoutBuilder from "@/components/WorkoutBuilder";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function WorkoutBuilderPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { language } = useLanguage();
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {

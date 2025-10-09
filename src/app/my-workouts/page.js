@@ -6,10 +6,12 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutsList from "@/components/WorkoutsList";
 import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function MyWorkoutsPage() {
   const [user, setUser] = useState(null);
   const [workouts, setWorkouts] = useState(null);
+  const { language } = useLanguage();
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((u) => {
@@ -71,11 +73,11 @@ export default function MyWorkoutsPage() {
   }, []);
 
   if (!user) {
-    return <p className="text-center mt-10">Please sign in to your account</p>;
+    return <p className="text-center mt-10">{TEXTS[language].auth.pleaseLogin}</p>;
   }
   
   if (workouts === null) {
-    return <p className="text-center mt-10">{TEXTS.en.common.loading}</p>;
+    return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
   }
 
   return (
@@ -83,27 +85,27 @@ export default function MyWorkoutsPage() {
       <Navigation currentPage="my-workouts" user={user} />
       <div className="max-w-[1200px] mx-auto p-4 pt-20">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white">{TEXTS.en.workouts.myWorkouts}</h2>
+          <h2 className="text-2xl font-bold text-white">{TEXTS[language].workouts.myWorkouts}</h2>
         </div>
         
         {workouts.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">{TEXTS.en.workouts.noWorkouts}</div>
+            <div className="text-gray-400 text-lg mb-4">{TEXTS[language].workouts.noWorkouts}</div>
             <div className="text-gray-500 text-sm mb-6">
-              {TEXTS.en.workouts.createFirstWorkout}
+              {TEXTS[language].workouts.createFirstWorkout}
             </div>
             <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-lg p-6 max-w-md mx-auto">
               <div className="text-green-400 text-sm font-medium mb-2">
-                🏋️‍♂️ Create Workout
+                🏋️‍♂️ {TEXTS[language].workouts.createWorkout}
               </div>
               <div className="text-gray-300 text-sm mb-4">
-                Select exercises and create your personalized workout
+                {TEXTS[language].workouts.selectExercisesDescription}
               </div>
               <button 
                 onClick={() => window.location.href = '/workout-builder'}
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:from-green-400 hover:to-blue-400 transition-all duration-300"
               >
-                {TEXTS.en.workouts.createWorkout}
+                {TEXTS[language].workouts.createWorkout}
               </button>
             </div>
           </div>
