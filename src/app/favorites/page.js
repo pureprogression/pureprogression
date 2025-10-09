@@ -58,17 +58,22 @@ export default function FavoritesPage() {
     <>
       <Navigation currentPage="favorites" user={user} />
       <div className="pt-20">
+        {/* Заголовок и переключатель в ограниченном контейнере */}
         <div className="max-w-[1200px] mx-auto p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">{TEXTS[language].favorites.title}</h2>
-          <ViewToggle
-            viewMode={viewMode}
-            onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
-          />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white">{TEXTS[language].favorites.title}</h2>
+            <ViewToggle
+              viewMode={viewMode}
+              onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
+            />
+          </div>
         </div>
 
+        {/* Слайдер упражнений на полную ширину как на главной странице */}
         {favorites.length === 0 ? (
-          <p className="text-center mt-10">{TEXTS[language].favorites.noFavorites}</p>
+          <div className="max-w-[1200px] mx-auto p-4">
+            <p className="text-center mt-10">{TEXTS[language].favorites.noFavorites}</p>
+          </div>
         ) : (
           <ExercisesSlider
             videos={favorites}
@@ -80,7 +85,6 @@ export default function FavoritesPage() {
             showToggle={false}
           />
         )}
-        </div>
       </div>
     </>
   );
