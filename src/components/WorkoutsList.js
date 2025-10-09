@@ -56,7 +56,7 @@ export default function WorkoutsList({ workouts, user }) {
   const handleStartWorkout = (workout) => {
     // Проверяем, что тренировка существует и имеет упражнения
     if (!workout || !workout.id || !workout.exercises || workout.exercises.length === 0) {
-      alert("Тренировка повреждена или не содержит упражнений");
+      alert("Workout is corrupted or contains no exercises");
       return;
     }
     
@@ -120,12 +120,12 @@ export default function WorkoutsList({ workouts, user }) {
   if (!workouts || workouts.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-lg mb-4">У вас пока нет сохраненных тренировок</div>
+        <div className="text-gray-400 text-lg mb-4">You don't have any saved workouts yet</div>
         <button
           onClick={() => router.push('/workout-builder')}
           className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300"
         >
-          Создать первую тренировку
+          Create First Workout
         </button>
       </div>
     );

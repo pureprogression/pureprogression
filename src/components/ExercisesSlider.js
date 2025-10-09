@@ -170,7 +170,7 @@ export default function ExercisesSlider({
 
   if (!videos || videos.length === 0) {
     return mode === "favorites-page" 
-      ? <p className="text-center py-8">Нет избранных упражнений</p>
+      ? <p className="text-center py-8">No favorite exercises</p>
       : null;
   }
 

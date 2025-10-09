@@ -97,20 +97,20 @@ export default function WorkoutHistoryPage() {
                     </h3>
                     <p className="text-gray-400 text-sm">
                       {session.completedAt?.toDate ? 
-                        session.completedAt.toDate().toLocaleDateString('ru-RU', {
+                        session.completedAt.toDate().toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
                         }) : 
-                        'Недавно'
+                        'Recently'
                       }
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-green-400 text-sm font-medium">
-                      ✓ Завершено
+                      ✓ Completed
                     </div>
                   </div>
                 </div>

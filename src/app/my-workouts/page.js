@@ -56,7 +56,7 @@ export default function MyWorkoutsPage() {
           
           setWorkouts(validWorkouts);
         }).catch((error) => {
-          console.error("Ошибка при загрузке тренировок:", error);
+          console.error("Error loading workouts:", error);
           setWorkouts([]);
         });
       } else {
