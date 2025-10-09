@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
+import { TEXTS } from "@/constants/texts";
 
 export default function WorkoutsList({ workouts, user }) {
   const router = useRouter();
@@ -189,12 +190,12 @@ export default function WorkoutsList({ workouts, user }) {
             </div>
             <div className="text-right">
               <div className="text-gray-400 text-sm">
-                {workout.exercises?.length || 0} упражнений
+                {workout.exercises?.length || 0} exercises
               </div>
               <div className="text-gray-500 text-xs">
                 {workout.createdAt?.toDate ? 
                   workout.createdAt.toDate().toLocaleDateString('ru-RU') : 
-                  'Недавно'
+                  'Recently'
                 }
               </div>
             </div>
@@ -228,7 +229,7 @@ export default function WorkoutsList({ workouts, user }) {
 
           {/* Индикатор для swipe */}
           <div className="absolute bottom-2 left-2 text-gray-500 text-xs">
-            Проведите влево для удаления
+            Swipe left to delete
           </div>
 
           {/* Индикатор удаления при свайпе */}
@@ -239,7 +240,7 @@ export default function WorkoutsList({ workouts, user }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <div className="text-xs font-medium">
-                  {swipeOffset < -120 ? "Отпустите для удаления" : "Продолжайте для удаления"}
+                  {swipeOffset < -120 ? "Release to delete" : "Continue to delete"}
                 </div>
               </div>
             </div>
@@ -259,9 +260,9 @@ export default function WorkoutsList({ workouts, user }) {
                 </svg>
               </div>
               
-              <h3 className="text-white text-lg font-semibold mb-2">Удалить тренировку?</h3>
+              <h3 className="text-white text-lg font-semibold mb-2">{TEXTS.en.workouts.confirmDelete}</h3>
               <p className="text-gray-300 text-sm mb-6">
-                Тренировка <span className="text-white font-medium">&quot;{showDeleteConfirm.name}&quot;</span> будет удалена навсегда.
+                {TEXTS.en.workouts.workoutWillBeDeleted}
               </p>
               
               <div className="flex gap-3">
@@ -269,13 +270,13 @@ export default function WorkoutsList({ workouts, user }) {
                   onClick={cancelDelete}
                   className="flex-1 bg-white/10 text-white py-3 px-4 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
                 >
-                  Отмена
+                  {TEXTS.en.common.cancel}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="flex-1 bg-red-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-600 transition-all duration-300"
                 >
-                  Удалить
+                  {TEXTS.en.common.delete}
                 </button>
               </div>
             </div>

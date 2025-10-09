@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { exercises } from "@/data/exercises";
+import { TEXTS } from "@/constants/texts";
 
 export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [workoutName, setWorkoutName] = useState("");
@@ -355,7 +356,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                         value={workoutName}
                         onChange={(e) => setWorkoutName(e.target.value)}
                         className="w-full px-3 py-2 bg-white/5 backdrop-blur-sm rounded-lg text-white placeholder-gray-500 focus:outline-none focus:bg-white/10 transition-all duration-300 hover:bg-white/8"
-                        placeholder="Название тренировки"
+                        placeholder={TEXTS.en.workoutBuilder.workoutName}
                       />
                     </div>
                     <div>
@@ -364,7 +365,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                         value={workoutDescription}
                         onChange={(e) => setWorkoutDescription(e.target.value)}
                         className="w-full px-3 py-2 bg-white/5 backdrop-blur-sm rounded-lg text-white placeholder-gray-500 focus:outline-none focus:bg-white/10 transition-all duration-300 hover:bg-white/8"
-                        placeholder="Описание (необязательно)"
+                        placeholder={TEXTS.en.workoutBuilder.workoutDescription}
                       />
                     </div>
                   </div>
@@ -372,12 +373,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
 
                 {selectedExercises.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-400 mb-4">Добавьте упражнения</p>
+                    <p className="text-gray-400 mb-4">{TEXTS.en.workoutBuilder.noExercisesSelected}</p>
                     <button
                       onClick={() => setActiveSection("browse")}
                       className="bg-white text-black py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300"
                     >
-                      Выбрать
+                      Select
                     </button>
                   </div>
                 ) : (
@@ -491,7 +492,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                         disabled={!workoutName.trim() || selectedExercises.length === 0 || isSaving}
                         className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-300"
                       >
-                        {isSaving ? "Сохранение..." : "Сохранить тренировку"}
+                        {isSaving ? "Saving..." : TEXTS.en.workoutBuilder.saveWorkout}
                       </button>
                     </div>
                   </>
@@ -605,7 +606,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
 
                 {filteredExercises.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-400">Упражнения не найдены</p>
+                    <p className="text-gray-400">No exercises found</p>
                   </div>
                 )}
               </div>

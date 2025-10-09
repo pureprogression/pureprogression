@@ -6,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import WorkoutBuilder from "@/components/WorkoutBuilder";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { TEXTS } from "@/constants/texts";
 
 export default function WorkoutBuilderPage() {
   const router = useRouter();

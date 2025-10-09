@@ -1,11 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TEXTS } from "@/constants/texts";
 
 export default function Features() {
   const features = [
-    { title: "Интенсив", description: "4 недели тренировок для кора на коврике" },
-    { title: "Силовые видео", description: "Упражнения на улице с прогрессией" },
+    { 
+      title: TEXTS.en.home.features.createWorkouts.title, 
+      description: TEXTS.en.home.features.createWorkouts.description 
+    },
+    { 
+      title: TEXTS.en.home.features.trackProgress.title, 
+      description: TEXTS.en.home.features.trackProgress.description 
+    },
+    { 
+      title: TEXTS.en.home.features.videoGuides.title, 
+      description: TEXTS.en.home.features.videoGuides.description 
+    },
   ];
 
   return (

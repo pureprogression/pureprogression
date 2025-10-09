@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase"; // убедись, что этот путь верный
+import { auth } from "@/lib/firebase";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword 
 } from "firebase/auth";
+import { TEXTS } from "@/constants/texts";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
@@ -17,10 +18,10 @@ export default function AuthForm() {
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
-        alert("Регистрация прошла успешно!");
+        alert("Registration successful!");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        alert("Вход выполнен!");
+        alert("Sign in successful!");
       }
       setEmail("");
       setPassword("");
@@ -37,11 +38,11 @@ export default function AuthForm() {
         className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-sm"
       >
         <h2 className="text-white text-2xl font-bold mb-6 text-center">
-          {isSignUp ? "Регистрация" : "Вход"}
+          {isSignUp ? TEXTS.en.auth.signUp : TEXTS.en.auth.signIn}
         </h2>
         <input
           type="email"
-          placeholder="Email"
+          placeholder={TEXTS.en.auth.email}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -49,7 +50,7 @@ export default function AuthForm() {
         />
         <input
           type="password"
-          placeholder="Пароль"
+          placeholder={TEXTS.en.auth.password}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -59,16 +60,16 @@ export default function AuthForm() {
           type="submit"
           className="w-full p-3 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold transition"
         >
-          {isSignUp ? "Зарегистрироваться" : "Войти"}
+          {isSignUp ? "Sign Up" : "Sign In"}
         </button>
         <p className="text-white text-sm mt-4 text-center">
-          {isSignUp ? "Уже есть аккаунт?" : "Нет аккаунта?"}{" "}
+          {isSignUp ? TEXTS.en.auth.alreadyHaveAccount : "Don't have an account?"}{" "}
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-blue-400 underline"
           >
-            {isSignUp ? "Войти" : "Зарегистрироваться"}
+            {isSignUp ? TEXTS.en.auth.signInHere : TEXTS.en.auth.signUpHere}
           </button>
         </p>
       </form>
