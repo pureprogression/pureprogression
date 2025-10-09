@@ -276,11 +276,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
     }
 
     const workout = {
-      id: Date.now().toString(),
+      // Убираем id - пусть Firestore сам создаст ID
       name: workoutName,
       description: workoutDescription,
       exercises: selectedExercises,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
       estimatedDuration: selectedExercises.length * 3 // Примерная оценка: 3 минуты на упражнение
     };
 

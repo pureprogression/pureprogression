@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 
-export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
+export default function WorkoutsList({ workouts, user }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState(null);
   const [swipedWorkout, setSwipedWorkout] = useState(null);
@@ -15,8 +15,6 @@ export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
   const [deletingWorkoutId, setDeletingWorkoutId] = useState(null);
 
   const handleDeleteWorkout = async (workoutId, workoutName) => {
-    console.log("🔥 handleDeleteWorkout вызван для:", workoutId, workoutName);
-    
     // Показываем кастомный диалог подтверждения
     setShowDeleteConfirm({ id: workoutId, name: workoutName });
   };
@@ -24,29 +22,26 @@ export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
   const confirmDelete = async () => {
     const { id: workoutId, name: workoutName } = showDeleteConfirm;
     
-    console.log("🔥 Подтверждено удаление тренировки:", workoutId);
     setDeletingId(workoutId);
-    setDeletingWorkoutId(workoutId); // Начинаем анимацию исчезновения
+    setDeletingWorkoutId(workoutId);
     setShowDeleteConfirm(null);
     
     try {
-      await deleteDoc(doc(db, 'workouts', workoutId));
-      console.log("🔥 Тренировка удалена:", workoutId);
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("Пользователь не авторизован");
+      }
+
+      // Удаление через Firebase SDK
+      const workoutRef = doc(db, "workouts", workoutId);
+      await deleteDoc(workoutRef);
       
-      // Удаляем из localStorage кэша
+      // Удаляем из localStorage
       localStorage.removeItem(`workout_${workoutId}`);
-      console.log("🔥 Тренировка удалена из кэша:", workoutId);
       
-      // Ждем завершения анимации исчезновения, затем уведомляем родительский компонент
-      setTimeout(() => {
-        if (onWorkoutDeleted) {
-          onWorkoutDeleted(workoutId);
-        }
-        setDeletingWorkoutId(null);
-      }, 300); // Время анимации
     } catch (error) {
-      console.error("🔥 Ошибка при удалении тренировки:", error);
-      alert("Ошибка при удалении тренировки");
+      console.error("Ошибка при удалении:", error);
+      alert(`Ошибка при удалении: ${error.message}`);
       setDeletingWorkoutId(null);
     } finally {
       setDeletingId(null);
@@ -58,9 +53,6 @@ export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
   };
 
   const handleStartWorkout = (workout) => {
-    console.log("Запуск тренировки:", workout);
-    console.log("ID тренировки:", workout.id);
-    
     // Проверяем, что тренировка существует и имеет упражнения
     if (!workout || !workout.id || !workout.exercises || workout.exercises.length === 0) {
       alert("Тренировка повреждена или не содержит упражнений");
@@ -73,14 +65,12 @@ export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
   const handleEditWorkout = (e, workout) => {
     e.stopPropagation(); // Предотвращаем запуск тренировки
     // TODO: Реализовать редактирование тренировки
-    console.log("Редактирование тренировки:", workout.name);
     alert(`Редактирование тренировки "${workout.name}" - функция в разработке`);
   };
 
   // Функции для swipe удаления
   const handleTouchStart = (e, workoutId) => {
     const touch = e.touches[0];
-    console.log("🔥 Touch start для тренировки:", workoutId, "X:", touch.clientX);
     setSwipedWorkout({ id: workoutId, startX: touch.clientX });
     setSwipeOffset(0);
     setSwipeOpacity(1);
@@ -111,17 +101,13 @@ export default function WorkoutsList({ workouts, user, onWorkoutDeleted }) {
     if (!swipedWorkout || swipedWorkout.id !== workoutId) return;
     
     const threshold = -120;
-    console.log("🔥 Swipe завершен. Offset:", swipeOffset, "Threshold:", threshold);
     
     if (swipeOffset < threshold) {
-      console.log("🔥 Swipe превысил порог, удаляем тренировку:", workoutId);
       // Удаляем тренировку
       const workout = workouts.find(w => w.id === workoutId);
       if (workout) {
         handleDeleteWorkout(workoutId, workout.name);
       }
-    } else {
-      console.log("🔥 Swipe не превысил порог, тренировка не удаляется");
     }
     
     // Сброс состояния

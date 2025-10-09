@@ -55,10 +55,10 @@ export default function WorkoutHistoryPage() {
   return (
     <>
       <Navigation currentPage="workout-history" user={user} />
-      <div className="pt-16">
+      <div className="pt-20">
         <div className="max-w-[1200px] mx-auto p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">История тренировок</h2>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white">История тренировок</h2>
         </div>
 
         {workoutHistory.length === 0 ? (
@@ -67,15 +67,18 @@ export default function WorkoutHistoryPage() {
             <div className="text-gray-500 text-sm mb-6">
               Выполните свою первую тренировку, чтобы отслеживать прогресс
             </div>
-            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-6 max-w-md mx-auto">
-              <div className="text-yellow-400 text-sm font-medium mb-2">
-                🔒 Премиум функция
+            <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-lg p-6 max-w-md mx-auto">
+              <div className="text-blue-400 text-sm font-medium mb-2">
+                🏃‍♂️ Начните тренироваться
               </div>
               <div className="text-gray-300 text-sm mb-4">
-                Отслеживание истории тренировок доступно с премиум подпиской
+                Создайте тренировку и выполните её, чтобы увидеть здесь прогресс
               </div>
-              <button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black py-2 px-4 rounded-lg font-medium hover:from-yellow-400 hover:to-orange-400 transition-all duration-300">
-                Попробовать бесплатно
+              <button 
+                onClick={() => window.location.href = '/workout-builder'}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-400 hover:to-purple-400 transition-all duration-300"
+              >
+                Создать тренировку
               </button>
             </div>
           </div>

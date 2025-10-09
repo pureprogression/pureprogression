@@ -54,10 +54,10 @@ export default function FavoritesPage() {
   return (
     <>
       <Navigation currentPage="favorites" user={user} />
-      <div className="pt-16">
+      <div className="pt-20">
         <div className="max-w-[1200px] mx-auto p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Избранные упражнения</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white">Избранные упражнения</h2>
           <ViewToggle
             viewMode={viewMode}
             onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}

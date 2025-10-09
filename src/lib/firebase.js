@@ -26,17 +26,20 @@ try {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// В ряде окружений канал WebChannel блокируется/ломается. Включаем long polling.
+// Отключаем кэширование Firebase для решения проблем с удалением
 try {
-  // Автовыбор транспорта (fetch streams / long polling) в проблемных сетях
   initializeFirestore(app, {
     experimentalAutoDetectLongPolling: true,
     experimentalLongPollingOptions: { timeoutSeconds: 30 },
     useFetchStreams: true,
+    // Отключаем локальное кэширование
+    localCache: {
+      kind: "disabled"
+    }
   });
-  setLogLevel("debug");
+  setLogLevel("error");
 } catch {}
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export {app}
+export { app };

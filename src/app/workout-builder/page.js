@@ -31,22 +31,18 @@ export default function WorkoutBuilderPage() {
     setIsSaving(true);
     
     try {
-      // Добавляем информацию о пользователе и время создания
+      // Простая структура как у тестовой тренировки
       const workoutData = {
-        ...workout,
+        name: workout.name,
+        description: workout.description || "",
+        exercises: workout.exercises,
         userId: user.uid,
-        userEmail: user.email,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        estimatedDuration: workout.estimatedDuration
       };
 
       // Сохраняем в коллекцию 'workouts' в Firebase
-      const docRef = await addDoc(collection(db, 'workouts'), workoutData);
-      
-      console.log("Тренировка сохранена с ID:", docRef.id);
-      
-      // Показываем уведомление об успехе
-      alert(`Тренировка "${workout.name}" успешно сохранена!`);
+      await addDoc(collection(db, 'workouts'), workoutData);
       
       // Перенаправляем в профиль
       router.push('/profile');

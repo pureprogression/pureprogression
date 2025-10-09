@@ -20,18 +20,14 @@ export default function WorkoutPage() {
       setUser(u);
       
       if (u && params.id) {
-        console.log("Загружаем тренировку с ID:", params.id);
-        
         // Сначала пытаемся получить из localStorage (кэш)
         const cachedWorkout = localStorage.getItem(`workout_${params.id}`);
         if (cachedWorkout) {
           try {
             const workoutData = JSON.parse(cachedWorkout);
-            console.log("Тренировка загружена из кэша:", workoutData);
             
             // Проверяем, что тренировка принадлежит пользователю
             if (workoutData.userId === u.uid) {
-              console.log("Тренировка из кэша принадлежит пользователю, загружаем");
               setWorkout(workoutData);
               setIsLoading(false);
               return;
@@ -43,36 +39,18 @@ export default function WorkoutPage() {
         
         try {
           // Загружаем тренировку из Firebase
-          console.log("🔍 Пытаемся загрузить документ:", `workouts/${params.id}`);
-          console.log("🔍 Пользователь:", {
-            uid: u.uid,
-            email: u.email,
-            emailVerified: u.emailVerified
-          });
-          
           const workoutDoc = await getDoc(doc(db, 'workouts', params.id));
-          console.log("🔍 Результат getDoc:", {
-            exists: workoutDoc.exists(),
-            id: workoutDoc.id,
-            data: workoutDoc.exists() ? workoutDoc.data() : null
-          });
           
           if (workoutDoc.exists()) {
             const workoutData = {
               id: workoutDoc.id,
               ...workoutDoc.data()
             };
-            console.log("Данные тренировки:", workoutData);
-            console.log("ID пользователя:", u.uid);
-            console.log("ID владельца тренировки:", workoutData.userId);
             
             // Проверяем, что тренировка принадлежит пользователю
             if (workoutData.userId === u.uid) {
-              console.log("Тренировка принадлежит пользователю, загружаем и кэшируем");
-              
               // Кэшируем тренировку
               localStorage.setItem(`workout_${params.id}`, JSON.stringify(workoutData));
-              console.log("Тренировка сохранена в кэш");
               
               setWorkout(workoutData);
             } else {
@@ -81,20 +59,8 @@ export default function WorkoutPage() {
               router.push('/my-workouts');
             }
           } else {
-            console.error("❌ Тренировка не найдена в Firebase");
-            console.log("🔍 Проверяем права доступа...");
-            
-            // Попробуем загрузить любой документ из коллекции workouts для проверки прав
-            try {
-              const testQuery = collection(db, 'workouts');
-              console.log("🔍 Тест доступа к коллекции workouts: OK");
-            } catch (testError) {
-              console.error("❌ Ошибка доступа к коллекции workouts:", testError);
-            }
-            
             // Если есть кэш, используем его
             if (cachedWorkout) {
-              console.log("✅ Используем кэшированную тренировку");
               const workoutData = JSON.parse(cachedWorkout);
               setWorkout(workoutData);
             } else {
@@ -107,7 +73,6 @@ export default function WorkoutPage() {
           
           // Если есть кэш, используем его
           if (cachedWorkout) {
-            console.log("Используем кэшированную тренировку после ошибки");
             const workoutData = JSON.parse(cachedWorkout);
             setWorkout(workoutData);
           } else {
@@ -140,8 +105,6 @@ export default function WorkoutPage() {
       };
 
       await addDoc(collection(db, 'workoutHistory'), historyData);
-      
-      console.log("Тренировка завершена и сохранена в историю");
       
       // Перенаправляем в мои тренировки (безопаснее)
       router.push('/my-workouts');

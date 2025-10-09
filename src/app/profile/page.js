@@ -1,19 +1,67 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    completedWorkouts: 0,
+    totalExercises: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
       setUser(u);
+      
+      if (u) {
+        await loadUserStats(u.uid);
+      } else {
+        setStats({ completedWorkouts: 0, totalExercises: 0 });
+        setIsLoading(false);
+      }
     });
 
     return () => unsubscribe();
   }, []);
+
+  const loadUserStats = async (userId) => {
+    try {
+      setIsLoading(true);
+      
+      // Загружаем только историю тренировок (устойчивые данные)
+      const historyQuery = query(
+        collection(db, "workoutHistory"),
+        where("userId", "==", userId)
+      );
+      const historySnapshot = await getDocs(historyQuery);
+      
+      // Подсчитываем статистику из истории
+      const completedWorkouts = historySnapshot.docs.length;
+      
+      // Подсчитываем общее количество упражнений из выполненных тренировок
+      let totalExercises = 0;
+      historySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.exercises && Array.isArray(data.exercises)) {
+          totalExercises += data.exercises.length;
+        }
+      });
+      
+      setStats({
+        completedWorkouts,
+        totalExercises
+      });
+      
+    } catch (error) {
+      console.error("Ошибка при загрузке статистики:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!user)
     return <p className="text-center mt-10">Пожалуйста, войдите в аккаунт</p>;
@@ -21,9 +69,9 @@ export default function ProfilePage() {
   return (
     <>
       <Navigation currentPage="profile" user={user} />
-      <div className="pt-16">
+      <div className="pt-20">
         <div className="max-w-[1200px] mx-auto p-4">
-          <h2 className="text-2xl font-bold mb-6">Профиль</h2>
+          <h2 className="text-2xl font-bold mb-6 text-white">Профиль</h2>
           
           {/* Информация о пользователе */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4">
@@ -55,19 +103,32 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Минимальная статистика */}
+          {/* Статистика активности */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
             <h3 className="text-white text-sm font-semibold mb-3">Активность</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-white text-lg font-bold">0</div>
-                <div className="text-gray-400 text-xs">Тренировок</div>
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="bg-white/10 rounded-lg p-3 text-center">
+                    <div className="animate-pulse">
+                      <div className="h-6 bg-white/20 rounded mb-2"></div>
+                      <div className="h-3 bg-white/10 rounded w-3/4 mx-auto"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-white text-lg font-bold">0</div>
-                <div className="text-gray-400 text-xs">Упражнений</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/10 rounded-lg p-3 text-center">
+                  <div className="text-white text-lg font-bold">{stats.completedWorkouts}</div>
+                  <div className="text-gray-400 text-xs">Выполнено тренировок</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 text-center">
+                  <div className="text-white text-lg font-bold">{stats.totalExercises}</div>
+                  <div className="text-gray-400 text-xs">Выполнено упражнений</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
