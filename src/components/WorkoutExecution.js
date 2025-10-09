@@ -121,18 +121,8 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               <source src={`/${currentExercise.video}`} type="video/mp4" />
             </video>
             
-            {/* Прогресс-бар сверху */}
-            <div className="absolute top-16 left-4 right-4">
-              <div className="w-full bg-white/20 rounded-full h-1">
-                <div 
-                  className="bg-white h-1 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-            
             {/* Минималистичная информация поверх видео */}
-            <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="absolute bottom-16 left-0 right-0 p-6">
               <div className="flex items-center justify-between">
                 <div className="text-white">
                   {/* Название упражнения */}
@@ -162,8 +152,18 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               </div>
             </div>
             
+            {/* Прогресс-бар в самом низу */}
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="w-full bg-white/20 rounded-full h-1">
+                <div 
+                  className="bg-white h-1 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+            
             {/* Градиент для лучшей читаемости текста */}
-            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
           </div>
 
         </div>
