@@ -13,6 +13,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
+  const [isLanguageChanging, setIsLanguageChanging] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -84,9 +85,29 @@ export default function Navigation({ currentPage = "home", user = null }) {
         whileTap={{ scale: 0.95 }}
       >
         <div className="w-6 h-6 flex flex-col justify-center items-center">
-          <span className="block h-0.5 w-5 bg-current" />
-          <span className="block h-0.5 w-5 bg-current mt-1" />
-          <span className="block h-0.5 w-5 bg-current mt-1" />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current"
+            animate={{ 
+              rotate: isMenuOpen ? 45 : 0,
+              y: isMenuOpen ? 6 : 0
+            }}
+            transition={{ duration: 0.2 }}
+          />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current mt-1"
+            animate={{ 
+              opacity: isMenuOpen ? 0 : 1
+            }}
+            transition={{ duration: 0.2 }}
+          />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current mt-1"
+            animate={{ 
+              rotate: isMenuOpen ? -45 : 0,
+              y: isMenuOpen ? -6 : 0
+            }}
+            transition={{ duration: 0.2 }}
+          />
         </div>
       </motion.button>
 
@@ -105,10 +126,11 @@ export default function Navigation({ currentPage = "home", user = null }) {
       </AnimatePresence>
 
       {/* Боковое меню */}
-      <div
-        className={`fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-50 transition-transform duration-300 ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <motion.div
+        className="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-50"
+        initial={{ x: "-100%" }}
+        animate={{ x: isMenuOpen ? 0 : "-100%" }}
+        transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
       >
         <div className="flex flex-col h-full p-6">
           {/* Заголовок */}
@@ -247,15 +269,27 @@ export default function Navigation({ currentPage = "home", user = null }) {
             {/* Переключатель языков */}
             <div className="pt-4 border-t border-white/10">
               <button
-                onClick={toggleLanguage}
-                className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200"
+                onClick={() => {
+                  setIsLanguageChanging(true);
+                  toggleLanguage();
+                  setTimeout(() => setIsLanguageChanging(false), 300);
+                }}
+                disabled={isLanguageChanging}
+                className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="text-sm font-medium">
                   {language === 'en' ? 'ENG' : 'RU'}
                 </span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <motion.svg 
+                  className="w-4 h-4" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  animate={{ rotate: isLanguageChanging ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
+                </motion.svg>
               </button>
             </div>
 
@@ -267,7 +301,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
             </div>
           </nav>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 }

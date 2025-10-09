@@ -23,10 +23,21 @@ const pageTransition = {
 
 
 export default function PageTransition({ children }) {
-  // Временно отключаем анимации для диагностики производительности
+  const pathname = usePathname();
+
   return (
-    <div className="min-h-screen">
-      {children}
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={pathname}
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={pageTransition}
+        className="min-h-screen"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

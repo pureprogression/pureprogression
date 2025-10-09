@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState('en'); // ENG по умолчанию
+  const [isChanging, setIsChanging] = useState(false);
 
   // Загружаем язык из localStorage при инициализации
   useEffect(() => {
@@ -20,16 +21,22 @@ export function LanguageProvider({ children }) {
     localStorage.setItem('language', language);
   }, [language]);
 
-  const toggleLanguage = () => {
+  const toggleLanguage = useCallback(() => {
+    if (isChanging) return; // Предотвращаем множественные клики
+    
+    setIsChanging(true);
     setLanguage(prev => prev === 'en' ? 'ru' : 'en');
-  };
+    
+    // Сбрасываем флаг через небольшую задержку
+    setTimeout(() => setIsChanging(false), 300);
+  }, [isChanging]);
 
   // Мемоизируем контекст для оптимизации производительности
   const contextValue = useMemo(() => ({
     language,
     setLanguage,
     toggleLanguage
-  }), [language]);
+  }), [language, toggleLanguage]);
 
   return (
     <LanguageContext.Provider value={contextValue}>
