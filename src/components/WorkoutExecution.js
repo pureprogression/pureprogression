@@ -97,30 +97,19 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Крестик для выхода - на уровне меню */}
+      <button
+        onClick={onCancel}
+        className="fixed top-4 right-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
+        aria-label="Выход из тренировки"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       {/* Safe zone сверху */}
       <div className="pt-16">
-        {/* Заголовок */}
-        <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
-          <div className="max-w-[1200px] mx-auto p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-white text-xl font-bold">{workout.name}</h1>
-                <p className="text-gray-400 text-sm">
-                  Упражнение {currentExerciseIndex + 1} из {workoutResults.exercises.length}
-                </p>
-              </div>
-              <button
-                onClick={onCancel}
-                className="text-gray-400 hover:text-white transition-colors duration-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Прогресс */}
         <div className="max-w-[1200px] mx-auto p-4 mb-6">
           <div className="w-full bg-white/10 rounded-full h-2">
