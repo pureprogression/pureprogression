@@ -121,63 +121,50 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto p-4">
-          {/* Прогресс */}
-          <div className="mb-4">
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <div 
-                className="bg-white h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
+        {/* Прогресс */}
+        <div className="max-w-[1200px] mx-auto p-4 mb-6">
+          <div className="w-full bg-white/10 rounded-full h-2">
+            <div 
+              className="bg-white h-2 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
+        </div>
 
-          {/* Текущее упражнение */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Видео */}
-              <div className="relative">
-                <video
-                  className="w-full h-80 md:h-[600px] rounded-lg object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                >
-                  <source src={`/${currentExercise.video}`} type="video/mp4" />
-                </video>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-lg"></div>
-              </div>
-
-              {/* Информация об упражнении */}
-              <div className="flex flex-col">
-                <h2 className="text-white text-xl font-bold mb-4">{currentExercise.title}</h2>
-                
-                {/* Статистика подходов и повторений */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white/10 rounded-lg p-2">
-                    <div className="text-center">
-                      <div className="text-white text-sm font-bold mb-0.5">
-                        {currentSet} / {currentExercise.sets}
-                      </div>
-                      <div className="text-gray-400 text-xs">Подход</div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white/10 rounded-lg p-2">
-                    <div className="text-center">
-                      <div className="text-white text-sm font-bold mb-0.5">
-                        {currentExercise.reps}
-                      </div>
-                      <div className="text-gray-400 text-xs">Повторений</div>
-                    </div>
-                  </div>
-                </div>
+        {/* Видео на полную ширину с информацией поверх */}
+        <div className="relative">
+          <video
+            className="w-full h-[70vh] md:h-[80vh] object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src={`/${currentExercise.video}`} type="video/mp4" />
+          </video>
+          
+          {/* Минималистичная информация поверх видео */}
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="text-white">
+              {/* Название упражнения */}
+              <h2 className="text-2xl md:text-3xl font-bold mb-3 drop-shadow-lg">
+                {currentExercise.title}
+              </h2>
+              
+              {/* Подходы и повторения - минималистично */}
+              <div className="flex items-center space-x-6 text-lg md:text-xl font-medium drop-shadow-lg">
+                <span>{currentSet}/{currentExercise.sets}</span>
+                <span>{currentExercise.reps}</span>
               </div>
             </div>
           </div>
+          
+          {/* Градиент для лучшей читаемости текста */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent"></div>
+        </div>
 
-          {/* Кнопки действий - ниже видимой области */}
+        {/* Кнопки действий */}
+        <div className="max-w-[1200px] mx-auto p-4 mt-6">
           <div className="space-y-3">
             <button
               onClick={handleCompleteSet}
@@ -193,7 +180,6 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               Пропустить упражнение
             </button>
           </div>
-
         </div>
       </div>
     </div>
