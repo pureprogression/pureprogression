@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { TEXTS } from "@/constants/texts";
 
 export default function Navigation({ currentPage = "home", user = null }) {
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
       <motion.button
         onClick={toggleMenu}
         className="fixed top-4 left-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
-        aria-label="Открыть меню"
+        aria-label="Open menu"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -132,9 +133,9 @@ export default function Navigation({ currentPage = "home", user = null }) {
         <div className="flex flex-col h-full p-6">
           {/* Заголовок */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-white mb-2">Меню</h2>
+            <h2 className="text-xl font-bold text-white mb-2">Menu</h2>
             {user && (
-              <p className="text-gray-400 text-sm">Добро пожаловать!</p>
+              <p className="text-gray-400 text-sm">Welcome!</p>
             )}
           </div>
 
@@ -142,7 +143,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
           <nav className="flex-1 space-y-6">
             {/* Основная навигация */}
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Навигация</h3>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Navigation</h3>
               <ul className="space-y-1">
                 {/* Главная */}
                 {currentPage !== "home" && (
@@ -154,7 +155,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
-                      <span>Главная</span>
+                      <span>{TEXTS.en.navigation.home}</span>
                     </button>
                   </li>
                 )}

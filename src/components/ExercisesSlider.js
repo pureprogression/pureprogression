@@ -70,7 +70,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           {/* indicator */}
           <span
             className={`relative block w-4 h-4 rounded-full border-2 transition-all duration-300 ease-out transform drop-shadow
-              ${isFavorite ? "bg-white border-white" : "bg-transparent border-white/80 group-hover:border-white"}
+              ${isFavorite ? "bg-white border-white shadow-lg" : "bg-transparent border-white/80 group-hover:border-white"}
               group-hover:scale-110 group-active:scale-95`}
           />
         </button>
@@ -91,7 +91,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
           {/* indicator */}
-          <span className="relative block w-4 h-4 rounded-full border-2 border-white/80 group-hover:border-white group-hover:bg-white transition-all duration-300 ease-out transform group-hover:scale-110 group-active:scale-95 drop-shadow" />
+          <span className="relative block w-4 h-4 rounded-full border-2 bg-white border-white shadow-lg transition-all duration-300 ease-out transform group-hover:scale-110 group-active:scale-95 drop-shadow" />
         </button>
       </div>
     )}
@@ -242,6 +242,7 @@ export default function ExercisesSlider({
     }
   };
 
+
   return (
     <div className="w-full max-w-[1200px] mx-auto">
       <style dangerouslySetInnerHTML={{ __html: swiperStyles }} />
@@ -307,7 +308,12 @@ export default function ExercisesSlider({
               <SwiperSlide key={ex.id || ex.exerciseId}>
                 <ExerciseCard
                   ex={ex}
-                  isFavorite={favorites.some(f => f.id === ex.id || f.exerciseId === ex.id)}
+                  isFavorite={favorites.some(f => 
+                  f.id === ex.id || 
+                  f.exerciseId === ex.id || 
+                  f.exerciseId === ex.exerciseId ||
+                  f.id === ex.exerciseId
+                )}
                   onToggleFavorite={handleFavoriteClick}
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
@@ -321,7 +327,12 @@ export default function ExercisesSlider({
               <ExerciseCard
                 key={ex.id || ex.exerciseId}
                 ex={ex}
-                isFavorite={favorites.some(f => f.id === ex.id || f.exerciseId === ex.id)}
+                isFavorite={favorites.some(f => 
+                  f.id === ex.id || 
+                  f.exerciseId === ex.id || 
+                  f.exerciseId === ex.exerciseId ||
+                  f.id === ex.exerciseId
+                )}
                 onToggleFavorite={handleFavoriteClick}
                 readOnly={readOnly}
                 showRemoveButton={mode === "favorites-page"}
