@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
@@ -72,32 +73,62 @@ export default function Navigation({ currentPage = "home", user = null }) {
   return (
     <>
       {/* Гамбургер кнопка */}
-      <button
+      <motion.button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out hover:scale-105 focus:outline-none"
+        className="fixed top-4 left-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
         aria-label="Открыть меню"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <div className="w-6 h-6 flex flex-col justify-center items-center">
-          <span className={`block h-0.5 w-5 bg-current transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
-          <span className={`block h-0.5 w-5 bg-current transition-all duration-300 mt-1 ${isMenuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block h-0.5 w-5 bg-current transition-all duration-300 mt-1 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current"
+            animate={{ 
+              rotate: isMenuOpen ? 45 : 0,
+              y: isMenuOpen ? 6 : 0
+            }}
+            transition={{ duration: 0.3 }}
+          />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current mt-1"
+            animate={{ 
+              opacity: isMenuOpen ? 0 : 1,
+              scale: isMenuOpen ? 0 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          />
+          <motion.span 
+            className="block h-0.5 w-5 bg-current mt-1"
+            animate={{ 
+              rotate: isMenuOpen ? -45 : 0,
+              y: isMenuOpen ? -6 : 0
+            }}
+            transition={{ duration: 0.3 }}
+          />
         </div>
-      </button>
+      </motion.button>
 
       {/* Overlay для закрытия меню */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={closeMenu}
-        />
-      )}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={closeMenu}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Боковое меню */}
-      <div className={`
-        fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-50
-        transform transition-transform duration-300 ease-out
-        ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <motion.div 
+        className="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-50"
+        initial={{ x: "-100%" }}
+        animate={{ x: isMenuOpen ? 0 : "-100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      >
         <div className="flex flex-col h-full p-6">
           {/* Заголовок */}
           <div className="mb-8">
@@ -240,7 +271,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 }

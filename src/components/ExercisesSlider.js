@@ -40,8 +40,9 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton }) => (
-  <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton }) {
+  return (
+    <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
     <video
       src={ex.video}
       muted
@@ -98,8 +99,9 @@ const ExerciseCard = memo(({ ex, isFavorite, onToggleFavorite, readOnly, showRem
     {/* <p className="absolute bottom-2 left-2 text-white text-sm font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pr-2">
       {ex.title}
     </p> */}
-  </div>
-));
+    </div>
+  );
+});
 
 export default function ExercisesSlider({
   videos,

@@ -13,16 +13,17 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Простейшая диагностика: предупредить в консоли, если что-то из env не задано
-try {
-  const missing = Object.entries(firebaseConfig)
-    .filter(([, v]) => !v)
-    .map(([k]) => k);
-  if (missing.length) {
-    // Не логируем сами значения, только имена ключей
-    console.warn("[Firebase] Отсутствуют переменные окружения:", missing.join(", "));
-  }
-} catch {}
+// Проверка конфигурации Firebase (только для разработки)
+if (process.env.NODE_ENV === 'development') {
+  try {
+    const missing = Object.entries(firebaseConfig)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+    if (missing.length) {
+      console.warn("[Firebase] Отсутствуют переменные окружения:", missing.join(", "));
+    }
+  } catch {}
+}
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 

@@ -261,7 +261,7 @@ export default function WorkoutsList({ workouts, user }) {
               
               <h3 className="text-white text-lg font-semibold mb-2">Удалить тренировку?</h3>
               <p className="text-gray-300 text-sm mb-6">
-                Тренировка <span className="text-white font-medium">"{showDeleteConfirm.name}"</span> будет удалена навсегда.
+                Тренировка <span className="text-white font-medium">&quot;{showDeleteConfirm.name}&quot;</span> будет удалена навсегда.
               </p>
               
               <div className="flex gap-3">
