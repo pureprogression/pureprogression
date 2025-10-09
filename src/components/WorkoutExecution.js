@@ -45,26 +45,31 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     return () => clearTimeout(timer);
   }, [currentExerciseIndex, currentExercise]);
 
-  const handleCompleteExercise = () => {
-    if (!currentExercise) return;
+      const handleCompleteExercise = () => {
+        if (!currentExercise) return;
 
-    const updatedResults = { ...workoutResults };
-    const exercise = updatedResults.exercises[currentExerciseIndex];
-    
-    // Отмечаем упражнение как выполненное с исходными значениями
-    exercise.actualSets = exercise.sets || 3;
-    exercise.actualReps = exercise.reps || 12;
-    exercise.completedSets = exercise.sets || 3;
-    
-    setWorkoutResults(updatedResults);
+        const updatedResults = { ...workoutResults };
+        const exercise = updatedResults.exercises[currentExerciseIndex];
+        
+        // Сохраняем реальные данные
+        const completedReps = exercise.completedReps || [];
+        const actualReps = completedReps.filter(reps => reps > 0);
+        const actualSets = actualReps.length;
+        
+        exercise.actualSets = actualSets;
+        exercise.actualReps = actualReps;
+        exercise.completedSets = actualSets;
+        exercise.totalReps = actualReps.reduce((sum, reps) => sum + reps, 0);
+        
+        setWorkoutResults(updatedResults);
 
-    // Переходим к следующему упражнению или завершаем тренировку
-    if (currentExerciseIndex < workoutResults.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-    } else {
-      handleCompleteWorkout();
-    }
-  };
+        // Переходим к следующему упражнению или завершаем тренировку
+        if (currentExerciseIndex < workoutResults.exercises.length - 1) {
+          setCurrentExerciseIndex(currentExerciseIndex + 1);
+        } else {
+          handleCompleteWorkout();
+        }
+      };
 
   const handleCompleteWorkout = () => {
     const finalResults = {
@@ -140,11 +145,48 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                     {currentExercise.title}
                   </h2>
                   
-                  {/* Подходы и повторения - стильный текст */}
-                  <div className="flex items-center space-x-4 text-sm md:text-base font-medium drop-shadow-lg opacity-90">
-                    <span>{currentExercise.sets || 3} подходов</span>
-                    <span>•</span>
-                    <span>{currentExercise.reps || 12} повторений</span>
+                  {/* Интерактивные подходы */}
+                  <div className="flex items-center space-x-3 mb-2">
+                    {Array.from({ length: currentExercise.sets || 3 }, (_, index) => {
+                      const completedReps = currentExercise.completedReps || [];
+                      const reps = completedReps[index] || 0;
+                      const targetReps = currentExercise.reps || 12;
+                      
+                      return (
+                        <div key={index} className="flex items-center space-x-1">
+                          {/* Номер подхода */}
+                          <span className="text-xs text-white/70 w-3">
+                            {index + 1}
+                          </span>
+                          
+                          {/* Счетчик повторений */}
+                          <button
+                            onClick={() => {
+                              const updatedResults = { ...workoutResults };
+                              const exercise = updatedResults.exercises[currentExerciseIndex];
+                              
+                              if (!exercise.completedReps) {
+                                exercise.completedReps = Array(exercise.sets || 3).fill(0);
+                              }
+                              
+                              if (exercise.completedReps[index] < targetReps) {
+                                exercise.completedReps[index]++;
+                              }
+                              
+                              setWorkoutResults(updatedResults);
+                            }}
+                            className="flex items-center justify-center w-8 h-6 bg-white/20 hover:bg-white/30 rounded text-xs font-medium transition-all duration-200 hover:scale-105"
+                          >
+                            {reps}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Целевые повторения */}
+                  <div className="text-xs text-white/60 drop-shadow-lg">
+                    Цель: {currentExercise.reps || 12} повторений в подходе
                   </div>
                 </div>
 
