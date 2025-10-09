@@ -134,10 +134,19 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             {/* Минималистичная информация поверх видео */}
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <div className="flex items-center justify-between">
-                {/* Название упражнения */}
-                <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
-                  {currentExercise.title}
-                </h2>
+                <div className="text-white">
+                  {/* Название упражнения */}
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-lg">
+                    {currentExercise.title}
+                  </h2>
+                  
+                  {/* Подходы и повторения - стильный текст */}
+                  <div className="flex items-center space-x-4 text-sm md:text-base font-medium drop-shadow-lg opacity-90">
+                    <span>{currentExercise.sets || 3} подходов</span>
+                    <span>•</span>
+                    <span>{currentExercise.reps || 12} повторений</span>
+                  </div>
+                </div>
 
                 {/* Кнопка завершения упражнения */}
                 <button
