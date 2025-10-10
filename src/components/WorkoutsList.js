@@ -122,7 +122,7 @@ export default function WorkoutsList({ workouts, user }) {
   if (!workouts || workouts.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-lg mb-4">You don't have any saved workouts yet</div>
+        <div className="text-gray-400 text-lg mb-4">You don&apos;t have any saved workouts yet</div>
         <button
           onClick={() => router.push('/workout-builder')}
           className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300"

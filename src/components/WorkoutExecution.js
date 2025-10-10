@@ -129,7 +129,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentExerciseIndex, workoutResults.exercises.length]);
+  }, [currentExerciseIndex, workoutResults.exercises.length, goToNextExercise, goToPreviousExercise]);
 
   if (isCompleted) {
     return (
