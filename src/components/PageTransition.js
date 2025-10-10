@@ -34,7 +34,6 @@ export default function PageTransition({ children }) {
         exit="out"
         variants={pageVariants}
         transition={pageTransition}
-        className="min-h-screen"
       >
         {children}
       </motion.div>
