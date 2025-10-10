@@ -69,7 +69,7 @@ export default function Home() {
           <ViewToggle
             viewMode={viewMode}
             onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
-            className="mr-4"
+            className="mr-4 flex-shrink-0"
           />
         </div>
       </div>
