@@ -9,6 +9,8 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   });
   const [startTime, setStartTime] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingSets, setEditingSets] = useState([]);
 
   // Инициализация результатов
   useEffect(() => {
@@ -75,6 +77,40 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     onComplete(finalResults);
   };
 
+  const handleEditSets = () => {
+    const currentSets = currentExercise.sets || 3;
+    const currentReps = currentExercise.reps || 12;
+    
+    // Создаем массив подходов для редактирования
+    const sets = Array.from({ length: currentSets }, (_, i) => ({
+      setNumber: i + 1,
+      reps: currentReps
+    }));
+    
+    setEditingSets(sets);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateSet = (setIndex, newReps) => {
+    const updatedSets = [...editingSets];
+    updatedSets[setIndex].reps = parseInt(newReps) || 0;
+    setEditingSets(updatedSets);
+  };
+
+  const handleSaveEditedSets = () => {
+    const updatedResults = { ...workoutResults };
+    const exercise = updatedResults.exercises[currentExerciseIndex];
+    
+    // Обновляем данные упражнения с отредактированными подходами
+    exercise.actualSets = editingSets.length;
+    exercise.actualReps = editingSets.reduce((sum, set) => sum + set.reps, 0);
+    exercise.completedSets = editingSets.length;
+    exercise.setsData = editingSets; // Сохраняем детальную информацию о подходах
+    
+    setWorkoutResults(updatedResults);
+    setShowEditModal(false);
+  };
+
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -130,11 +166,20 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                     {currentExercise.title}
                   </h2>
                   
-                  {/* Простые цифры */}
+                  {/* Простые цифры с иконкой редактирования */}
                   <div className="flex items-center space-x-3 text-lg font-medium drop-shadow-lg opacity-90">
                     <span>{currentExercise.sets || 3}</span>
                     <span>•</span>
                     <span>{currentExercise.reps || 12}</span>
+                    <button
+                      onClick={handleEditSets}
+                      className="ml-2 p-1 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                      aria-label="Редактировать подходы"
+                    >
+                      <svg className="w-4 h-4 text-white/70 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -165,6 +210,59 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             {/* Градиент для лучшей читаемости текста */}
             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
           </div>
+
+          {/* Модальное окно редактирования подходов */}
+          {showEditModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full max-w-md border border-white/20">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-white text-xl font-semibold">Редактировать подходы</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  {editingSets.map((set, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-white/90 text-sm">Подход {set.setNumber}</span>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="number"
+                          value={set.reps}
+                          onChange={(e) => handleUpdateSet(index, e.target.value)}
+                          className="w-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-center focus:outline-none focus:border-white/40 transition-colors"
+                          min="0"
+                          max="999"
+                        />
+                        <span className="text-white/70 text-sm">повторений</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 py-3 px-4 bg-white/10 text-white rounded-lg font-medium hover:bg-white/20 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleSaveEditedSets}
+                    className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+                  >
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       );
