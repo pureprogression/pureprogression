@@ -296,7 +296,7 @@ export default function Navigation({ currentPage = "home", user = null }) {
             {/* Подвал */}
             <div className="pt-6 border-t border-white/10">
               <p className="text-gray-500 text-xs text-center">
-                PureP Fitness
+                Beta Version
               </p>
             </div>
           </nav>
