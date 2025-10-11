@@ -21,15 +21,10 @@ export default function WorkoutBuilderPage() {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setIsLoading(false);
-      
-      // Если пользователь не авторизован, перенаправляем на главную
-      if (!user) {
-        router.push('/');
-      }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const handleSaveWorkout = async (workout) => {
     setIsSaving(true);

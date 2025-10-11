@@ -29,7 +29,7 @@ export default function PageTransition({ children }) {
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
         initial="initial"
@@ -37,11 +37,6 @@ export default function PageTransition({ children }) {
         exit="out"
         variants={pageVariants}
         transition={pageTransition}
-        style={{ 
-          minHeight: '100vh',
-          opacity: 0 // Prevent initial flash
-        }}
-        data-framer-motion="true"
       >
         {children}
       </motion.div>
