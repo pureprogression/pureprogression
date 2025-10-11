@@ -36,6 +36,27 @@ body {
   overflow-x: hidden;
 }
 
+/* Prevent page flicker during transitions */
+[data-framer-motion] {
+  opacity: 0 !important;
+  will-change: opacity, transform;
+}
+
+/* Ensure smooth transitions */
+.motion-div {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Prevent flash of unstyled content */
+body {
+  visibility: hidden;
+}
+
+body.loaded {
+  visibility: visible;
+}
+
 /* Оптимизация производительности */
 * {
   -webkit-font-smoothing: antialiased;

@@ -5,20 +5,23 @@ import { usePathname } from "next/navigation";
 
 const pageVariants = {
   initial: {
-    opacity: 0
+    opacity: 0,
+    y: 10
   },
   in: {
-    opacity: 1
+    opacity: 1,
+    y: 0
   },
   out: {
-    opacity: 0
+    opacity: 0,
+    y: -10
   }
 };
 
 const pageTransition = {
   type: "tween",
-  ease: "easeOut",
-  duration: 0.3
+  ease: "easeInOut",
+  duration: 0.4
 };
 
 
@@ -34,6 +37,11 @@ export default function PageTransition({ children }) {
         exit="out"
         variants={pageVariants}
         transition={pageTransition}
+        style={{ 
+          minHeight: '100vh',
+          opacity: 0 // Prevent initial flash
+        }}
+        data-framer-motion="true"
       >
         {children}
       </motion.div>
