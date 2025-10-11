@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
+import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -50,8 +51,21 @@ export default function WorkoutHistoryPage() {
     };
   }, []);
 
-  if (!user)
-    return <p className="text-center mt-10">Please sign in to your account</p>;
+  if (!user) {
+    return (
+      <>
+        <Navigation currentPage="workout-history" user={null} />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <PremiumModal
+            isOpen={true}
+            onClose={() => window.location.href = '/'}
+            onUpgrade={() => window.location.href = '/auth'}
+            feature="Workout History"
+          />
+        </div>
+      </>
+    );
+  }
   if (workoutHistory === null)
     return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
 

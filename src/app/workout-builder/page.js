@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import WorkoutBuilder from "@/components/WorkoutBuilder";
+import PremiumModal from "@/components/PremiumModal";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
@@ -70,7 +71,19 @@ export default function WorkoutBuilderPage() {
   }
 
   if (!user) {
-    return null; // Будет перенаправление
+    return (
+      <>
+        <Navigation currentPage="workout-builder" user={null} />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <PremiumModal
+            isOpen={true}
+            onClose={() => window.location.href = '/'}
+            onUpgrade={() => window.location.href = '/auth'}
+            feature="Workout Builder"
+          />
+        </div>
+      </>
+    );
   }
 
   return (

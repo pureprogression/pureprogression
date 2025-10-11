@@ -5,12 +5,14 @@ import { auth, db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutsList from "@/components/WorkoutsList";
+import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function MyWorkoutsPage() {
   const [user, setUser] = useState(null);
   const [workouts, setWorkouts] = useState(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -73,7 +75,19 @@ export default function MyWorkoutsPage() {
   }, []);
 
   if (!user) {
-    return <p className="text-center mt-10">{TEXTS[language].auth.pleaseLogin}</p>;
+    return (
+      <>
+        <Navigation currentPage="my-workouts" user={null} />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <PremiumModal
+            isOpen={true}
+            onClose={() => window.location.href = '/'}
+            onUpgrade={() => window.location.href = '/auth'}
+            feature="My Workouts"
+          />
+        </div>
+      </>
+    );
   }
   
   if (workouts === null) {

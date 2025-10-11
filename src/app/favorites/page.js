@@ -6,6 +6,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import ExercisesSlider from "@/components/ExercisesSlider";
 import ViewToggle from "@/components/ViewToggle";
+import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -49,8 +50,21 @@ export default function FavoritesPage() {
     };
   }, []);
 
-  if (!user)
-    return <p className="text-center mt-10">Please sign in to your account</p>;
+  if (!user) {
+    return (
+      <>
+        <Navigation currentPage="favorites" user={null} />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <PremiumModal
+            isOpen={true}
+            onClose={() => window.location.href = '/'}
+            onUpgrade={() => window.location.href = '/auth'}
+            feature="Favorites"
+          />
+        </div>
+      </>
+    );
+  }
   if (favorites === null)
     return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
 
