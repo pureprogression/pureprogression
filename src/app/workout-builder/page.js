@@ -9,6 +9,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { trackWorkoutCreated } from "@/lib/analytics";
 
 export default function WorkoutBuilderPage() {
   const router = useRouter();
@@ -42,6 +43,9 @@ export default function WorkoutBuilderPage() {
 
       // Сохраняем в коллекцию 'workouts' в Firebase
       await addDoc(collection(db, 'workouts'), workoutData);
+      
+      // Отслеживаем создание тренировки
+      trackWorkoutCreated(workout.exercises.length);
       
       // Перенаправляем в профиль
       router.push('/profile');

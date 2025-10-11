@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { trackRegistration, trackLogin } from "@/lib/analytics";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
@@ -20,9 +21,11 @@ export default function AuthForm() {
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
+        trackRegistration('email');
         alert("Registration successful!");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        trackLogin('email');
         alert("Sign in successful!");
       }
       setEmail("");

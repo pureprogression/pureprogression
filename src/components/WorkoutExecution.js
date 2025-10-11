@@ -134,10 +134,13 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="text-3xl font-bold mb-4">Тренировка завершена! 🎉</div>
-          <div className="text-gray-400 mb-6">Сохранение результатов...</div>
-          <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto"></div>
+        <div className="text-center">
+          <h1 className="text-2xl font-light text-white mb-2 tracking-wide">
+            Workout Complete
+          </h1>
+          <div className="text-gray-400 text-sm">
+            Saving results...
+          </div>
         </div>
       </div>
     );
@@ -152,7 +155,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-screen bg-black text-white overflow-hidden">
       {/* Крестик для выхода - на уровне меню */}
       <button
         onClick={onCancel}
@@ -165,7 +168,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
       </button>
 
       {/* Основной контейнер */}
-      <div className="flex flex-col md:flex-row h-screen">
+      <div className="flex flex-col md:flex-row h-full">
         {/* Видео контейнер */}
         <div 
           className="relative flex-1 md:flex-none md:w-1/2"
@@ -210,13 +213,13 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           </video>
 
           {/* Мобильная информация поверх видео */}
-          <div className="md:hidden absolute bottom-0 left-0 right-0 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="md:hidden absolute bottom-0 left-0 right-0 p-4">
+            <div className="flex items-center justify-between mb-3">
               <div className="text-white">
-                <h2 className="text-2xl font-bold mb-2 drop-shadow-lg">
+                <h2 className="text-lg font-medium mb-1 drop-shadow-lg">
                   {currentExercise.title}
                 </h2>
-                <div className="flex items-center space-x-3 text-lg font-medium drop-shadow-lg opacity-90">
+                <div className="flex items-center space-x-3 text-sm font-medium drop-shadow-lg opacity-90">
                   <span>{currentExercise.sets || 3}</span>
                   <span>•</span>
                   <span>{currentExercise.reps || 12}</span>
@@ -234,7 +237,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               </button>
             </div>
             
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-white/70 text-sm font-medium">
                 {currentExerciseIndex + 1} / {workoutResults.exercises.length}
               </span>
