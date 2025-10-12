@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local media files (will be hosted on Cloudflare R2)
+/public/posters
+/public/videos
+generate-posters.js
