@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "@/lib/firebase";
@@ -14,6 +15,11 @@ export default function Navigation({ currentPage = "home", user = null }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -75,15 +81,16 @@ export default function Navigation({ currentPage = "home", user = null }) {
     setIsMenuOpen(false);
   };
 
-  return (
+  const menuContent = (
     <>
       {/* Гамбургер кнопка */}
       <motion.button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
+        className="fixed top-4 left-4 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
         aria-label="Open menu"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        style={{ zIndex: 9999 }}
       >
         <div className="w-6 h-6 flex flex-col justify-center items-center">
           <motion.span 
@@ -113,22 +120,16 @@ export default function Navigation({ currentPage = "home", user = null }) {
       </motion.button>
 
       {/* Overlay для закрытия меню */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-            onClick={closeMenu}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-      </AnimatePresence>
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+          onClick={closeMenu}
+        />
+      )}
 
       {/* Боковое меню */}
       <motion.div
-        className="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-50"
+        className="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur-xl border-r border-white/20 z-[9999]"
         initial={{ x: "-100%" }}
         animate={{ x: isMenuOpen ? 0 : "-100%" }}
         transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
@@ -305,4 +306,8 @@ export default function Navigation({ currentPage = "home", user = null }) {
       </motion.div>
     </>
   );
+
+  // Рендерим Navigation через Portal в document.body
+  if (!mounted) return null;
+  return createPortal(menuContent, document.body);
 }

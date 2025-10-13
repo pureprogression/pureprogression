@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Navigation } from "swiper/modules";
 import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import LazyVideo from "./LazyVideo";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -43,14 +44,14 @@ const swiperStyles = `
 const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton }) {
   return (
     <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
-    <video
+    <LazyVideo
       src={ex.video}
+      poster={ex.poster}
       muted
       loop
       playsInline
       autoPlay
-      preload="auto"
-      webkit-playsinline="true"
+      preload="none"
       className="absolute inset-0 w-full h-full object-cover"
     />
     
@@ -216,7 +217,8 @@ export default function ExercisesSlider({
             userId,
             exerciseId,
             title: ex.title,
-            video: ex.video?.startsWith("/") ? ex.video : `/${ex.video}`,
+            video: ex.video,
+            poster: ex.poster,
           });
         }
       }
@@ -274,7 +276,7 @@ export default function ExercisesSlider({
         </div>
       )}
 
-      <div className="bg-black p-4 rounded-xl">
+      <div className="bg-black p-4 rounded-xl relative z-0">
         <div 
           className={`transition-all duration-400 ease-out ${
             animationPhase === 'fadeOut' ? 

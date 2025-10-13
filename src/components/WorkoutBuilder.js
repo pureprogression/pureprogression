@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LazyVideo from "./LazyVideo";
 
 export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [workoutName, setWorkoutName] = useState("");
@@ -508,7 +509,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
             <div className="animate-fadeIn">
               {/* Фильтр групп мышц - вне swipe контейнера */}
               <div className="px-4 mb-4">
-                <div className="flex gap-2 overflow-x-auto pb-2">
+                <div 
+                  className="flex gap-2 overflow-x-auto pb-2"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                >
                   {categories.map((group) => (
                     <button
                       key={group}

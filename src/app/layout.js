@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
       >
         <GoogleAnalytics GA_TRACKING_ID={process.env.NEXT_PUBLIC_GA_ID} />
         <LanguageProvider>
-          <div className="page-container">
+          <div className="page-container relative z-0">
             {children}
           </div>
         </LanguageProvider>

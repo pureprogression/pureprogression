@@ -31,6 +31,7 @@ export default function LazyVideo({
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -38,14 +39,18 @@ export default function LazyVideo({
 
     // Обработчик загрузки видео
     const handleCanPlay = () => {
-      // Небольшая задержка для плавного перехода
+      // Минимальная задержка для показа skeleton (300ms)
       setTimeout(() => {
         setIsPlaying(true);
-      }, 100);
+        setShowContent(true);
+      }, 300);
     };
 
     const handleLoadedData = () => {
-      setIsPlaying(true);
+      setTimeout(() => {
+        setIsPlaying(true);
+        setShowContent(true);
+      }, 300);
     };
 
     video.addEventListener('canplay', handleCanPlay);
@@ -94,26 +99,30 @@ export default function LazyVideo({
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      {/* Poster image - показываем сразу */}
-      {poster && !isPlaying && (
-        <img
-          src={poster}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          onLoad={() => setImageLoaded(true)}
-        />
-      )}
-      
-      {/* Skeleton loader поверх poster пока видео грузится */}
-      {!isPlaying && !imageLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 animate-pulse z-10">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
+      {/* Минималистичный skeleton loader */}
+      {!showContent && (
+        <div className="absolute inset-0 bg-black z-10 flex items-center justify-center">
+          {/* Пульсирующий круг */}
+          <div className="relative">
+            {/* Внешнее кольцо */}
+            <div className="w-12 h-12 border border-white/10 rounded-full animate-pulse"></div>
+            {/* Вращающееся кольцо */}
+            <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-white/40 rounded-full animate-spin" style={{ animationDuration: '1.5s' }}></div>
           </div>
         </div>
       )}
       
-      {/* Видео с fade-in анимацией */}
+      {/* Poster image - плавное появление */}
+      {poster && (
+        <img
+          src={poster}
+          alt=""
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+          onLoad={() => setImageLoaded(true)}
+        />
+      )}
+      
+      {/* Видео - очень плавное появление с легким zoom */}
       <video
         ref={videoRef}
         src={src}
@@ -122,7 +131,7 @@ export default function LazyVideo({
         loop={loop}
         playsInline={playsInline}
         preload={preload}
-        className={`${className} transition-opacity duration-700 ease-out ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className} transition-all duration-1000 ease-out ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
         webkit-playsinline="true"
         onPlay={onPlay}
         onPause={onPause}

@@ -53,8 +53,7 @@ export default function FavoritesPage() {
   if (!user) {
     return (
       <>
-        <Navigation currentPage="favorites" user={null} />
-        <div className="min-h-screen bg-black pt-20">
+        <div className="min-h-screen pt-20">
           <div className="max-w-[1200px] mx-auto p-4">
             <h2 className="text-2xl font-bold text-white mb-6">{TEXTS[language].favorites.title}</h2>
             
@@ -72,6 +71,7 @@ export default function FavoritesPage() {
             </div>
           </div>
         </div>
+        <Navigation currentPage="favorites" user={null} />
       </>
     );
   }
@@ -80,7 +80,6 @@ export default function FavoritesPage() {
 
   return (
     <>
-      <Navigation currentPage="favorites" user={user} />
       <div className="pt-20">
         {/* Заголовок и переключатель в ограниченном контейнере */}
         <div className="max-w-[1200px] mx-auto p-4">
@@ -110,6 +109,7 @@ export default function FavoritesPage() {
           />
         )}
       </div>
+      <Navigation currentPage="favorites" user={user} />
     </>
   );
 }
