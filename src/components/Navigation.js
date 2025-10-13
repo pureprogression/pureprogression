@@ -250,8 +250,8 @@ export default function Navigation({ currentPage = "home", user = null }) {
               </ul>
             </div>
 
-            {/* Выход - только если авторизован и не на главной */}
-            {user && currentPage !== "home" && (
+            {/* Выход - если пользователь авторизован */}
+            {user && (
               <div className="pt-4 border-t border-white/10">
                 <button
                   onClick={handleLogoutWithClose}
