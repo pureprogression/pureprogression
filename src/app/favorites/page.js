@@ -54,13 +54,29 @@ export default function FavoritesPage() {
     return (
       <>
         <Navigation currentPage="favorites" user={null} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <PremiumModal
-            isOpen={true}
-            onClose={() => window.location.href = '/'}
-            onUpgrade={() => window.location.href = '/auth'}
-            feature="Favorites"
-          />
+        <div className="min-h-screen bg-black pt-20">
+          <div className="max-w-[1200px] mx-auto p-4">
+            <h2 className="text-2xl font-bold text-white mb-6">{TEXTS[language].favorites.title}</h2>
+            
+            {/* Сообщение для неавторизованных пользователей */}
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-8 max-w-md mx-auto">
+                <div className="text-4xl mb-4">❤️</div>
+                <div className="text-yellow-400 text-lg font-medium mb-3">
+                  {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
+                </div>
+                <div className="text-gray-300 text-sm mb-6">
+                  {TEXTS[language].favorites.loginDescription || "Create an account to save your favorite exercises and access them anytime"}
+                </div>
+                <button 
+                  onClick={() => window.location.href = '/auth'}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black py-3 px-6 rounded-lg font-medium hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 shadow-lg"
+                >
+                  {TEXTS[language].auth.signIn || "Sign In"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </>
     );
