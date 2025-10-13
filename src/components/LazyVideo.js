@@ -30,6 +30,7 @@ export default function LazyVideo({
   const [isVisible, setIsVisible] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -37,10 +38,18 @@ export default function LazyVideo({
 
     // Обработчик загрузки видео
     const handleCanPlay = () => {
+      // Небольшая задержка для плавного перехода
+      setTimeout(() => {
+        setIsPlaying(true);
+      }, 100);
+    };
+
+    const handleLoadedData = () => {
       setIsPlaying(true);
     };
 
     video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('loadeddata', handleLoadedData);
 
     // Intersection Observer для отслеживания видимости
     const observer = new IntersectionObserver(
@@ -78,17 +87,28 @@ export default function LazyVideo({
 
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadeddata', handleLoadedData);
       observer.disconnect();
     };
   }, [autoPlay, hasLoaded]);
 
   return (
-    <div className="relative w-full h-full">
-      {/* Skeleton loader пока видео грузится */}
-      {!isPlaying && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 animate-pulse">
+    <div className="relative w-full h-full overflow-hidden">
+      {/* Poster image - показываем сразу */}
+      {poster && !isPlaying && (
+        <img
+          src={poster}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          onLoad={() => setImageLoaded(true)}
+        />
+      )}
+      
+      {/* Skeleton loader поверх poster пока видео грузится */}
+      {!isPlaying && !imageLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 animate-pulse z-10">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 border-4 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-3 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
           </div>
         </div>
       )}
@@ -102,7 +122,7 @@ export default function LazyVideo({
         loop={loop}
         playsInline={playsInline}
         preload={preload}
-        className={`${className} transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className} transition-opacity duration-700 ease-out ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
         webkit-playsinline="true"
         onPlay={onPlay}
         onPause={onPause}

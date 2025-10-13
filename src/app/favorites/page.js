@@ -60,7 +60,6 @@ export default function FavoritesPage() {
             
             {/* Сообщение для неавторизованных пользователей */}
             <div className="text-center py-20">
-              <div className="text-white/40 text-4xl mb-6">❤️</div>
               <div className="text-white text-xl font-light mb-6 tracking-wide">
                 {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
               </div>
