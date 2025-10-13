@@ -138,7 +138,10 @@ export default function WorkoutHistoryPage() {
                     {session.exercises.slice(0, 4).map((exercise, index) => (
                       <div key={index} className="flex-shrink-0">
                         <img
-                          src={exercise.poster || exercise.video.replace('.mp4', '.jpg').replace('/videos/', '/posters/')}
+                          src={
+                            exercise.poster || 
+                            exercise.video.replace('/videos/', '/posters/').replace('.mp4', '.jpg')
+                          }
                           alt={exercise.title || 'Exercise'}
                           className="w-16 h-16 rounded-lg object-cover bg-gray-800"
                           loading="lazy"
