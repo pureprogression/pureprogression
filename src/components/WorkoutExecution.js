@@ -203,14 +203,13 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
 
           <video
             key={`${currentExerciseIndex}-${currentExercise.id}`}
+            src={currentExercise.video}
             className="w-full h-full object-cover md:object-contain"
             autoPlay
             muted
             loop
             playsInline
-          >
-            <source src={`/${currentExercise.video}`} type="video/mp4" />
-          </video>
+          />
 
           {/* Мобильная информация поверх видео */}
           <div className="md:hidden absolute bottom-0 left-0 right-0 p-4">
