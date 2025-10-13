@@ -505,20 +505,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
 
           {/* Секция выбора упражнений */}
           {activeSection === "browse" && (
-            <div 
-              className="animate-fadeIn"
-              style={{
-                transform: `translateX(${tabSwipeOffset}px)`,
-                transition: tabSwipeStart ? 'none' : 'transform 0.3s ease-out'
-              }}
-              onTouchStart={handleTabSwipeStart}
-              onTouchMove={handleTabSwipeMove}
-              onTouchEnd={handleTabSwipeEnd}
-            >
-              <div className="px-4 py-6 bg-white/5 backdrop-blur-sm rounded-xl">
-                
-                {/* Фильтр групп мышц */}
-                <div className="flex gap-2 overflow-x-auto mb-6 pb-2">
+            <div className="animate-fadeIn">
+              {/* Фильтр групп мышц - вне swipe контейнера */}
+              <div className="px-4 mb-4">
+                <div className="flex gap-2 overflow-x-auto pb-2">
                   {categories.map((group) => (
                     <button
                       key={group}
@@ -533,6 +523,19 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Сетка упражнений - с swipe для переключения вкладок */}
+              <div 
+                style={{
+                  transform: `translateX(${tabSwipeOffset}px)`,
+                  transition: tabSwipeStart ? 'none' : 'transform 0.3s ease-out'
+                }}
+                onTouchStart={handleTabSwipeStart}
+                onTouchMove={handleTabSwipeMove}
+                onTouchEnd={handleTabSwipeEnd}
+              >
+              <div className="px-4 py-6 bg-white/5 backdrop-blur-sm rounded-xl">
 
                 {/* Сетка упражнений */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -611,6 +614,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                     <p className="text-gray-400">No exercises found</p>
                   </div>
                 )}
+              </div>
               </div>
             </div>
           )}

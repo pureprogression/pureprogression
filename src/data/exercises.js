@@ -31,41 +31,34 @@ export const exercises = [
     },
     {
         id: "5",
-        title: "Hanging abs",
-        video: `${R2_CDN_URL}/videos/x51.mp4`,
-        poster: `${R2_CDN_URL}/posters/x51.jpg`,
-        muscleGroups: ["chest", "arms", "shoulders"]
-    },
-    {
-        id: "6",
         title: "Squats",
         video: `${R2_CDN_URL}/videos/x102.mp4`,
         poster: `${R2_CDN_URL}/posters/x102.jpg`,
         muscleGroups: ["legs", "glutes"]
     },
     {
-        id: "7",
+        id: "6",
         title: "Handstand",
         video: `${R2_CDN_URL}/videos/x113.mp4`,
         poster: `${R2_CDN_URL}/posters/x113.jpg`,
         muscleGroups: ["core", "abs"]
     },
     {
-        id: "8",
+        id: "7",
         title: "Push-ups",
         video: `${R2_CDN_URL}/videos/x84.mp4`,
         poster: `${R2_CDN_URL}/posters/x84.jpg`,
         muscleGroups: ["full body", "cardio"]
     },
     {
-        id: "9",
+        id: "8",
         title: "Decline Push-ups",
         video: `${R2_CDN_URL}/videos/x124.mp4`,
         poster: `${R2_CDN_URL}/posters/x124.jpg`,
         muscleGroups: ["core", "cardio", "legs"]
     },
     {
-        id: "10",
+        id: "9",
         title: "Push-ups",
         video: `${R2_CDN_URL}/videos/x32.mp4`,
         poster: `${R2_CDN_URL}/posters/x32.jpg`,
