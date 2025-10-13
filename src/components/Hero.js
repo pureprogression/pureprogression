@@ -16,7 +16,7 @@ export default function Hero() {
         webkit-playsinline="true"
         preload="auto"
       >
-        <source src="/videos/webHero.mp4" type="video/mp4" />
+        <source src="https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 

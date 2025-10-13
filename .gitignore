@@ -40,7 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local media files (will be hosted on Cloudflare R2)
-/public/posters
-/public/videos
+# optimization scripts (not needed in production)
+optimize-videos.js
 generate-posters.js
