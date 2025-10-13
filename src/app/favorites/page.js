@@ -59,22 +59,17 @@ export default function FavoritesPage() {
             <h2 className="text-2xl font-bold text-white mb-6">{TEXTS[language].favorites.title}</h2>
             
             {/* Сообщение для неавторизованных пользователей */}
-            <div className="text-center py-12">
-              <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-8 max-w-md mx-auto">
-                <div className="text-4xl mb-4">❤️</div>
-                <div className="text-yellow-400 text-lg font-medium mb-3">
-                  {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
-                </div>
-                <div className="text-gray-300 text-sm mb-6">
-                  {TEXTS[language].favorites.loginDescription || "Create an account to save your favorite exercises and access them anytime"}
-                </div>
-                <button 
-                  onClick={() => window.location.href = '/auth'}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black py-3 px-6 rounded-lg font-medium hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 shadow-lg"
-                >
-                  {TEXTS[language].auth.signIn || "Sign In"}
-                </button>
+            <div className="text-center py-20">
+              <div className="text-white/40 text-4xl mb-6">❤️</div>
+              <div className="text-white text-xl font-light mb-6 tracking-wide">
+                {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
               </div>
+              <button 
+                onClick={() => window.location.href = '/auth'}
+                className="text-white/60 hover:text-white text-sm font-light border border-white/20 hover:border-white/40 py-3 px-8 rounded-lg transition-all duration-300"
+              >
+                {TEXTS[language].auth.signIn || "Sign In"}
+              </button>
             </div>
           </div>
         </div>

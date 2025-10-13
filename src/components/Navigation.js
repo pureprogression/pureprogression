@@ -18,8 +18,9 @@ export default function Navigation({ currentPage = "home", user = null }) {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      await signOut(auth);
+      // Сначала редирект, потом logout - чтобы не показывать модалку
       router.push('/');
+      await signOut(auth);
     } catch (error) {
       console.error("Ошибка при выходе:", error);
     } finally {

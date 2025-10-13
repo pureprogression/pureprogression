@@ -69,15 +69,12 @@ export default function WorkoutsList({ workouts, user }) {
             <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
               {workout.exercises.slice(0, 4).map((exercise, index) => (
                 <div key={index} className="flex-shrink-0">
-                  <video
-                    className="w-16 h-16 rounded-lg object-cover"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                  >
-                    <source src={exercise.video} type="video/mp4" />
-                  </video>
+                  <img
+                    src={exercise.poster || exercise.video.replace('.mp4', '.jpg').replace('/videos/', '/posters/')}
+                    alt={exercise.title || 'Exercise'}
+                    className="w-16 h-16 rounded-lg object-cover bg-gray-800"
+                    loading="lazy"
+                  />
                 </div>
               ))}
               {workout.exercises.length > 4 && (
