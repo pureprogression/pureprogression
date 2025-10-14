@@ -2,41 +2,30 @@
 
 import { useRef, useState, useEffect, memo, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, Navigation } from "swiper/modules";
+import { Navigation } from "swiper/modules";
 import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import LazyVideo from "./LazyVideo";
 
 import "swiper/css";
-import "swiper/css/pagination";
 import "swiper/css/navigation";
 
-// Custom styles for white navigation and pagination
+// Custom styles for white navigation
 const swiperStyles = `
   .swiper-button-next,
   .swiper-button-prev {
-    color: white !important;
-    background: rgba(0, 0, 0, 0.3) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
     border-radius: 50% !important;
-    width: 16px !important;
-    height: 16px !important;
-    margin-top: -8px !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-top: -4px !important;
   }
   
   .swiper-button-next:after,
   .swiper-button-prev:after {
-    font-size: 6px !important;
-  }
-  
-  .swiper-pagination-bullet {
-    background: rgba(255, 255, 255, 0.5) !important;
-    opacity: 1 !important;
-    width: 6px !important;
-    height: 6px !important;
-  }
-  
-  .swiper-pagination-bullet-active {
-    background: white !important;
+    font-size: 3px !important;
+    font-weight: 100 !important;
   }
 `;
 
@@ -73,12 +62,12 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
     
     {/* Кнопка для слайдера - минималистичный индикатор (круг) - показываем после загрузки видео */}
     {!readOnly && !showRemoveButton && onToggleFavorite && (
-      <div className={`absolute top-2 right-2 z-30 transition-all duration-[1200ms] ease-in-out ${
-        showIndicator ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-[1200ms] ease-in-out ${
+        showIndicator ? 'opacity-100' : 'opacity-0'
       }`}>
         <button
           aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
-          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out"
+          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(ex);
@@ -88,9 +77,10 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
           {/* indicator - фиксированный размер */}
           <span
-            className={`relative block w-4 h-4 min-w-[16px] min-h-[16px] rounded-full border-2 transition-all duration-300 ease-out drop-shadow
-              ${isFavorite ? "bg-white border-white shadow-lg" : "bg-transparent border-white/80 group-hover:border-white"}
-              group-hover:scale-110 group-active:scale-95`}
+            style={{ width: '16px', height: '16px' }}
+            className={`relative block rounded-full border-2 transition-all duration-[1200ms] ease-in-out drop-shadow
+              ${showIndicator ? 'scale-100' : 'scale-50'}
+              ${isFavorite ? "bg-white border-white shadow-lg" : "bg-transparent border-white/80 group-hover:border-white"}`}
           />
         </button>
       </div>
@@ -98,12 +88,12 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
     
     {/* Кнопка для страницы избранного - удаление - показываем после загрузки видео */}
     {showRemoveButton && (
-      <div className={`absolute top-2 right-2 z-30 transition-all duration-[1200ms] ease-in-out ${
-        showIndicator ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-[1200ms] ease-in-out ${
+        showIndicator ? 'opacity-100' : 'opacity-0'
       }`}>
         <button
           aria-label="Удалить из избранного"
-          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out"
+          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(ex);
@@ -112,7 +102,11 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
           {/* indicator - фиксированный размер */}
-          <span className="relative block w-4 h-4 min-w-[16px] min-h-[16px] rounded-full border-2 bg-white border-white shadow-lg transition-all duration-300 ease-out group-hover:scale-110 group-active:scale-95 drop-shadow" />
+          <span 
+            style={{ width: '16px', height: '16px' }}
+            className={`relative block rounded-full border-2 bg-white border-white shadow-lg transition-all duration-[1200ms] ease-in-out drop-shadow
+              ${showIndicator ? 'scale-100' : 'scale-50'}`}
+          />
         </button>
       </div>
     )}
@@ -152,6 +146,31 @@ export default function ExercisesSlider({
   useEffect(() => {
     setSliderMounted(true);
   }, []);
+
+  // Предзагружаем первые 5 слайдов для плавного старта
+  useEffect(() => {
+    if (effectiveViewMode === "slider" && swiperRef.current) {
+      const timer = setTimeout(() => {
+        const slides = swiperRef.current.slides;
+        // Загружаем первые 5 слайдов постепенно
+        [0, 1, 2, 3, 4].forEach((i, index) => {
+          setTimeout(() => {
+            if (i < slides.length) {
+              const video = slides[i]?.querySelector('video');
+              if (video && video.readyState < 2) {
+                video.load();
+                // Автоплей только для текущего
+                if (i === initialSlideIndex || i === 0) {
+                  video.play().catch(() => {});
+                }
+              }
+            }
+          }, index * 200); // Загружаем постепенно с задержкой 200мс
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [effectiveViewMode, initialSlideIndex]);
 
   // Переключаем на нужный слайд когда меняется initialSlideIndex и viewMode становится slider
   useEffect(() => {
@@ -401,37 +420,43 @@ export default function ExercisesSlider({
                 handleSlideChange(swiper);
               }}
               onSlideChange={handleSlideChange}
-              modules={[Pagination, Navigation]}
+              modules={[Navigation]}
               spaceBetween={16}
               slidesPerView={1}
               breakpoints={{
                 640: { slidesPerView: 2 },
                 1024: { slidesPerView: 3 },
               }}
-              pagination={{ clickable: true }}
               navigation
               grabCursor
               speed={400}
             >
-            {videos.map((ex, index) => (
-              <SwiperSlide key={ex.id || ex.exerciseId}>
-                <ExerciseCard
-                  ex={ex}
-                  isFavorite={favorites.some(f => 
-                  f.id === ex.id || 
-                  f.exerciseId === ex.id || 
-                  f.exerciseId === ex.exerciseId ||
-                  f.id === ex.exerciseId
-                )}
-                  onToggleFavorite={handleFavoriteClick}
-                  readOnly={readOnly}
-                  showRemoveButton={mode === "favorites-page"}
-                  isActive={index === activeSlideIndex}
-                  eager={true}
-                  preloadLevel="auto"
-                />
-              </SwiperSlide>
-            ))}
+            {videos.map((ex, index) => {
+              // Баланс: первые 5 + текущие соседние всегда готовы
+              const isInitial = index < 5;
+              const isNearActive = Math.abs(index - activeSlideIndex) <= 1;
+              const shouldFullyLoad = isInitial || isNearActive;
+              
+              return (
+                <SwiperSlide key={ex.id || ex.exerciseId}>
+                  <ExerciseCard
+                    ex={ex}
+                    isFavorite={favorites.some(f => 
+                    f.id === ex.id || 
+                    f.exerciseId === ex.id || 
+                    f.exerciseId === ex.exerciseId ||
+                    f.id === ex.exerciseId
+                  )}
+                    onToggleFavorite={handleFavoriteClick}
+                    readOnly={readOnly}
+                    showRemoveButton={mode === "favorites-page"}
+                    isActive={index === activeSlideIndex}
+                    eager={shouldFullyLoad}
+                    preloadLevel={shouldFullyLoad ? "auto" : "none"}
+                  />
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
           </div>
         )}
@@ -471,7 +496,7 @@ export default function ExercisesSlider({
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
                   eager={index < 6}
-                  preloadLevel={index < 6 ? "auto" : "none"}
+                  preloadLevel={index < 6 ? "metadata" : "none"}
                 />
               </div>
             ))}
