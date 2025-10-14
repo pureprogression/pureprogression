@@ -84,7 +84,7 @@ export default function Home() {
 
   return (
     <>
-      <Navigation currentPage="home" user={user} />
+      <Navigation currentPage="home" user={user} disableSwipe={viewMode === "slider"} />
       <Hero />
       <div className="relative">
         <div className="flex items-center justify-between">

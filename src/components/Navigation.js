@@ -9,16 +9,33 @@ import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function Navigation({ currentPage = "home", user = null }) {
+export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showBurger, setShowBurger] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Показываем/скрываем бургер при скролле
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      // Показываем бургер после 100px скролла
+      if (scrollY > 100) {
+        setShowBurger(true);
+      } else {
+        setShowBurger(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleLogout = async () => {
@@ -81,40 +98,50 @@ export default function Navigation({ currentPage = "home", user = null }) {
     setIsMenuOpen(false);
   };
 
+  // Убрали свайп из-за конфликта с Safari на iPhone
+
   const menuContent = (
     <>
-      {/* Гамбургер кнопка */}
+      {/* Минималистичная кнопка меню - появляется при скролле */}
       <motion.button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
+        className="fixed top-4 left-4 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-300 ease-out focus:outline-none"
         aria-label="Open menu"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ 
+          opacity: showBurger ? 1 : 0,
+          x: showBurger ? 0 : -20,
+          pointerEvents: showBurger ? 'auto' : 'none'
+        }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        whileHover={showBurger ? { scale: 1.1 } : {}}
+        whileTap={showBurger ? { scale: 0.9 } : {}}
         style={{ zIndex: 9999 }}
       >
-        <div className="w-6 h-6 flex flex-col justify-center items-center">
+        <div className="w-5 h-5 flex flex-col justify-center items-center gap-1">
           <motion.span 
-            className="block h-0.5 w-5 bg-current"
+            className="block h-px w-4 bg-current"
             animate={{ 
               rotate: isMenuOpen ? 45 : 0,
-              y: isMenuOpen ? 6 : 0
+              y: isMenuOpen ? 4 : 0
             }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           />
           <motion.span 
-            className="block h-0.5 w-5 bg-current mt-1"
+            className="block h-px w-4 bg-current"
             animate={{ 
-              opacity: isMenuOpen ? 0 : 1
+              opacity: isMenuOpen ? 0 : 1,
+              scale: isMenuOpen ? 0 : 1
             }}
             transition={{ duration: 0.2 }}
           />
           <motion.span 
-            className="block h-0.5 w-5 bg-current mt-1"
+            className="block h-px w-4 bg-current"
             animate={{ 
               rotate: isMenuOpen ? -45 : 0,
-              y: isMenuOpen ? -6 : 0
+              y: isMenuOpen ? -4 : 0
             }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           />
         </div>
       </motion.button>
