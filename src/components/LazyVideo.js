@@ -57,13 +57,16 @@ export default function LazyVideo({
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('loadeddata', handleLoadedData);
 
-    // Если eager - грузим СРАЗУ без задержки
+    // Если eager - грузим СРАЗУ без задержки (даже если элемент скрыт)
     if (eager && !hasLoaded) {
-      video.load();
-      setHasLoaded(true);
-      if (autoPlay) {
-        video.play().catch(() => {});
-      }
+      // Небольшая задержка чтобы DOM успел отрендериться
+      requestAnimationFrame(() => {
+        video.load();
+        setHasLoaded(true);
+        if (autoPlay) {
+          video.play().catch(() => {});
+        }
+      });
     }
 
     // Intersection Observer для отслеживания видимости (если не eager)
@@ -152,9 +155,12 @@ export default function LazyVideo({
         loop={loop}
         playsInline={playsInline}
         preload={preload}
-        className={`${className} transition-opacity duration-500 ease-in-out ${
+        className={`${className} transition-opacity duration-400 ease-in-out ${
           isPlaying ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{
+          zIndex: isPlaying ? 2 : 1
+        }}
         webkit-playsinline="true"
         onPlay={onPlay}
         onPause={onPause}

@@ -57,6 +57,7 @@ export default function Home() {
       : exercises.filter((ex) => ex.muscleGroups.includes(selectedGroup));
 
   const handleExerciseClick = (exerciseIndex) => {
+    console.log('[Home] Exercise clicked:', exerciseIndex);
     setInitialSlide(exerciseIndex);
     setViewMode("slider");
   };

@@ -41,8 +41,20 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none" }) {
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none", isActive = true }) {
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
+  
+  // Сбрасываем и запускаем анимацию при смене активного слайда
+  useEffect(() => {
+    if (isActive && isVideoReady) {
+      setShowIndicator(false);
+      const timer = setTimeout(() => setShowIndicator(true), 100);
+      return () => clearTimeout(timer);
+    } else if (!isActive) {
+      setShowIndicator(false);
+    }
+  }, [isActive, isVideoReady]);
   
   return (
     <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
@@ -61,12 +73,12 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
     
     {/* Кнопка для слайдера - минималистичный индикатор (круг) - показываем после загрузки видео */}
     {!readOnly && !showRemoveButton && onToggleFavorite && (
-      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-500 ${
-        isVideoReady ? 'opacity-100' : 'opacity-0'
+      <div className={`absolute top-2 right-2 z-30 transition-all duration-[1200ms] ease-in-out ${
+        showIndicator ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
       }`}>
         <button
           aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
-          className={`group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out`}
+          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out"
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(ex);
@@ -74,9 +86,9 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
         >
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
-          {/* indicator */}
+          {/* indicator - фиксированный размер */}
           <span
-            className={`relative block w-4 h-4 rounded-full border-2 transition-all duration-300 ease-out transform drop-shadow
+            className={`relative block w-4 h-4 min-w-[16px] min-h-[16px] rounded-full border-2 transition-all duration-300 ease-out drop-shadow
               ${isFavorite ? "bg-white border-white shadow-lg" : "bg-transparent border-white/80 group-hover:border-white"}
               group-hover:scale-110 group-active:scale-95`}
           />
@@ -86,8 +98,8 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
     
     {/* Кнопка для страницы избранного - удаление - показываем после загрузки видео */}
     {showRemoveButton && (
-      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-500 ${
-        isVideoReady ? 'opacity-100' : 'opacity-0'
+      <div className={`absolute top-2 right-2 z-30 transition-all duration-[1200ms] ease-in-out ${
+        showIndicator ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
       }`}>
         <button
           aria-label="Удалить из избранного"
@@ -99,8 +111,8 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
         >
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
-          {/* indicator */}
-          <span className="relative block w-4 h-4 rounded-full border-2 bg-white border-white shadow-lg transition-all duration-300 ease-out transform group-hover:scale-110 group-active:scale-95 drop-shadow" />
+          {/* indicator - фиксированный размер */}
+          <span className="relative block w-4 h-4 min-w-[16px] min-h-[16px] rounded-full border-2 bg-white border-white shadow-lg transition-all duration-300 ease-out group-hover:scale-110 group-active:scale-95 drop-shadow" />
         </button>
       </div>
     )}
@@ -130,11 +142,32 @@ export default function ExercisesSlider({
   const effectiveViewMode = controlledViewMode || viewMode;
   
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [sliderMounted, setSliderMounted] = useState(false);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+
+  // Монтируем Slider сразу чтобы видео начали грузиться
+  useEffect(() => {
+    setSliderMounted(true);
+  }, []);
 
   // Переключаем на нужный слайд когда меняется initialSlideIndex и viewMode становится slider
   useEffect(() => {
-    if (swiperRef.current && effectiveViewMode === "slider" && initialSlideIndex > 0) {
+    if (swiperRef.current && effectiveViewMode === "slider") {
+      console.log('[ExercisesSlider] Setting slide to:', initialSlideIndex);
       swiperRef.current.slideTo(initialSlideIndex, 0);
+      
+      // Принудительно запускаем загрузку видео в текущем и соседних слайдах
+      setTimeout(() => {
+        const slides = swiperRef.current.slides;
+        [initialSlideIndex - 1, initialSlideIndex, initialSlideIndex + 1].forEach(i => {
+          if (i >= 0 && i < slides.length) {
+            const video = slides[i]?.querySelector('video');
+            if (video && video.readyState < 2) {
+              video.load();
+            }
+          }
+        });
+      }, 50);
     }
   }, [effectiveViewMode, initialSlideIndex]);
 
@@ -222,6 +255,7 @@ export default function ExercisesSlider({
   }
 
   const handleSlideChange = (swiper) => {
+    setActiveSlideIndex(swiper.activeIndex);
     const slides = swiper.slides;
     slides.forEach((slide, idx) => {
       const video = slide.querySelector("video");
@@ -324,16 +358,17 @@ export default function ExercisesSlider({
 
       <div className="bg-black p-4 rounded-xl relative z-0">
         <div className="relative">
-        {/* Slider view */}
-        <div
-          className={`transition-all duration-300 ease-out ${
-            effectiveViewMode === "slider" 
-              ? "opacity-100 translate-y-0" 
-              : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"
-          }`}
-          onClick={handleDoubleTap}
-        >
-          <Swiper
+        {/* Slider view - рендерим сразу для предзагрузки */}
+        {sliderMounted && (
+          <div
+            className={`transition-all duration-300 ease-out ${
+              effectiveViewMode === "slider" 
+                ? "opacity-100 translate-y-0 relative z-10" 
+                : "opacity-0 pointer-events-none absolute inset-0 z-0"
+            }`}
+            onClick={handleDoubleTap}
+          >
+            <Swiper
               onSwiper={(swiper) => {
                 swiperRef.current = swiper;
                 handleSlideChange(swiper);
@@ -364,20 +399,24 @@ export default function ExercisesSlider({
                   onToggleFavorite={handleFavoriteClick}
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
-                  eager={index < 3}
-                  preloadLevel={index < 3 ? "auto" : "metadata"}
+                  isActive={index === activeSlideIndex}
+                  eager={true}
+                  preloadLevel="auto"
                 />
               </SwiperSlide>
             ))}
           </Swiper>
-        </div>
+          </div>
+        )}
 
         {/* Grid view */}
-        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-300 ease-out ${
-          effectiveViewMode === "grid" 
-            ? "opacity-100 translate-y-0" 
-            : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"
-        }`}>
+        <div 
+          className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-300 ease-out ${
+            effectiveViewMode === "grid" 
+              ? "opacity-100 translate-y-0 relative z-10" 
+              : "opacity-0 pointer-events-none absolute inset-0 z-0"
+          }`}
+        >
             {videos.map((ex, index) => (
               <div
                 key={ex.id || ex.exerciseId}
