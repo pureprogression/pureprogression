@@ -15,7 +15,8 @@ export default function Home() {
   const [selectedGroup, setSelectedGroup] = useState("All");
   const [user, setUser] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [viewMode, setViewMode] = useState("slider");
+  const [viewMode, setViewMode] = useState("grid");
+  const [initialSlide, setInitialSlide] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +56,18 @@ export default function Home() {
       ? exercises
       : exercises.filter((ex) => ex.muscleGroups.includes(selectedGroup));
 
+  const handleExerciseClick = (exerciseIndex) => {
+    setInitialSlide(exerciseIndex);
+    setViewMode("slider");
+  };
+
+  // Сбрасываем initialSlide когда возвращаемся в Grid
+  useEffect(() => {
+    if (viewMode === "grid") {
+      setInitialSlide(0);
+    }
+  }, [viewMode]);
+
   return (
     <>
       <Navigation currentPage="home" user={user} />
@@ -81,6 +94,8 @@ export default function Home() {
         controlledViewMode={viewMode}
         onToggleViewMode={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
         onToggleFavorite={undefined}
+        onExerciseClick={handleExerciseClick}
+        initialSlideIndex={initialSlide}
         showToggle={false}
       />
     </>

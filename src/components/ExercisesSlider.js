@@ -41,7 +41,7 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton }) {
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, delay = 0, eager = false }) {
   return (
     <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
     <LazyVideo
@@ -52,6 +52,8 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       playsInline
       autoPlay
       preload="none"
+      delay={delay}
+      eager={eager}
       className="absolute inset-0 w-full h-full object-cover"
     />
     
@@ -112,12 +114,50 @@ export default function ExercisesSlider({
   mode = "default", // "default" | "favorites-page"
   controlledViewMode,
   onToggleViewMode,
+  onExerciseClick,
+  initialSlideIndex = 0,
   showToggle = true,
 }) {
   const swiperRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(true);
   const [viewMode, setViewMode] = useState("slider");
   const effectiveViewMode = controlledViewMode || viewMode;
+  
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // Переключаем на нужный слайд когда меняется initialSlideIndex и viewMode становится slider
+  useEffect(() => {
+    if (swiperRef.current && effectiveViewMode === "slider" && initialSlideIndex > 0) {
+      swiperRef.current.slideTo(initialSlideIndex, 0);
+    }
+  }, [effectiveViewMode, initialSlideIndex]);
+
+  // Отмечаем что анимация была показана (чтобы не повторять при каждом возврате в Grid)
+  useEffect(() => {
+    if (effectiveViewMode === "grid" && !hasAnimated) {
+      const timer = setTimeout(() => {
+        setHasAnimated(true);
+      }, videos.length * 150 + 600);
+      return () => clearTimeout(timer);
+    }
+  }, [effectiveViewMode, hasAnimated, videos.length]);
+
+  // Обработчик двойного тапа для возврата в Grid
+  const [lastTap, setLastTap] = useState(0);
+  
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 300ms между тапами
+    
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      // Это двойной тап!
+      if (onToggleViewMode && effectiveViewMode === "slider") {
+        onToggleViewMode(); // Переключаем обратно в Grid
+      }
+    }
+    
+    setLastTap(now);
+  };
 
   // Подпись текущего набора видео (по id) для анимации при смене фильтра
   const videosSignature = useMemo(() => {
@@ -285,28 +325,32 @@ export default function ExercisesSlider({
               "opacity-100 translate-y-0 scale-100" :
               "opacity-100 translate-y-0 scale-100"
           } ${isTransitioning ? "pointer-events-none" : ""}`} 
-          key={`${videosSignature}-${effectiveViewMode}`}
+          key={videosSignature}
         >
-        {effectiveViewMode === "slider" ? (
+        {/* Slider view */}
+        <div
+          className={effectiveViewMode === "slider" ? "block" : "hidden"}
+          onClick={handleDoubleTap}
+        >
           <Swiper
-            onSwiper={(swiper) => {
-              swiperRef.current = swiper;
-              handleSlideChange(swiper);
-            }}
-            onSlideChange={handleSlideChange}
-            modules={[Pagination, Navigation]}
-            spaceBetween={16}
-            slidesPerView={1}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-            }}
-            pagination={{ clickable: true }}
-            navigation
-            grabCursor
-            speed={400}
-          >
-            {videos.map((ex) => (
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper;
+                handleSlideChange(swiper);
+              }}
+              onSlideChange={handleSlideChange}
+              modules={[Pagination, Navigation]}
+              spaceBetween={16}
+              slidesPerView={1}
+              breakpoints={{
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+              pagination={{ clickable: true }}
+              navigation
+              grabCursor
+              speed={400}
+            >
+            {videos.map((ex, index) => (
               <SwiperSlide key={ex.id || ex.exerciseId}>
                 <ExerciseCard
                   ex={ex}
@@ -319,29 +363,45 @@ export default function ExercisesSlider({
                   onToggleFavorite={handleFavoriteClick}
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
+                  eager={index < 3}
                 />
               </SwiperSlide>
             ))}
           </Swiper>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {videos.map((ex) => (
-              <ExerciseCard
+        </div>
+
+        {/* Grid view */}
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${effectiveViewMode === "grid" ? "block" : "hidden"}`}>
+            {videos.map((ex, index) => (
+              <div
                 key={ex.id || ex.exerciseId}
-                ex={ex}
-                isFavorite={favorites.some(f => 
-                  f.id === ex.id || 
-                  f.exerciseId === ex.id || 
-                  f.exerciseId === ex.exerciseId ||
-                  f.id === ex.exerciseId
-                )}
-                onToggleFavorite={handleFavoriteClick}
-                readOnly={readOnly}
-                showRemoveButton={mode === "favorites-page"}
-              />
+                style={{
+                  animation: hasAnimated ? 'none' : `fadeInUp 0.6s ease-out ${index * 0.15}s both`
+                }}
+                onClick={() => {
+                  if (onExerciseClick) {
+                    onExerciseClick(index);
+                  }
+                }}
+                className={onExerciseClick ? "cursor-pointer" : ""}
+              >
+                <ExerciseCard
+                  ex={ex}
+                  isFavorite={favorites.some(f => 
+                    f.id === ex.id || 
+                    f.exerciseId === ex.id || 
+                    f.exerciseId === ex.exerciseId ||
+                    f.id === ex.exerciseId
+                  )}
+                  onToggleFavorite={handleFavoriteClick}
+                  readOnly={readOnly}
+                  showRemoveButton={mode === "favorites-page"}
+                  delay={index * 250}
+                  eager={index < 6}
+                />
+              </div>
             ))}
-          </div>
-        )}
+        </div>
         </div>
       </div>
     </div>

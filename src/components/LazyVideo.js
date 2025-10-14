@@ -22,12 +22,14 @@ export default function LazyVideo({
   playsInline = true,
   className = "",
   preload = "none",
+  delay = 0,
+  eager = false,
   onPlay,
   onPause,
   ...props 
 }) {
   const videoRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(eager);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -56,22 +58,44 @@ export default function LazyVideo({
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('loadeddata', handleLoadedData);
 
-    // Intersection Observer для отслеживания видимости
+    // Если eager - грузим сразу без Intersection Observer
+    if (eager && !hasLoaded) {
+      setTimeout(() => {
+        video.load();
+        setHasLoaded(true);
+        if (autoPlay) {
+          video.play().catch(() => {});
+        }
+      }, delay);
+    }
+
+    // Intersection Observer для отслеживания видимости (если не eager)
+    if (eager) {
+      return () => {
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('loadeddata', handleLoadedData);
+      };
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           setIsVisible(entry.isIntersecting);
           
           if (entry.isIntersecting) {
-            // Видео стало видимым - загружаем и играем
+            // Видео стало видимым - загружаем с задержкой для каскадного эффекта
             if (!hasLoaded) {
-              video.load();
-              setHasLoaded(true);
-            }
-            if (autoPlay && video.paused) {
-              video.play().catch(() => {
-                // Игнорируем ошибки autoplay (может быть заблокировано браузером)
-              });
+              setTimeout(() => {
+                video.load();
+                setHasLoaded(true);
+                if (autoPlay && video.paused) {
+                  video.play().catch(() => {
+                    // Игнорируем ошибки autoplay
+                  });
+                }
+              }, delay);
+            } else if (autoPlay && video.paused) {
+              video.play().catch(() => {});
             }
           } else {
             // Видео вышло из зоны видимости - ставим на паузу для экономии ресурсов
@@ -82,8 +106,8 @@ export default function LazyVideo({
         });
       },
       {
-        // Начинаем загрузку за 200px до появления на экране
-        rootMargin: "200px",
+        // Начинаем загрузку только когда видео близко к экрану (меньше rootMargin для более контролируемой загрузки)
+        rootMargin: "50px",
         threshold: 0.1
       }
     );
@@ -95,7 +119,7 @@ export default function LazyVideo({
       video.removeEventListener('loadeddata', handleLoadedData);
       observer.disconnect();
     };
-  }, [autoPlay, hasLoaded]);
+  }, [autoPlay, hasLoaded, delay]);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
