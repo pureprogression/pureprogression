@@ -62,10 +62,23 @@ export default function Home() {
     setViewMode("slider");
   };
 
-  // Сбрасываем initialSlide когда возвращаемся в Grid
+  const handleReturnToGrid = (currentSlideIndex) => {
+    setInitialSlide(currentSlideIndex);
+    setViewMode("grid");
+  };
+
+  const handleSlideChange = (slideIndex) => {
+    setInitialSlide(slideIndex);
+  };
+
+  // Сбрасываем initialSlide когда возвращаемся в Grid (только при переключении фильтра)
   useEffect(() => {
     if (viewMode === "grid") {
-      setInitialSlide(0);
+      // Не сбрасываем сразу, даем время для скролла
+      const timer = setTimeout(() => {
+        setInitialSlide(0);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [viewMode]);
 
@@ -82,7 +95,13 @@ export default function Home() {
           />
           <ViewToggle
             viewMode={viewMode}
-            onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
+            onToggle={() => {
+              if (viewMode === "slider") {
+                handleReturnToGrid(initialSlide);
+              } else {
+                setViewMode("slider");
+              }
+            }}
             className="mr-4 flex-shrink-0"
           />
         </div>
@@ -93,7 +112,8 @@ export default function Home() {
         readOnly={false}
         mode="default"
         controlledViewMode={viewMode}
-        onToggleViewMode={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
+        onToggleViewMode={handleReturnToGrid}
+        onSlideChange={handleSlideChange}
         onToggleFavorite={undefined}
         onExerciseClick={handleExerciseClick}
         initialSlideIndex={initialSlide}

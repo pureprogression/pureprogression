@@ -132,11 +132,13 @@ export default function ExercisesSlider({
   mode = "default", // "default" | "favorites-page"
   controlledViewMode,
   onToggleViewMode,
+  onSlideChange,
   onExerciseClick,
   initialSlideIndex = 0,
   showToggle = true,
 }) {
   const swiperRef = useRef(null);
+  const gridRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(true);
   const [viewMode, setViewMode] = useState("slider");
   const effectiveViewMode = controlledViewMode || viewMode;
@@ -144,6 +146,7 @@ export default function ExercisesSlider({
   const [hasAnimated, setHasAnimated] = useState(false);
   const [sliderMounted, setSliderMounted] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [scrollToIndex, setScrollToIndex] = useState(null);
 
   // Монтируем Slider сразу чтобы видео начали грузиться
   useEffect(() => {
@@ -181,6 +184,26 @@ export default function ExercisesSlider({
     }
   }, [effectiveViewMode, hasAnimated, videos.length]);
 
+  // Скроллим к нужному элементу при возврате в Grid (до показа)
+  useEffect(() => {
+    if (effectiveViewMode === "grid" && scrollToIndex !== null && gridRef.current) {
+      const gridItems = gridRef.current.querySelectorAll('[data-exercise-index]');
+      const targetItem = gridItems[scrollToIndex];
+      
+      if (targetItem) {
+        // Мгновенно скроллим БЕЗ анимации, до того как Grid станет видимым
+        requestAnimationFrame(() => {
+          targetItem.scrollIntoView({
+            behavior: 'auto',
+            block: 'center',
+            inline: 'nearest'
+          });
+          setScrollToIndex(null);
+        });
+      }
+    }
+  }, [effectiveViewMode, scrollToIndex]);
+
   // Обработчик двойного тапа для возврата в Grid
   const [lastTap, setLastTap] = useState(0);
   
@@ -191,7 +214,8 @@ export default function ExercisesSlider({
     if (now - lastTap < DOUBLE_TAP_DELAY) {
       // Это двойной тап!
       if (onToggleViewMode && effectiveViewMode === "slider") {
-        onToggleViewMode(); // Переключаем обратно в Grid
+        setScrollToIndex(activeSlideIndex); // Запоминаем индекс для скролла
+        onToggleViewMode(activeSlideIndex); // Передаем текущий индекс слайда
       }
     }
     
@@ -256,6 +280,9 @@ export default function ExercisesSlider({
 
   const handleSlideChange = (swiper) => {
     setActiveSlideIndex(swiper.activeIndex);
+    if (onSlideChange) {
+      onSlideChange(swiper.activeIndex);
+    }
     const slides = swiper.slides;
     slides.forEach((slide, idx) => {
       const video = slide.querySelector("video");
@@ -411,6 +438,7 @@ export default function ExercisesSlider({
 
         {/* Grid view */}
         <div 
+          ref={gridRef}
           className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-300 ease-out ${
             effectiveViewMode === "grid" 
               ? "opacity-100 translate-y-0 relative z-10" 
@@ -420,6 +448,7 @@ export default function ExercisesSlider({
             {videos.map((ex, index) => (
               <div
                 key={ex.id || ex.exerciseId}
+                data-exercise-index={index}
                 style={{
                   animation: hasAnimated ? 'none' : `fadeInUp 0.6s ease-out ${index * 0.15}s both`
                 }}
