@@ -41,7 +41,9 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, delay = 0, eager = false }) {
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none" }) {
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  
   return (
     <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
     <LazyVideo
@@ -51,15 +53,17 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       loop
       playsInline
       autoPlay
-      preload="none"
-      delay={delay}
+      preload={preloadLevel}
       eager={eager}
+      onVideoReady={() => setIsVideoReady(true)}
       className="absolute inset-0 w-full h-full object-cover"
     />
     
-    {/* Кнопка для слайдера - минималистичный индикатор (круг) */}
+    {/* Кнопка для слайдера - минималистичный индикатор (круг) - показываем после загрузки видео */}
     {!readOnly && !showRemoveButton && onToggleFavorite && (
-      <div className="absolute top-2 right-2 z-30">
+      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-500 ${
+        isVideoReady ? 'opacity-100' : 'opacity-0'
+      }`}>
         <button
           aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
           className={`group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out`}
@@ -80,9 +84,11 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       </div>
     )}
     
-    {/* Кнопка для страницы избранного - удаление */}
+    {/* Кнопка для страницы избранного - удаление - показываем после загрузки видео */}
     {showRemoveButton && (
-      <div className="absolute top-2 right-2 z-30">
+      <div className={`absolute top-2 right-2 z-30 transition-opacity duration-500 ${
+        isVideoReady ? 'opacity-100' : 'opacity-0'
+      }`}>
         <button
           aria-label="Удалить из избранного"
           className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out"
@@ -317,19 +323,14 @@ export default function ExercisesSlider({
       )}
 
       <div className="bg-black p-4 rounded-xl relative z-0">
-        <div 
-          className={`transition-all duration-400 ease-out ${
-            animationPhase === 'fadeOut' ? 
-              (viewModeChanged ? "opacity-0 translate-y-3 scale-95" : "opacity-0 translate-y-2 scale-98") : 
-            animationPhase === 'fadeIn' ?
-              "opacity-100 translate-y-0 scale-100" :
-              "opacity-100 translate-y-0 scale-100"
-          } ${isTransitioning ? "pointer-events-none" : ""}`} 
-          key={videosSignature}
-        >
+        <div className="relative">
         {/* Slider view */}
         <div
-          className={effectiveViewMode === "slider" ? "block" : "hidden"}
+          className={`transition-all duration-300 ease-out ${
+            effectiveViewMode === "slider" 
+              ? "opacity-100 translate-y-0" 
+              : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"
+          }`}
           onClick={handleDoubleTap}
         >
           <Swiper
@@ -364,6 +365,7 @@ export default function ExercisesSlider({
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
                   eager={index < 3}
+                  preloadLevel={index < 3 ? "auto" : "metadata"}
                 />
               </SwiperSlide>
             ))}
@@ -371,7 +373,11 @@ export default function ExercisesSlider({
         </div>
 
         {/* Grid view */}
-        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${effectiveViewMode === "grid" ? "block" : "hidden"}`}>
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-300 ease-out ${
+          effectiveViewMode === "grid" 
+            ? "opacity-100 translate-y-0" 
+            : "opacity-0 translate-y-2 pointer-events-none absolute inset-0"
+        }`}>
             {videos.map((ex, index) => (
               <div
                 key={ex.id || ex.exerciseId}
@@ -396,8 +402,8 @@ export default function ExercisesSlider({
                   onToggleFavorite={handleFavoriteClick}
                   readOnly={readOnly}
                   showRemoveButton={mode === "favorites-page"}
-                  delay={index * 250}
                   eager={index < 6}
+                  preloadLevel={index < 6 ? "auto" : "none"}
                 />
               </div>
             ))}

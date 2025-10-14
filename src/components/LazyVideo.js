@@ -26,6 +26,7 @@ export default function LazyVideo({
   eager = false,
   onPlay,
   onPause,
+  onVideoReady,
   ...props 
 }) {
   const videoRef = useRef(null);
@@ -41,32 +42,28 @@ export default function LazyVideo({
 
     // Обработчик загрузки видео
     const handleCanPlay = () => {
-      // Минимальная задержка для показа skeleton (300ms)
-      setTimeout(() => {
-        setIsPlaying(true);
-        setShowContent(true);
-      }, 300);
+      // Показываем сразу без задержки
+      setIsPlaying(true);
+      setShowContent(true);
+      if (onVideoReady) onVideoReady();
     };
 
     const handleLoadedData = () => {
-      setTimeout(() => {
-        setIsPlaying(true);
-        setShowContent(true);
-      }, 300);
+      setIsPlaying(true);
+      setShowContent(true);
+      if (onVideoReady) onVideoReady();
     };
 
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('loadeddata', handleLoadedData);
 
-    // Если eager - грузим сразу без Intersection Observer
+    // Если eager - грузим СРАЗУ без задержки
     if (eager && !hasLoaded) {
-      setTimeout(() => {
-        video.load();
-        setHasLoaded(true);
-        if (autoPlay) {
-          video.play().catch(() => {});
-        }
-      }, delay);
+      video.load();
+      setHasLoaded(true);
+      if (autoPlay) {
+        video.play().catch(() => {});
+      }
     }
 
     // Intersection Observer для отслеживания видимости (если не eager)
@@ -83,17 +80,15 @@ export default function LazyVideo({
           setIsVisible(entry.isIntersecting);
           
           if (entry.isIntersecting) {
-            // Видео стало видимым - загружаем с задержкой для каскадного эффекта
+            // Видео стало видимым - загружаем СРАЗУ
             if (!hasLoaded) {
-              setTimeout(() => {
-                video.load();
-                setHasLoaded(true);
-                if (autoPlay && video.paused) {
-                  video.play().catch(() => {
-                    // Игнорируем ошибки autoplay
-                  });
-                }
-              }, delay);
+              video.load();
+              setHasLoaded(true);
+              if (autoPlay && video.paused) {
+                video.play().catch(() => {
+                  // Игнорируем ошибки autoplay
+                });
+              }
             } else if (autoPlay && video.paused) {
               video.play().catch(() => {});
             }
@@ -122,31 +117,33 @@ export default function LazyVideo({
   }, [autoPlay, hasLoaded, delay]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      {/* Минималистичный skeleton loader */}
-      {!showContent && (
-        <div className="absolute inset-0 bg-black z-10 flex items-center justify-center">
-          {/* Пульсирующий круг */}
-          <div className="relative">
-            {/* Внешнее кольцо */}
-            <div className="w-12 h-12 border border-white/10 rounded-full animate-pulse"></div>
-            {/* Вращающееся кольцо */}
-            <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-white/40 rounded-full animate-spin" style={{ animationDuration: '1.5s' }}></div>
-          </div>
-        </div>
-      )}
-      
-      {/* Poster image - плавное появление */}
+    <div className="relative w-full h-full overflow-hidden bg-black">
+      {/* Poster image - базовый слой, всегда видим */}
       {poster && (
         <img
           src={poster}
           alt=""
-          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
           onLoad={() => setImageLoaded(true)}
         />
       )}
       
-      {/* Видео - очень плавное появление с легким zoom */}
+      {/* Минималистичный пульсирующий индикатор - только если нет poster */}
+      {!imageLoaded && !showContent && (
+        <div className="absolute inset-0 bg-black z-10 flex items-center justify-center">
+          <div 
+            className="w-2.5 h-2.5 rounded-full"
+            style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              animation: 'breathe 2s ease-in-out infinite'
+            }}
+          ></div>
+        </div>
+      )}
+      
+      {/* Видео - быстрое плавное появление поверх poster */}
       <video
         ref={videoRef}
         src={src}
@@ -155,7 +152,9 @@ export default function LazyVideo({
         loop={loop}
         playsInline={playsInline}
         preload={preload}
-        className={`${className} transition-all duration-1000 ease-out ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+        className={`${className} transition-opacity duration-500 ease-in-out ${
+          isPlaying ? 'opacity-100' : 'opacity-0'
+        }`}
         webkit-playsinline="true"
         onPlay={onPlay}
         onPause={onPause}
