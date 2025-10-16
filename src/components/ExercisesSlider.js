@@ -27,6 +27,27 @@ const swiperStyles = `
     font-size: 3px !important;
     font-weight: 100 !important;
   }
+  
+  /* Убираем пустоту внизу слайдера */
+  .swiper-container {
+    height: 400px !important;
+    max-height: 80vh !important;
+  }
+  
+  .swiper-wrapper {
+    height: 100% !important;
+  }
+  
+  .swiper-slide {
+    height: 100% !important;
+  }
+  
+  /* Убираем пустоту внизу контейнера слайдера */
+  .bg-black.rounded-xl {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
 `;
 
 // --- Карточка упражнения ---
@@ -146,6 +167,24 @@ export default function ExercisesSlider({
   useEffect(() => {
     setSliderMounted(true);
   }, []);
+
+  // Прокручиваем к слайдеру когда он активируется
+  useEffect(() => {
+    if (effectiveViewMode === "slider") {
+      // Прокручиваем к слайдеру в фиксированную позицию
+      const sliderContainer = document.querySelector('.bg-black.rounded-xl');
+      if (sliderContainer) {
+        sliderContainer.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    }
+  }, [effectiveViewMode]);
+
+
+
+
 
   // Предзагружаем первые 5 слайдов для плавного старта
   useEffect(() => {
