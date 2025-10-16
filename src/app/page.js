@@ -49,6 +49,28 @@ export default function Home() {
     };
   }, []);
 
+  // Устанавливаем начальную позицию скролла при загрузке страницы
+  useEffect(() => {
+    // Устанавливаем позицию скролла сразу при загрузке
+    const setInitialScroll = () => {
+      // Прокручиваем так, чтобы было видно часть видео и первый ряд упражнений
+      const heroSection = document.querySelector('main.relative.h-screen');
+      if (heroSection) {
+        // Прокручиваем на 66% высоты экрана, чтобы показать часть видео и упражнения
+        const scrollPosition = window.innerHeight * 0.66;
+        window.scrollTo(0, scrollPosition);
+      }
+    };
+
+    // Устанавливаем позицию сразу
+    setInitialScroll();
+    
+    // Дополнительно через небольшую задержку для надежности
+    const timer = setTimeout(setInitialScroll, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
 
   // Фильтруем упражнения по выбранной группе
   const filteredExercises =
