@@ -13,44 +13,36 @@ export default function Hero() {
   const [connectionSpeed, setConnectionSpeed] = useState('fast');
 
   useEffect(() => {
-    // Определяем мобильное устройство СРАЗУ
-    const checkMobile = () => {
-      const isMobileDevice = window.innerWidth < 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      setIsMobile(isMobileDevice);
-    };
+    // Определяем мобильное устройство СРАЗУ при инициализации
+    const isMobileDevice = typeof window !== 'undefined' && (
+      window.innerWidth < 768 || 
+      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    );
     
     // Определяем скорость соединения СРАЗУ
-    const checkConnectionSpeed = () => {
-      if ('connection' in navigator) {
-        const connection = navigator.connection;
-        const effectiveType = connection.effectiveType;
-        
-        if (effectiveType === 'slow-2g' || effectiveType === '2g') {
-          setConnectionSpeed('slow');
-        } else if (effectiveType === '3g') {
-          setConnectionSpeed('medium');
-        } else {
-          setConnectionSpeed('fast');
-        }
+    let connectionSpeed = 'fast';
+    if (typeof window !== 'undefined' && 'connection' in navigator) {
+      const connection = navigator.connection;
+      const effectiveType = connection.effectiveType;
+      
+      if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+        connectionSpeed = 'slow';
+      } else if (effectiveType === '3g') {
+        connectionSpeed = 'medium';
       }
-    };
+    }
     
-    // Устанавливаем все значения СРАЗУ
-    checkMobile();
-    checkConnectionSpeed();
+    // Устанавливаем все значения СРАЗУ без асинхронности
+    setIsMobile(isMobileDevice);
+    setConnectionSpeed(connectionSpeed);
     setMounted(true);
-    
-    window.addEventListener('resize', checkMobile);
     
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setIsLoading(false);
     });
 
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   // Адаптивный выбор видео в зависимости от устройства и соединения
@@ -103,7 +95,7 @@ export default function Hero() {
   }
 
   return (
-    <main className="relative h-screen w-screen">
+    <main className="relative h-screen w-screen overflow-hidden">
       
       <video 
         key={`${user ? 'auth' : 'guest'}-${isMobile ? 'mobile' : 'desktop'}-${connectionSpeed}`} // Принудительное обновление при смене параметров
@@ -115,6 +107,11 @@ export default function Hero() {
         webkit-playsinline="true"
         preload={isMobile && connectionSpeed === 'slow' ? 'none' : 'metadata'}
         poster={user ? "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg" : "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg"}
+        style={{
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden'
+        }}
       >
         <source src={videoSrc} type="video/mp4" />
         Your browser does not support the video tag.

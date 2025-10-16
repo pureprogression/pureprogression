@@ -54,7 +54,7 @@ export default function MobileHero() {
   }
 
   return (
-    <main className="relative h-screen w-full bg-black">
+    <main className="relative h-screen w-full bg-black overflow-hidden">
       {/* Fallback изображение для медленных соединений */}
       {showFallback && !videoLoaded && (
         <img
@@ -65,7 +65,7 @@ export default function MobileHero() {
         />
       )}
       
-      {/* Видео */}
+      {/* Видео с улучшенными мобильными настройками */}
       <video 
         key={user ? 'auth' : 'guest'}
         className="absolute inset-0 w-full h-full object-cover"
@@ -76,6 +76,12 @@ export default function MobileHero() {
         webkit-playsinline="true"
         preload="metadata"
         poster={posterSrc}
+        style={{
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+          perspective: '1000px'
+        }}
         onLoadedData={() => {
           setVideoLoaded(true);
           setShowFallback(false);
