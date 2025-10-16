@@ -16,27 +16,11 @@ export default function Navigation({ currentPage = "home", user = null, disableS
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [showBurger, setShowBurger] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Показываем/скрываем бургер при скролле
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      // Показываем бургер после 100px скролла
-      if (scrollY > 100) {
-        setShowBurger(true);
-      } else {
-        setShowBurger(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -102,20 +86,13 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
   const menuContent = (
     <>
-      {/* Минималистичная кнопка меню - появляется при скролле */}
+      {/* Минималистичная кнопка меню - всегда видна */}
       <motion.button
         onClick={toggleMenu}
         className="fixed top-4 left-4 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-300 ease-out focus:outline-none"
         aria-label="Open menu"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ 
-          opacity: showBurger ? 1 : 0,
-          x: showBurger ? 0 : -20,
-          pointerEvents: showBurger ? 'auto' : 'none'
-        }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        whileHover={showBurger ? { scale: 1.1 } : {}}
-        whileTap={showBurger ? { scale: 0.9 } : {}}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         style={{ zIndex: 9999 }}
       >
         <div className="w-5 h-5 flex flex-col justify-center items-center gap-1">

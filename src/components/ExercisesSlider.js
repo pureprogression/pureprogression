@@ -432,8 +432,8 @@ export default function ExercisesSlider({
               speed={400}
             >
             {videos.map((ex, index) => {
-              // Баланс: первые 5 + текущие соседние всегда готовы
-              const isInitial = index < 5;
+              // Оптимизация: первые 3 + текущие соседние для экономии трафика
+              const isInitial = index < 3;
               const isNearActive = Math.abs(index - activeSlideIndex) <= 1;
               const shouldFullyLoad = isInitial || isNearActive;
               

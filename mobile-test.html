@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3, user-scalable=yes">
+    <title>Mobile Test - PureP</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .warning { background: #5a5a2d; }
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+        .debug-info {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Mobile Test - PureP</h1>
+    
+    <div class="test-section">
+        <h2>📱 Device Info</h2>
+        <div id="device-info" class="debug-info"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🌐 Network Info</h2>
+        <div id="network-info" class="debug-info"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎬 Video Test - webHero.mp4 (800KB)</h2>
+        <video id="video1" controls muted playsinline>
+            <source src="https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4" type="video/mp4">
+        </video>
+        <div id="video1-status" class="status">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎬 Video Test - webHeroAuth.mp4 (2.8MB)</h2>
+        <video id="video2" controls muted playsinline>
+            <source src="https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHeroAuth.mp4" type="video/mp4">
+        </video>
+        <div id="video2-status" class="status">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🖼️ Image Test - Poster</h2>
+        <img id="poster" src="https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg" 
+             style="width: 100%; max-width: 400px; height: auto;" 
+             onload="document.getElementById('poster-status').innerHTML = '✅ Poster loaded successfully'"
+             onerror="document.getElementById('poster-status').innerHTML = '❌ Poster failed to load'">
+        <div id="poster-status" class="status">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Performance Test</h2>
+        <div id="performance-info" class="debug-info"></div>
+    </div>
+
+    <script>
+        // Device Info
+        function updateDeviceInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine
+            };
+            
+            document.getElementById('device-info').textContent = JSON.stringify(info, null, 2);
+        }
+        
+        // Network Info
+        function updateNetworkInfo() {
+            let networkInfo = {
+                connection: 'Not available'
+            };
+            
+            if ('connection' in navigator) {
+                const conn = navigator.connection;
+                networkInfo = {
+                    effectiveType: conn.effectiveType,
+                    downlink: conn.downlink,
+                    rtt: conn.rtt,
+                    saveData: conn.saveData
+                };
+            }
+            
+            document.getElementById('network-info').textContent = JSON.stringify(networkInfo, null, 2);
+        }
+        
+        // Performance Info
+        function updatePerformanceInfo() {
+            const perf = performance.timing;
+            const info = {
+                loadTime: perf.loadEventEnd - perf.navigationStart,
+                domReady: perf.domContentLoadedEventEnd - perf.navigationStart,
+                firstPaint: performance.getEntriesByType('paint')[0]?.startTime || 'N/A'
+            };
+            
+            document.getElementById('performance-info').textContent = JSON.stringify(info, null, 2);
+        }
+        
+        // Video Test
+        function testVideo(videoId, statusId) {
+            const video = document.getElementById(videoId);
+            const status = document.getElementById(statusId);
+            
+            video.addEventListener('loadstart', () => {
+                status.innerHTML = '🔄 Loading started...';
+                status.className = 'status warning';
+            });
+            
+            video.addEventListener('loadedmetadata', () => {
+                status.innerHTML = '📊 Metadata loaded';
+                status.className = 'status warning';
+            });
+            
+            video.addEventListener('canplay', () => {
+                status.innerHTML = '✅ Video ready to play';
+                status.className = 'status success';
+            });
+            
+            video.addEventListener('error', (e) => {
+                status.innerHTML = `❌ Error: ${e.target.error?.message || 'Unknown error'}`;
+                status.className = 'status error';
+            });
+            
+            video.addEventListener('stalled', () => {
+                status.innerHTML = '⏸️ Video stalled';
+                status.className = 'status warning';
+            });
+        }
+        
+        // Initialize
+        updateDeviceInfo();
+        updateNetworkInfo();
+        updatePerformanceInfo();
+        
+        testVideo('video1', 'video1-status');
+        testVideo('video2', 'video2-status');
+        
+        // Update info on resize
+        window.addEventListener('resize', () => {
+            updateDeviceInfo();
+        });
+        
+        // Update performance after load
+        window.addEventListener('load', () => {
+            setTimeout(updatePerformanceInfo, 1000);
+        });
+    </script>
+</body>
+</html>

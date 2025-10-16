@@ -17,12 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "PureP - Фитнес приложение",
   description: "Создавайте персональные тренировки с видео упражнениями",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+  // Предзагрузка критичных ресурсов
+  other: {
+    'preload': [
+      'https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4',
+      'https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg'
+    ].join(', ')
+  }
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 3,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }) {
