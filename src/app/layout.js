@@ -49,13 +49,19 @@ export default function RootLayout({ children }) {
                   }
                 };
                 
-                // Пытаемся установить позицию сразу
-                setScrollPosition();
+                // Ждем готовности DOM
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', setScrollPosition);
+                } else {
+                  setScrollPosition();
+                }
                 
-                // Дополнительные попытки
-                setTimeout(setScrollPosition, 10);
-                setTimeout(setScrollPosition, 50);
-                setTimeout(setScrollPosition, 100);
+                // Дополнительные попытки после загрузки
+                window.addEventListener('load', () => {
+                  setTimeout(setScrollPosition, 10);
+                  setTimeout(setScrollPosition, 50);
+                  setTimeout(setScrollPosition, 100);
+                });
               }
             `,
           }}

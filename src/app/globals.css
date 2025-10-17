@@ -213,4 +213,22 @@ body[data-page="favorites"] * {
   scroll-behavior: auto !important;
 }
 
+/* Принудительный скролл для favorites */
+@supports (scroll-behavior: auto) {
+  body[data-page="favorites"] {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Дополнительная попытка через CSS */
+body[data-page="favorites"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  z-index: -1;
+}
+
 

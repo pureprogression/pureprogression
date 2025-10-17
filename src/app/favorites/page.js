@@ -61,25 +61,29 @@ export default function FavoritesPage() {
     // Добавляем data-атрибут к body для CSS
     document.body.setAttribute('data-page', 'favorites');
     
-    // Устанавливаем начальную позицию скролла сразу
+    // Устанавливаем начальную позицию скролла
     const setInitialScroll = () => {
       const scrollPosition = window.innerHeight * 0.66; // 66% как на главной
       window.scrollTo(0, scrollPosition);
     };
 
-    // Устанавливаем позицию сразу без задержки
+    // Агрессивные попытки установить скролл
     setInitialScroll();
     
-    // Дополнительные попытки для надежности
-    const timer1 = setTimeout(setInitialScroll, 50);
-    const timer2 = setTimeout(setInitialScroll, 100);
-    const timer3 = setTimeout(setInitialScroll, 200);
+    // Множественные попытки с разными задержками
+    const timers = [];
+    for (let i = 0; i <= 20; i++) {
+      timers.push(setTimeout(setInitialScroll, i * 10)); // 0ms, 10ms, 20ms, ..., 200ms
+    }
+    
+    // Дополнительные попытки после загрузки
+    const loadTimer = setTimeout(setInitialScroll, 500);
+    const finalTimer = setTimeout(setInitialScroll, 1000);
     
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      // Убираем data-атрибут при размонтировании
+      timers.forEach(clearTimeout);
+      clearTimeout(loadTimer);
+      clearTimeout(finalTimer);
       document.body.removeAttribute('data-page');
     };
   }, []);
