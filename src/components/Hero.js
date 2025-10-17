@@ -106,7 +106,6 @@ export default function Hero() {
         playsInline
         webkit-playsinline="true"
         preload={isMobile && connectionSpeed === 'slow' ? 'none' : 'metadata'}
-        poster={user ? "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg" : "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg"}
         style={{
           willChange: 'transform',
           transform: 'translateZ(0)',

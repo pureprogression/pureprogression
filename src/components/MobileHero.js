@@ -75,7 +75,6 @@ export default function MobileHero() {
         playsInline
         webkit-playsinline="true"
         preload="metadata"
-        poster={posterSrc}
         style={{
           willChange: 'transform',
           transform: 'translateZ(0)',
