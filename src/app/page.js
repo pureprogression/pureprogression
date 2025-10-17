@@ -109,22 +109,11 @@ export default function Home() {
       <Navigation currentPage="home" user={user} disableSwipe={viewMode === "slider"} />
       <Hero />
       <div className="relative">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <ExercisesFilter
             exercises={exercises}
             selectedGroup={selectedGroup}
             setSelectedGroup={setSelectedGroup}
-          />
-          <ViewToggle
-            viewMode={viewMode}
-            onToggle={() => {
-              if (viewMode === "slider") {
-                handleReturnToGrid(initialSlide);
-              } else {
-                setViewMode("slider");
-              }
-            }}
-            className="mr-4 flex-shrink-0"
           />
         </div>
       </div>

@@ -171,6 +171,22 @@ body {
   }
 }
 
+/* Анимация появления фильтров */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* Плавная пульсация для loader */
 @keyframes breathe {
   0%, 100% {
