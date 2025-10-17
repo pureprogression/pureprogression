@@ -5,8 +5,8 @@ import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import ExercisesSlider from "@/components/ExercisesSlider";
-import ViewToggle from "@/components/ViewToggle";
-import PremiumModal from "@/components/PremiumModal";
+import ExercisesFilter from "@/components/ExercisesFilter";
+import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -28,9 +28,11 @@ const getConnectionSpeed = () => {
 };
 
 export default function FavoritesPage() {
+  const [selectedGroup, setSelectedGroup] = useState("All");
   const [user, setUser] = useState(null);
-  const [favorites, setFavorites] = useState(null);
+  const [favorites, setFavorites] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
+  const [initialSlide, setInitialSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
   const { language } = useLanguage();
 
@@ -56,32 +58,28 @@ export default function FavoritesPage() {
   useEffect(() => {
     setMounted(true);
     
-    // Автоматический скролл к началу контента (середина экрана)
-    const scrollToContent = () => {
-      const scrollPosition = window.innerHeight * 0.5; // 50% от высоты экрана
-      window.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
+    // Устанавливаем начальную позицию скролла как на главной странице
+    const setInitialScroll = () => {
+      const scrollPosition = window.innerHeight * 0.66; // 66% как на главной
+      window.scrollTo(0, scrollPosition);
     };
 
-    // Небольшая задержка для корректного скролла
-    setTimeout(scrollToContent, 100);
+    setInitialScroll();
+    const timer = setTimeout(setInitialScroll, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    let unsubscribe = null;
-    
+    let unsubscribeFavorites = null;
     const unsubscribeAuth = auth.onAuthStateChanged((u) => {
+      setUser(u || null);
       if (u) {
-        setUser(u);
-        
-        // Загружаем избранные упражнения
-        const favoritesQuery = query(
+        const qRef = query(
           collection(db, "favorites"),
           where("userId", "==", u.uid)
         );
-        unsubscribe = onSnapshot(favoritesQuery, (snapshot) => {
+        unsubscribeFavorites = onSnapshot(qRef, (snapshot) => {
           const items = snapshot.docs.map((d) => ({
             id: d.id,
             exerciseId: d.data().exerciseId,
@@ -91,17 +89,49 @@ export default function FavoritesPage() {
           setFavorites(items);
         });
       } else {
-        setUser(null);
-        setFavorites(null);
-        if (unsubscribe) unsubscribe();
+        setFavorites([]);
+        if (unsubscribeFavorites) unsubscribeFavorites();
       }
     });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeFavorites) unsubscribeFavorites();
       unsubscribeAuth();
     };
   }, []);
+
+  // Фильтруем упражнения по выбранной группе (только избранные)
+  const filteredExercises = favorites.filter((fav) => {
+    if (selectedGroup === "All") return true;
+    // Находим оригинальное упражнение по exerciseId
+    const originalExercise = exercises.find(ex => ex.id === fav.exerciseId);
+    return originalExercise && originalExercise.muscleGroups.includes(selectedGroup);
+  });
+
+  const handleExerciseClick = (exerciseIndex) => {
+    console.log('[Favorites] Exercise clicked:', exerciseIndex);
+    setInitialSlide(exerciseIndex);
+    setViewMode("slider");
+  };
+
+  const handleReturnToGrid = (currentSlideIndex) => {
+    setInitialSlide(currentSlideIndex);
+    setViewMode("grid");
+  };
+
+  const handleSlideChange = (slideIndex) => {
+    setInitialSlide(slideIndex);
+  };
+
+  // Сбрасываем initialSlide когда возвращаемся в Grid
+  useEffect(() => {
+    if (viewMode === "grid") {
+      const timer = setTimeout(() => {
+        setInitialSlide(0);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode]);
 
   if (!user) {
     return (
@@ -119,16 +149,15 @@ export default function FavoritesPage() {
             <source src={videoSrc} type="video/mp4" />
           </video>
           
-          {/* Градиентный блюр - более мягкий */}
+          {/* Градиентный блюр */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
         </div>
 
-        {/* Контент поверх видео - начинается с середины экрана */}
+        {/* Контент поверх видео */}
         <div className="relative z-10 min-h-screen" style={{ paddingTop: '50vh' }}>
           <div className="max-w-[1200px] mx-auto p-4">
             <h2 className="text-2xl font-bold text-white mb-6 drop-shadow-lg">{TEXTS[language].favorites.title}</h2>
             
-            {/* Сообщение для неавторизованных пользователей */}
             <div className="text-center py-20">
               <div className="text-white text-xl font-light mb-6 tracking-wide drop-shadow-lg">
                 {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
@@ -146,8 +175,6 @@ export default function FavoritesPage() {
       </>
     );
   }
-  if (favorites === null)
-    return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
 
   return (
     <>
@@ -164,44 +191,60 @@ export default function FavoritesPage() {
           <source src={videoSrc} type="video/mp4" />
         </video>
         
-        {/* Градиентный блюр сверху - более мягкий */}
+        {/* Градиентный блюр */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-        
-        {/* Дополнительный блюр снизу для контента - усиленный */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/80 to-transparent" />
       </div>
 
-      {/* Контент поверх видео - начинается с середины экрана */}
-      <div className="relative z-10" style={{ paddingTop: '50vh' }}>
-        {/* Заголовок и переключатель в ограниченном контейнере */}
-        <div className="max-w-[1200px] mx-auto p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white drop-shadow-lg">{TEXTS[language].favorites.title}</h2>
-            <ViewToggle
-              viewMode={viewMode}
-              onToggle={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
+      {/* Контент поверх видео - как на главной странице */}
+      <div className="relative z-10">
+        <Navigation currentPage="favorites" user={user} disableSwipe={viewMode === "slider"} />
+        
+        {/* Hero секция с видео */}
+        <div className="relative h-screen">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+            key={videoSrc}
+          >
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+        </div>
+
+        {/* Фильтры */}
+        <div className="relative">
+          <div className="flex items-center">
+            <ExercisesFilter
+              exercises={favorites}
+              selectedGroup={selectedGroup}
+              setSelectedGroup={setSelectedGroup}
             />
           </div>
         </div>
 
-        {/* Слайдер упражнений на полную ширину как на главной странице */}
+        {/* Слайдер упражнений */}
         {favorites.length === 0 ? (
           <div className="max-w-[1200px] mx-auto p-4">
             <p className="text-center mt-10 text-white drop-shadow-lg">{TEXTS[language].favorites.noFavorites}</p>
           </div>
         ) : (
           <ExercisesSlider
-            videos={favorites}
+            videos={filteredExercises}
             favorites={favorites}
             readOnly={false}
-            mode="favorites-page"
+            mode="default"
             controlledViewMode={viewMode}
-            onToggleViewMode={() => setViewMode(viewMode === "slider" ? "grid" : "slider")}
+            onToggleViewMode={handleReturnToGrid}
+            onSlideChange={handleSlideChange}
+            onToggleFavorite={undefined}
+            onExerciseClick={handleExerciseClick}
+            initialSlideIndex={initialSlide}
             showToggle={false}
           />
         )}
       </div>
-      <Navigation currentPage="favorites" user={user} />
     </>
   );
 }
