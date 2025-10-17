@@ -55,6 +55,18 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Автоматический скролл к началу контента (середина экрана)
+    const scrollToContent = () => {
+      const scrollPosition = window.innerHeight * 0.5; // 50% от высоты экрана
+      window.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    };
+
+    // Небольшая задержка для корректного скролла
+    setTimeout(scrollToContent, 100);
   }, []);
 
   useEffect(() => {
@@ -107,12 +119,12 @@ export default function FavoritesPage() {
             <source src={videoSrc} type="video/mp4" />
           </video>
           
-          {/* Градиентный блюр */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+          {/* Градиентный блюр - более мягкий */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
         </div>
 
-        {/* Контент поверх видео */}
-        <div className="relative z-10 min-h-screen pt-20">
+        {/* Контент поверх видео - начинается с середины экрана */}
+        <div className="relative z-10 min-h-screen" style={{ paddingTop: '50vh' }}>
           <div className="max-w-[1200px] mx-auto p-4">
             <h2 className="text-2xl font-bold text-white mb-6 drop-shadow-lg">{TEXTS[language].favorites.title}</h2>
             
@@ -152,15 +164,15 @@ export default function FavoritesPage() {
           <source src={videoSrc} type="video/mp4" />
         </video>
         
-        {/* Градиентный блюр сверху */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+        {/* Градиентный блюр сверху - более мягкий */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
         
-        {/* Дополнительный блюр снизу для контента */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/60 to-transparent" />
+        {/* Дополнительный блюр снизу для контента - усиленный */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/80 to-transparent" />
       </div>
 
-      {/* Контент поверх видео */}
-      <div className="relative z-10 pt-20">
+      {/* Контент поверх видео - начинается с середины экрана */}
+      <div className="relative z-10" style={{ paddingTop: '50vh' }}>
         {/* Заголовок и переключатель в ограниченном контейнере */}
         <div className="max-w-[1200px] mx-auto p-4">
           <div className="flex items-center justify-between mb-6">
