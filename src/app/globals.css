@@ -199,4 +199,18 @@ body {
   }
 }
 
+/* Предотвращаем видимый скролл при загрузке */
+html {
+  scroll-behavior: auto;
+}
+
+/* Для страницы favorites - немедленный скролл */
+body[data-page="favorites"] {
+  overflow: hidden;
+}
+
+body[data-page="favorites"] * {
+  scroll-behavior: auto !important;
+}
+
 

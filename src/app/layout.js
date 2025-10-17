@@ -36,6 +36,31 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Скрипт для немедленного скролла на странице favorites
+              if (typeof window !== 'undefined') {
+                const setScrollPosition = () => {
+                  if (window.location.pathname === '/favorites') {
+                    const scrollPosition = window.innerHeight * 0.66;
+                    window.scrollTo(0, scrollPosition);
+                  }
+                };
+                
+                // Пытаемся установить позицию сразу
+                setScrollPosition();
+                
+                // Дополнительные попытки
+                setTimeout(setScrollPosition, 10);
+                setTimeout(setScrollPosition, 50);
+                setTimeout(setScrollPosition, 100);
+              }
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -58,16 +58,30 @@ export default function FavoritesPage() {
   useEffect(() => {
     setMounted(true);
     
-    // Устанавливаем начальную позицию скролла как на главной странице
+    // Добавляем data-атрибут к body для CSS
+    document.body.setAttribute('data-page', 'favorites');
+    
+    // Устанавливаем начальную позицию скролла сразу
     const setInitialScroll = () => {
       const scrollPosition = window.innerHeight * 0.66; // 66% как на главной
       window.scrollTo(0, scrollPosition);
     };
 
+    // Устанавливаем позицию сразу без задержки
     setInitialScroll();
-    const timer = setTimeout(setInitialScroll, 500);
     
-    return () => clearTimeout(timer);
+    // Дополнительные попытки для надежности
+    const timer1 = setTimeout(setInitialScroll, 50);
+    const timer2 = setTimeout(setInitialScroll, 100);
+    const timer3 = setTimeout(setInitialScroll, 200);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      // Убираем data-атрибут при размонтировании
+      document.body.removeAttribute('data-page');
+    };
   }, []);
 
   useEffect(() => {
@@ -178,25 +192,8 @@ export default function FavoritesPage() {
 
   return (
     <>
-      {/* Видео фон */}
-      <div className="fixed inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-          key={videoSrc}
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
-        
-        {/* Градиентный блюр */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-      </div>
-
-      {/* Контент поверх видео - как на главной странице */}
-      <div className="relative z-10">
+      {/* Контент - как на главной странице */}
+      <div className="relative">
         <Navigation currentPage="favorites" user={user} disableSwipe={viewMode === "slider"} />
         
         {/* Hero секция с видео */}
@@ -217,7 +214,7 @@ export default function FavoritesPage() {
         <div className="relative">
           <div className="flex items-center">
             <ExercisesFilter
-              exercises={favorites}
+              exercises={exercises}
               selectedGroup={selectedGroup}
               setSelectedGroup={setSelectedGroup}
             />
