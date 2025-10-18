@@ -589,12 +589,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                       </button>
 
                       {/* Заголовок */}
-                      <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/80 to-transparent">
-                        <h3 className="text-white font-medium text-sm line-clamp-2">{exercise.title}</h3>
-                      </div>
-
-                      {/* Теги групп мышц */}
                       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                        <h3 className="text-white font-medium text-sm line-clamp-2 mb-2">{exercise.title}</h3>
+                        
+                        {/* Теги групп мышц под названием */}
                         <div className="flex flex-wrap gap-1">
                           {exercise.muscleGroups.slice(0, 2).map((group, index) => (
                             <span 

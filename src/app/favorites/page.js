@@ -38,7 +38,7 @@ export default function FavoritesPage() {
 
   // Определяем URL видео
   const getVideoSrc = () => {
-    if (!mounted) return '/videos/FavVid.mp4'; // Fallback для SSR
+    if (!mounted) return '/videos/FavVid2.mp4'; // Fallback для SSR
     
     const isMobile = isMobileDevice();
     const connectionSpeed = getConnectionSpeed();
@@ -47,10 +47,10 @@ export default function FavoritesPage() {
     const baseUrl = 'https://cdn.pure-progression.com';
     
     if (isMobile || connectionSpeed === 'slow') {
-      return `${baseUrl}/videos/FavVid_mobile.mp4`;
+      return `${baseUrl}/videos/FavVid2_mobile.mp4`;
     }
     
-    return `${baseUrl}/videos/FavVid.mp4`;
+    return `${baseUrl}/videos/FavVid2.mp4`;
   };
 
   const videoSrc = getVideoSrc();
