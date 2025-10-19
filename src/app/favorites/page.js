@@ -238,6 +238,12 @@ export default function FavoritesPage() {
           <div className="max-w-[1200px] mx-auto p-4">
             <p className="text-center mt-10 text-white drop-shadow-lg">{TEXTS[language].favorites.noFavorites}</p>
           </div>
+        ) : filteredExercises.length === 0 ? (
+          <div className="max-w-[1200px] mx-auto p-4">
+            <p className="text-center mt-10 text-white drop-shadow-lg">
+              {TEXTS[language].favorites.noExercisesInGroup || "No exercises found for this muscle group"}
+            </p>
+          </div>
         ) : (
           <ExercisesSlider
             videos={filteredExercises}
