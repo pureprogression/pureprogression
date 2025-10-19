@@ -8,11 +8,13 @@ import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import DonationModal from "./DonationModal";
 
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -224,6 +226,20 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                     <span>{user ? TEXTS[language].navigation.profile : TEXTS[language].auth.signIn}</span>
                   </button>
                 </li>
+
+                {/* Донаты */}
+                <li>
+                  <button
+                    onClick={() => {
+                      setIsDonationModalOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                  >
+                    <span>{language === 'en' ? 'Support Project' : 'Поддержать проект'}</span>
+                    <span className="text-yellow-500 text-xs">💝</span>
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -266,6 +282,12 @@ export default function Navigation({ currentPage = "home", user = null, disableS
           </nav>
         </div>
       </motion.div>
+
+      {/* Модалка донатов */}
+      <DonationModal 
+        isOpen={isDonationModalOpen} 
+        onClose={() => setIsDonationModalOpen(false)} 
+      />
     </>
   );
 
