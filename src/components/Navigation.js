@@ -9,12 +9,14 @@ import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import DonationModal from "./DonationModal";
+import ReviewsModal from "./ReviewsModal";
 
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -140,25 +142,25 @@ export default function Navigation({ currentPage = "home", user = null, disableS
         animate={{ x: isMenuOpen ? 0 : "-100%" }}
         transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
       >
-        <div className="flex flex-col h-full p-6">
+        <div className="flex flex-col h-full p-4">
           {/* Заголовок */}
-          <div className="mb-8">
+          <div className="mb-6">
             {user && (
               <p className="text-gray-400 text-sm">Welcome!</p>
             )}
           </div>
 
           {/* Навигационные ссылки */}
-          <nav className="flex-1 space-y-6">
+          <nav className="flex-1 space-y-3">
             {/* Основная навигация */}
             <div>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {/* Главная */}
                 {currentPage !== "home" && (
                   <li>
                     <button
                       onClick={handleHomeClick}
-                      className="w-full flex items-center p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                      className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                     >
                       <span>{TEXTS[language].navigation.home}</span>
                     </button>
@@ -169,7 +171,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 <li>
                   <button
                     onClick={handleFavoritesClick}
-                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                   >
                     <span>{TEXTS[language].navigation.favorites}</span>
                     <span className="text-green-500 text-xs">✓</span>
@@ -180,7 +182,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 <li>
                   <button
                     onClick={handleWorkoutBuilderClick}
-                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                   >
                     <span>{TEXTS[language].navigation.workoutBuilder}</span>
                     {user ? (
@@ -195,7 +197,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 <li>
                   <button
                     onClick={handleMyWorkoutsClick}
-                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                   >
                     <span>{TEXTS[language].navigation.myWorkouts}</span>
                     {user ? (
@@ -210,11 +212,16 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 <li>
                   <button
                     onClick={handleWorkoutHistoryClick}
-                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                   >
                     <span>{TEXTS[language].navigation.workoutHistory}</span>
                     <span className="text-gray-500 text-xs">🔒</span>
                   </button>
+                </li>
+
+                {/* Разделитель */}
+                <li className="my-2">
+                  <div className="h-px bg-white/20 mx-3"></div>
                 </li>
 
                 {/* Профиль */}
@@ -234,10 +241,24 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                       setIsDonationModalOpen(true);
                       setIsMenuOpen(false);
                     }}
-                    className="w-full flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
                   >
                     <span>{language === 'en' ? 'Support Project' : 'Поддержать проект'}</span>
                     <span className="text-yellow-500 text-xs">💝</span>
+                  </button>
+                </li>
+
+                {/* Отзывы */}
+                <li>
+                  <button
+                    onClick={() => {
+                      setIsReviewsModalOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                  >
+                    <span>{language === 'en' ? 'Leave Review' : 'Оставить отзыв'}</span>
+                    <span className="text-blue-500 text-xs">⭐</span>
                   </button>
                 </li>
               </ul>
@@ -287,6 +308,12 @@ export default function Navigation({ currentPage = "home", user = null, disableS
       <DonationModal 
         isOpen={isDonationModalOpen} 
         onClose={() => setIsDonationModalOpen(false)} 
+      />
+
+      {/* Модалка отзывов */}
+      <ReviewsModal 
+        isOpen={isReviewsModalOpen} 
+        onClose={() => setIsReviewsModalOpen(false)} 
       />
     </>
   );

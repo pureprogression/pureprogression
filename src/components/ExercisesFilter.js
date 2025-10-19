@@ -12,15 +12,15 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
-    <div className="p-4">
+    <div className="p-4 h-12 overflow-hidden">
       <div 
-        className="flex gap-3 overflow-x-auto scrollbar-hide max-w-[calc(100vw-32px)]"
+        className="flex gap-3 overflow-x-auto scrollbar-hide max-w-[calc(100vw-32px)] h-full items-center"
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {/* Кнопка "All" - основной триггер */}
-        <button
+        {/* Тонкие стильные линии фильтра - основной триггер */}
+        <div
           onClick={() => {
             if (isExpanded) {
               // Если закрываем фильтр, выбираем "All"
@@ -31,14 +31,23 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
-          className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-300 text-sm flex-shrink-0 ${
+          className={`flex flex-col gap-0.5 cursor-pointer transition-all duration-300 flex-shrink-0 ${
             isExpanded 
-              ? "bg-white text-black" 
-              : "bg-transparent text-white border border-white/30 hover:border-white/60"
+              ? "text-white" 
+              : "text-white"
           }`}
+          title="Фильтр по группам мышц"
         >
-          All
-        </button>
+          <div className={`w-5 h-px transition-all duration-300 ${
+            isExpanded ? "bg-white/20" : "bg-white"
+          }`}></div>
+          <div className={`w-3 h-px transition-all duration-300 ${
+            isExpanded ? "bg-white/20" : "bg-white"
+          }`}></div>
+          <div className={`w-4 h-px transition-all duration-300 ${
+            isExpanded ? "bg-white/20" : "bg-white"
+          }`}></div>
+        </div>
 
         {/* Раскрывающиеся фильтры в той же строке */}
         {isExpanded && muscleGroups.map((group, index) => (

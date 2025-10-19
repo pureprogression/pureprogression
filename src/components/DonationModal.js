@@ -13,10 +13,9 @@ export default function DonationModal({ isOpen, onClose }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currency, setCurrency] = useState('RUB');
   const [bitcoinInfo, setBitcoinInfo] = useState(null);
-  const [donorName, setDonorName] = useState("");
 
   const currencies = {
-    RUB: { symbol: '₽', amounts: [500, 1000, 2000, 5000, 10000], label: 'Рубль' },
+    RUB: { symbol: '', amounts: [500, 1000, 2000, 5000, 10000], label: 'Рубль' },
     USD: { symbol: '$', amounts: [25, 50, 100, 250, 500], label: 'Bitcoin', crypto: true }
   };
 
@@ -31,14 +30,14 @@ export default function DonationModal({ isOpen, onClose }) {
     let payment = null;
     
     try {
-      if (currentCurrency.crypto) {
-        // Для криптоплатежей - сразу показываем Bitcoin адрес (без API)
-        setBitcoinInfo({
-          address: "18g8QKGkqprjSvVF6FdBaiWfdi8W3bbVNb", // Ваш реальный Bitcoin адрес
-          amount: amount,
-          currency: currency,
-          symbol: currentCurrency.symbol
-        });
+        if (currentCurrency.crypto) {
+          // Для криптоплатежей - сразу показываем Bitcoin адрес (без API)
+          setBitcoinInfo({
+            address: "18g8QKGkqprjSvVF6FdBaiWfdi8W3bbVNb", // Ваш реальный Bitcoin адрес
+            amount: amount,
+            currency: currency,
+            symbol: currentCurrency.symbol
+          });
       } else {
         // Для обычных платежей - используем API
         const description = language === 'en' 
@@ -94,7 +93,7 @@ export default function DonationModal({ isOpen, onClose }) {
         onClick={onClose}
       >
         <motion.div
-          className="bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-xl border border-white/30 rounded-2xl max-w-md w-full p-8 shadow-2xl"
+          className="bg-gray-100 border border-gray-300 rounded-2xl max-w-md w-full p-6 shadow-2xl"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -105,10 +104,10 @@ export default function DonationModal({ isOpen, onClose }) {
             <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <span className="text-2xl">💚</span>
             </div>
-            <h2 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-gray-900 mb-3">
               {language === 'en' ? 'Make a Difference' : 'Внесите вклад'}
             </h2>
-            <p className="text-white/80 text-sm leading-relaxed">
+            <p className="text-gray-600 text-sm leading-relaxed">
               {language === 'en' 
                 ? 'Your support helps us create amazing fitness experiences' 
                 : 'Ваша поддержка помогает создавать потрясающие фитнес-тренировки'}
@@ -116,8 +115,8 @@ export default function DonationModal({ isOpen, onClose }) {
           </div>
 
           {/* Переключатель валют */}
-          <div className="mb-6">
-            <div className="flex bg-white/10 rounded-xl p-1">
+          <div className="mb-5">
+            <div className="flex bg-gray-200 rounded-xl p-1">
               {Object.keys(currencies).map((curr) => (
                 <button
                   key={curr}
@@ -128,8 +127,8 @@ export default function DonationModal({ isOpen, onClose }) {
                   }}
                   className={`flex-1 p-3 rounded-lg transition-all duration-300 font-medium ${
                     currency === curr
-                      ? "bg-green-400 text-black shadow-lg"
-                      : "text-white hover:bg-white/10"
+                      ? "bg-gray-800 text-white shadow-lg"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {currencies[curr].label}
@@ -139,8 +138,8 @@ export default function DonationModal({ isOpen, onClose }) {
             
             {/* Предупреждение для криптовалют */}
             {currentCurrency.crypto && (
-              <div className="mt-3 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
-                <p className="text-orange-300 text-sm text-center">
+              <div className="mt-3 p-3 bg-orange-100 border border-orange-300 rounded-lg">
+                <p className="text-orange-700 text-sm text-center">
                   {language === 'en' 
                     ? '⚠️ USD/EUR payments are processed via Bitcoin cryptocurrency' 
                     : '⚠️ Платежи в USD/EUR обрабатываются через Bitcoin'}
@@ -151,8 +150,8 @@ export default function DonationModal({ isOpen, onClose }) {
           </div>
 
           {/* Суммы */}
-          <div className="mb-8">
-            <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="mb-6">
+            <div className="grid grid-cols-3 gap-2 mb-4">
               {predefinedAmounts.map((amount) => (
                 <button
                   key={amount}
@@ -160,10 +159,10 @@ export default function DonationModal({ isOpen, onClose }) {
                     setSelectedAmount(amount);
                     setCustomAmount("");
                   }}
-                  className={`p-4 rounded-xl border-2 transition-all duration-300 font-semibold ${
+                  className={`p-3 rounded-lg border-2 transition-all duration-300 font-medium text-sm ${
                     selectedAmount === amount
-                      ? "border-green-400 bg-green-400/20 text-green-400 shadow-lg shadow-green-400/20"
-                      : "border-white/30 text-white hover:border-green-400/50 hover:bg-green-400/10 hover:scale-105"
+                      ? "border-gray-800 bg-gray-800 text-white shadow-lg"
+                      : "border-gray-300 text-gray-700 hover:border-gray-500 hover:bg-gray-50 hover:scale-105"
                   }`}
                 >
                   {amount}{currentCurrency.symbol}
@@ -181,7 +180,7 @@ export default function DonationModal({ isOpen, onClose }) {
                   setCustomAmount(e.target.value);
                   setSelectedAmount(null);
                 }}
-                className="w-full p-4 bg-white/5 border-2 border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-green-400 focus:bg-white/10 transition-all duration-300 text-center font-semibold"
+                className="w-full p-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-gray-500 focus:bg-gray-50 transition-all duration-300 text-center font-medium text-sm"
                 min="1"
               />
               
@@ -192,14 +191,14 @@ export default function DonationModal({ isOpen, onClose }) {
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 p-4 border-2 border-white/30 rounded-xl text-white hover:bg-white/10 hover:border-white/50 transition-all duration-300 font-medium"
+              className="flex-1 p-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-medium text-sm"
             >
               {language === 'en' ? 'Cancel' : 'Отмена'}
             </button>
             <button
               onClick={handleDonate}
               disabled={!selectedAmount && !customAmount || isProcessing}
-              className="flex-1 p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+              className="flex-1 p-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none text-sm"
             >
               {isProcessing 
                 ? (language === 'en' ? 'Processing...' : 'Обработка...')
@@ -220,7 +219,7 @@ export default function DonationModal({ isOpen, onClose }) {
           onClick={() => setBitcoinInfo(null)}
         >
           <motion.div
-            className="bg-gradient-to-br from-orange-900/95 to-yellow-900/95 backdrop-blur-xl border border-orange-500/30 rounded-2xl max-w-md w-full p-8 shadow-2xl"
+            className="bg-gray-100 border border-gray-300 rounded-2xl max-w-md w-full p-8 shadow-2xl"
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -231,35 +230,19 @@ export default function DonationModal({ isOpen, onClose }) {
                 <span className="text-3xl">₿</span>
               </div>
               
-              <h3 className="text-xl font-bold text-white mb-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
                 {language === 'en' ? 'Bitcoin Payment' : 'Bitcoin платеж'}
               </h3>
               
-              <p className="text-white/80 mb-4">
+              <p className="text-gray-600 mb-4">
                 {language === 'en' 
                   ? `Send any amount to this Bitcoin address:`
                   : `Отправьте любую сумму на этот Bitcoin адрес:`}
               </p>
               
-              <p className="text-orange-300/80 text-sm mb-4">
-                {language === 'en' 
-                  ? `💡 We'll remember your message when we receive the payment`
-                  : `💡 Мы запомним ваше сообщение, когда получим платеж`}
-              </p>
               
-              {/* Поле для комментария */}
-              <div className="mb-4">
-                <textarea
-                  placeholder={language === 'en' ? 'Write anything: your name, message, or just say thanks! (optional)' : 'Напишите что угодно: ваше имя, сообщение или просто спасибо! (необязательно)'}
-                  value={donorName}
-                  onChange={(e) => setDonorName(e.target.value)}
-                  rows={3}
-                  className="w-full p-3 bg-white/5 border-2 border-orange-500/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-orange-400 focus:bg-white/10 transition-all duration-300 resize-none"
-                />
-              </div>
-              
-              <div className="bg-black/30 border border-orange-500/30 rounded-lg p-4 mb-6">
-                <p className="text-orange-300 font-mono text-sm break-all">
+              <div className="bg-gray-200 border border-gray-300 rounded-lg p-4 mb-6">
+                <p className="text-gray-800 font-mono text-sm break-all">
                   {bitcoinInfo.address}
                 </p>
               </div>
@@ -269,14 +252,14 @@ export default function DonationModal({ isOpen, onClose }) {
                   navigator.clipboard.writeText(bitcoinInfo.address);
                   alert(language === 'en' ? 'Address copied!' : 'Адрес скопирован!');
                 }}
-                className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 text-white py-3 rounded-xl font-bold hover:from-orange-400 hover:to-yellow-400 transition-all duration-300 mb-4"
+                className="w-full bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-gray-700 transition-all duration-300 mb-4"
               >
                 {language === 'en' ? 'Copy Address' : 'Копировать адрес'}
               </button>
               
               <button
                 onClick={() => setBitcoinInfo(null)}
-                className="w-full border border-white/30 text-white py-3 rounded-xl hover:bg-white/10 transition-all duration-300"
+                className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-50 transition-all duration-300"
               >
                 {language === 'en' ? 'Close' : 'Закрыть'}
               </button>

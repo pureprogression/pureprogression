@@ -1,7 +1,7 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, setLogLevel } from "firebase/firestore";
+import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -44,3 +44,39 @@ try {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export { app };
+
+// Функции для работы с отзывами
+export const saveReview = async (reviewData) => {
+  try {
+    const reviewsRef = collection(db, 'reviews');
+    const docRef = await addDoc(reviewsRef, {
+      ...reviewData,
+      createdAt: serverTimestamp(),
+      approved: false // Отзывы требуют модерации
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('Ошибка при сохранении отзыва:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getReviews = async (limitCount = 10) => {
+  try {
+    const reviewsRef = collection(db, 'reviews');
+    const q = query(
+      reviewsRef,
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const querySnapshot = await getDocs(q);
+    const reviews = [];
+    querySnapshot.forEach((doc) => {
+      reviews.push({ id: doc.id, ...doc.data() });
+    });
+    return { success: true, reviews };
+  } catch (error) {
+    console.error('Ошибка при получении отзывов:', error);
+    return { success: false, error: error.message };
+  }
+};

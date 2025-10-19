@@ -220,6 +220,9 @@ export default function FavoritesPage() {
           >
             <source src={videoSrc} type="video/mp4" />
           </video>
+          
+          {/* Черный блюр внизу */}
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 to-transparent" />
         </div>
 
         {/* Фильтры */}

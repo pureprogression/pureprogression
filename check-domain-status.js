@@ -110,3 +110,5 @@ async function checkBothDomains() {
 checkBothDomains().catch(console.error);
 
 
+
+
