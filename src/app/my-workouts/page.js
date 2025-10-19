@@ -12,14 +12,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export default function MyWorkoutsPage() {
   const [user, setUser] = useState(null);
   const [workouts, setWorkouts] = useState(null);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { language } = useLanguage();
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((u) => {
+      setUser(u);
+      setIsLoading(false);
+      
       if (u) {
-        setUser(u);
-        
         // Очищаем кэш при загрузке
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -43,12 +44,11 @@ export default function MyWorkoutsPage() {
             ...d.data(),
           }));
           
-          // Фильтруем тренировки с упражнениями и не удаленные
+          // Фильтруем тренировки с упражнениями
           const validWorkouts = items.filter(workout => 
             workout.exercises && 
             Array.isArray(workout.exercises) && 
-            workout.exercises.length > 0 &&
-            !workout._deleted // Исключаем помеченные как удаленные
+            workout.exercises.length > 0
           );
           
           // Сортируем по дате создания (новые сначала)
@@ -64,7 +64,6 @@ export default function MyWorkoutsPage() {
           setWorkouts([]);
         });
       } else {
-        setUser(null);
         setWorkouts(null);
       }
     });
@@ -73,6 +72,10 @@ export default function MyWorkoutsPage() {
       unsubscribeAuth();
     };
   }, []);
+
+  if (isLoading) {
+    return null; // Убираем загрузочный экран
+  }
 
   if (!user) {
     return (

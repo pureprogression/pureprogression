@@ -47,26 +47,22 @@ export default function WorkoutBuilderPage() {
       // Отслеживаем создание тренировки
       trackWorkoutCreated(workout.exercises.length);
       
-      // Перенаправляем в профиль
-      router.push('/profile');
+      // Перенаправляем на страницу с тренировками
+      router.push('/my-workouts');
     } catch (error) {
       console.error("Ошибка при сохранении тренировки:", error);
-      alert("Ошибка при сохранении тренировки. Попробуйте еще раз.");
+      // Ошибка логируется в консоль
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    router.push('/profile');
+    router.push('/my-workouts');
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Загрузка...</div>
-      </div>
-    );
+    return null; // Убираем загрузочный экран
   }
 
   if (!user) {

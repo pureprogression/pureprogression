@@ -2,8 +2,11 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { TEXTS } from "@/constants/texts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "this feature" }) {
+  const { language } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -16,7 +19,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
         onClick={onClose}
       >
         <motion.div
-          className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-8 max-w-md w-full mx-4"
+          className="bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg p-6 max-w-sm w-full mx-4"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -24,47 +27,42 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
           onClick={(e) => e.stopPropagation()}
         >
           {/* Icon */}
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
+          <div className="text-center mb-4">
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-4 h-4 rounded-full bg-black" />
             </div>
           </div>
 
           {/* Content */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Premium Feature
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-white mb-3">
+              {language === 'en' ? 'Premium Feature' : 'Премиум функция'}
             </h2>
             <p className="text-gray-300 text-sm leading-relaxed">
-              To access {feature}, please upgrade to Premium for unlimited workouts, advanced analytics, and exclusive content.
+              {language === 'en' 
+                ? `To access ${feature}, please upgrade to Premium for unlimited workouts, advanced analytics, and exclusive content.`
+                : `Для доступа к ${feature}, пожалуйста, обновитесь до Премиум для неограниченных тренировок, расширенной аналитики и эксклюзивного контента.`
+              }
             </p>
           </div>
 
           {/* Buttons */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <button
               onClick={onUpgrade}
-              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black py-3 px-6 rounded-xl font-semibold hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-white/90 transition-all duration-300"
             >
-              Upgrade to Premium
+              {language === 'en' ? 'Upgrade to Premium' : 'Обновить до Премиум'}
             </button>
             
             <button
               onClick={onClose}
-              className="w-full bg-white/10 text-white py-3 px-6 rounded-xl font-medium hover:bg-white/20 transition-all duration-300"
+              className="w-full bg-white/10 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
             >
-              Maybe Later
+              {language === 'en' ? 'Maybe Later' : 'Возможно позже'}
             </button>
           </div>
 
-          {/* Features hint */}
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <p className="text-gray-400 text-xs text-center">
-              ✨ Unlimited workouts • 📊 Advanced analytics • 🎯 Personalized plans
-            </p>
-          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

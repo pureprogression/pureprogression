@@ -51,9 +51,10 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none", isActive = true }) {
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none", isActive = true, showRemoveAnimation = false }) {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   
   // Сбрасываем и запускаем анимацию при смене активного слайда
   useEffect(() => {
@@ -65,9 +66,35 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       setShowIndicator(false);
     }
   }, [isActive, isVideoReady]);
+
+  // Обработка добавления/удаления с анимацией
+  const handleToggle = async (e) => {
+    e.stopPropagation();
+    
+    if (isFavorite) {
+      // Удаление из избранного
+      if (showRemoveAnimation) {
+        // На странице избранного - с анимацией исчезновения
+        setIsRemoving(true);
+        setTimeout(async () => {
+          await onToggleFavorite(ex);
+        }, 200);
+      } else {
+        // На главной странице - без анимации исчезновения
+        await onToggleFavorite(ex);
+      }
+    } else {
+      // Добавление в избранное - без анимации зума, только закрашивание кружка
+      await onToggleFavorite(ex);
+    }
+  };
   
   return (
-    <div className="relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md">
+    <div className={`relative w-full aspect-[9/16] overflow-hidden rounded-xl shadow-md transition-all duration-300 ${
+      isRemoving 
+        ? 'opacity-0 scale-95 transform -translate-y-2' 
+        : 'opacity-100 scale-100 transform translate-y-0'
+    }`}>
     <LazyVideo
       src={ex.video}
       poster={ex.poster}
@@ -89,10 +116,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
         <button
           aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
           className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(ex);
-          }}
+          onClick={handleToggle}
         >
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
@@ -115,10 +139,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
         <button
           aria-label="Удалить из избранного"
           className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(ex);
-          }}
+          onClick={handleToggle}
         >
           {/* ripple */}
           <span className="pointer-events-none absolute inset-0 rounded-full scale-50 opacity-0 group-active:opacity-100 group-active:scale-110 transition-all duration-500 ease-out bg-white/15" />
@@ -151,6 +172,7 @@ export default function ExercisesSlider({
   onExerciseClick,
   initialSlideIndex = 0,
   showToggle = true,
+  filterTransitioning = false,
 }) {
   const swiperRef = useRef(null);
   const gridRef = useRef(null);
@@ -295,7 +317,9 @@ export default function ExercisesSlider({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [viewModeChanged, setViewModeChanged] = useState(false);
   const [animationPhase, setAnimationPhase] = useState('idle'); // 'idle' | 'fadeOut' | 'fadeIn'
-  
+  // Анимация при изменении фильтра (используем переданный проп)
+  const isFilterTransitioning = filterTransitioning;
+
   useEffect(() => {
     setAnimationPhase('fadeOut');
     setIsTransitioning(true);
@@ -357,7 +381,7 @@ export default function ExercisesSlider({
   // --- Универсальная функция для работы с избранным ---
   const internalToggleFavorite = async (ex) => {
     if (!auth.currentUser) {
-      alert("Необходимо войти в аккаунт, чтобы управлять избранным.");
+      console.log("Необходимо войти в аккаунт");
       return;
     }
 
@@ -389,7 +413,7 @@ export default function ExercisesSlider({
       }
     } catch (err) {
       console.error("Ошибка при обновлении избранного:", err);
-      alert("Не удалось обновить избранное. Подробности в консоли.");
+      console.log("Не удалось обновить избранное");
     }
   };
 
@@ -492,6 +516,7 @@ export default function ExercisesSlider({
                     isActive={index === activeSlideIndex}
                     eager={shouldFullyLoad}
                     preloadLevel={shouldFullyLoad ? "auto" : "none"}
+                    showRemoveAnimation={mode === "favorites-page"}
                   />
                 </SwiperSlide>
               );
@@ -521,7 +546,7 @@ export default function ExercisesSlider({
                     onExerciseClick(index);
                   }
                 }}
-                className={onExerciseClick ? "cursor-pointer" : ""}
+                className={`exercise-item ${onExerciseClick ? "cursor-pointer" : ""} ${isFilterTransitioning ? "filter-transitioning" : ""}`}
               >
                 <ExerciseCard
                   ex={ex}
@@ -536,6 +561,7 @@ export default function ExercisesSlider({
                   showRemoveButton={mode === "favorites-page"}
                   eager={index < 6}
                   preloadLevel={index < 6 ? "metadata" : "none"}
+                  showRemoveAnimation={mode === "favorites-page"}
                 />
               </div>
             ))}

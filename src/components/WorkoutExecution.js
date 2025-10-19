@@ -29,22 +29,19 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   }, [workout]);
 
   const currentExercise = workoutResults.exercises[currentExerciseIndex];
+  const nextExercise = workoutResults.exercises[currentExerciseIndex + 1];
   const progress = ((currentExerciseIndex + 1) / workoutResults.exercises.length) * 100;
 
   // Принудительное обновление видео при смене упражнения
   useEffect(() => {
     if (!currentExercise) return;
     
-    // Небольшая задержка для корректного обновления видео
-    const timer = setTimeout(() => {
-      const video = document.querySelector('video');
-      if (video) {
-        video.load();
-        video.play().catch(console.error);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
+    // Немедленное обновление видео без задержки
+    const video = document.querySelector('video');
+    if (video) {
+      video.load();
+      video.play().catch(console.error);
+    }
   }, [currentExerciseIndex, currentExercise]);
 
   const handleCompleteExercise = () => {
@@ -209,7 +206,22 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             muted
             loop
             playsInline
+            preload="auto"
+            onLoadStart={() => console.log('Video loading started')}
+            onCanPlay={() => console.log('Video can play')}
+            onError={(e) => console.error('Video error:', e)}
           />
+
+          {/* Скрытая предзагрузка следующего видео */}
+          {nextExercise && (
+            <video
+              src={nextExercise.video}
+              preload="auto"
+              style={{ display: 'none' }}
+              onLoadStart={() => console.log('Next video preloading started')}
+              onCanPlay={() => console.log('Next video preloaded')}
+            />
+          )}
 
           {/* Мобильная информация поверх видео */}
           <div className="md:hidden absolute bottom-0 left-0 right-0 p-4">

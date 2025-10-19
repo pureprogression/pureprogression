@@ -17,6 +17,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
   const [initialSlide, setInitialSlide] = useState(0);
+  const [filterTransitioning, setFilterTransitioning] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -71,6 +72,14 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Анимация при изменении фильтра
+  useEffect(() => {
+    setFilterTransitioning(true);
+    const timer = setTimeout(() => {
+      setFilterTransitioning(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [selectedGroup]);
 
   // Фильтруем упражнения по выбранной группе
   const filteredExercises =
@@ -129,6 +138,7 @@ export default function Home() {
         onExerciseClick={handleExerciseClick}
         initialSlideIndex={initialSlide}
         showToggle={false}
+        filterTransitioning={filterTransitioning}
       />
     </>
   );

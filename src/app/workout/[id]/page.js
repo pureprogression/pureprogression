@@ -55,7 +55,7 @@ export default function WorkoutPage() {
               setWorkout(workoutData);
             } else {
               console.error("Тренировка не принадлежит пользователю");
-              alert("У вас нет доступа к этой тренировке");
+              console.log("Нет доступа к тренировке");
               router.push('/my-workouts');
             }
           } else {
@@ -64,7 +64,7 @@ export default function WorkoutPage() {
               const workoutData = JSON.parse(cachedWorkout);
               setWorkout(workoutData);
             } else {
-              alert("Тренировка не найдена или была удалена");
+              console.log("Тренировка не найдена");
               router.push('/my-workouts');
             }
           }
@@ -76,7 +76,7 @@ export default function WorkoutPage() {
             const workoutData = JSON.parse(cachedWorkout);
             setWorkout(workoutData);
           } else {
-            alert("Ошибка при загрузке тренировки: " + error.message);
+            console.log("Ошибка при загрузке тренировки");
             router.push('/my-workouts');
           }
         }
@@ -110,7 +110,7 @@ export default function WorkoutPage() {
       router.push('/my-workouts');
     } catch (error) {
       console.error("Ошибка при сохранении результатов:", error);
-      alert("Ошибка при сохранении результатов тренировки");
+      console.log("Ошибка при сохранении результатов");
     } finally {
       setIsSaving(false);
     }
@@ -121,16 +121,12 @@ export default function WorkoutPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Загрузка тренировки...</div>
-      </div>
-    );
+    return null; // Убираем загрузочный экран
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Пожалуйста, войдите в аккаунт</div>
       </div>
     );
@@ -138,7 +134,7 @@ export default function WorkoutPage() {
 
   if (!workout) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Тренировка не найдена</div>
       </div>
     );

@@ -34,23 +34,22 @@ export default function FavoritesPage() {
   const [viewMode, setViewMode] = useState("grid");
   const [initialSlide, setInitialSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [filterTransitioning, setFilterTransitioning] = useState(false);
   const { language } = useLanguage();
 
   // Определяем URL видео
   const getVideoSrc = () => {
-    if (!mounted) return '/videos/FavVid2.mp4'; // Fallback для SSR
+    if (!mounted) return '/videos/FavVid.mp4'; // Fallback для SSR
     
     const isMobile = isMobileDevice();
     const connectionSpeed = getConnectionSpeed();
     
-    // CDN URL
-    const baseUrl = 'https://cdn.pure-progression.com';
-    
+    // Временно используем локальные файлы
     if (isMobile || connectionSpeed === 'slow') {
-      return `${baseUrl}/videos/FavVid2_mobile.mp4`;
+      return '/videos/FavVid_mobile.mp4';
     }
     
-    return `${baseUrl}/videos/FavVid2.mp4`;
+    return '/videos/FavVid.mp4';
   };
 
   const videoSrc = getVideoSrc();
@@ -118,6 +117,15 @@ export default function FavoritesPage() {
     };
   }, []);
 
+  // Анимация при изменении фильтра
+  useEffect(() => {
+    setFilterTransitioning(true);
+    const timer = setTimeout(() => {
+      setFilterTransitioning(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [selectedGroup]);
+
   // Фильтруем упражнения по выбранной группе (только избранные)
   const filteredExercises = favorites.filter((fav) => {
     if (selectedGroup === "All") return true;
@@ -172,7 +180,7 @@ export default function FavoritesPage() {
         </div>
 
         {/* Контент поверх видео */}
-        <div className="relative z-10 min-h-screen" style={{ paddingTop: '50vh' }}>
+        <div className="relative z-10 min-h-screen" style={{ paddingTop: '20vh' }}>
           <div className="max-w-[1200px] mx-auto p-4">
             <h2 className="text-2xl font-bold text-white mb-6 drop-shadow-lg">{TEXTS[language].favorites.title}</h2>
             
@@ -235,7 +243,7 @@ export default function FavoritesPage() {
             videos={filteredExercises}
             favorites={favorites}
             readOnly={false}
-            mode="default"
+            mode="favorites-page"
             controlledViewMode={viewMode}
             onToggleViewMode={handleReturnToGrid}
             onSlideChange={handleSlideChange}
@@ -243,6 +251,7 @@ export default function FavoritesPage() {
             onExerciseClick={handleExerciseClick}
             initialSlideIndex={initialSlide}
             showToggle={false}
+            filterTransitioning={filterTransitioning}
           />
         )}
       </div>

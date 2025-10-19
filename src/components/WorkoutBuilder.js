@@ -5,6 +5,7 @@ import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LazyVideo from "./LazyVideo";
+import ExercisesFilter from "./ExercisesFilter";
 
 export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [workoutName, setWorkoutName] = useState("");
@@ -22,6 +23,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [swipeOpacity, setSwipeOpacity] = useState(1); // прозрачность для fade эффекта
   const [tabSwipeStart, setTabSwipeStart] = useState(null); // начальная позиция для swipe между вкладками
   const [tabSwipeOffset, setTabSwipeOffset] = useState(0); // смещение для анимации переключения вкладок
+  const [filterTransitioning, setFilterTransitioning] = useState(false);
 
   // Получаем уникальные категории из упражнений
   const categories = ["All", ...new Set(exercises.flatMap(ex => ex.muscleGroups))];
@@ -31,6 +33,15 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
     if (selectedCategory === "All") return true;
     return exercise.muscleGroups.includes(selectedCategory);
   });
+
+  // Анимация при изменении фильтра
+  useEffect(() => {
+    setFilterTransitioning(true);
+    const timer = setTimeout(() => {
+      setFilterTransitioning(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [selectedCategory]);
 
   // Добавляем упражнение в тренировку
   const addExercise = (exercise) => {
@@ -271,11 +282,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   // Сохраняем тренировку
   const handleSave = () => {
     if (!workoutName.trim()) {
-      alert("Введите название тренировки");
+      console.log("Введите название тренировки");
       return;
     }
     if (selectedExercises.length === 0) {
-      alert("Добавьте хотя бы одно упражнение");
+      console.log("Добавьте хотя бы одно упражнение");
       return;
     }
 
@@ -507,29 +518,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
           {/* Секция выбора упражнений */}
           {activeSection === "browse" && (
             <div className="animate-fadeIn">
-              {/* Фильтр групп мышц - вне swipe контейнера */}
-              <div className="px-4 mb-4">
-                <div 
-                  className="flex gap-2 overflow-x-auto pb-2"
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchMove={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                >
-                  {categories.map((group) => (
-                    <button
-                      key={group}
-                      onClick={() => setSelectedCategory(group)}
-                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-300 text-sm ${
-                        selectedCategory === group 
-                          ? "bg-white text-black" 
-                          : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/15"
-                      }`}
-                    >
-                      {group}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Новый фильтр */}
+              <ExercisesFilter 
+                exercises={exercises}
+                selectedGroup={selectedCategory}
+                onGroupChange={setSelectedCategory}
+              />
 
               {/* Сетка упражнений - с swipe для переключения вкладок */}
               <div 
@@ -549,7 +543,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                     <div 
                       key={exercise.id}
                       data-exercise-card
-                      className="relative rounded-lg overflow-hidden group"
+                      className={`exercise-item relative rounded-lg overflow-hidden group ${filterTransitioning ? "filter-transitioning" : ""}`}
                       style={{ aspectRatio: '16/18' }}
                     >
                       {/* Видео */}

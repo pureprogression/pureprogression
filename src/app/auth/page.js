@@ -23,7 +23,7 @@ export default function AuthPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+    <div className="min-h-screen bg-black">
       <Navigation currentPage="auth" user={user} />
       <AuthForm />
     </div>

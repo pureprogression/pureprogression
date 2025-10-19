@@ -20,7 +20,7 @@ export default function AuthObserver({ children }) {
     return () => unsubscribe();
   }, [router]);
 
-  if (user === undefined) return <div>Загрузка...</div>; // можно спиннер
+  if (user === undefined) return null; // Убираем загрузочный экран
 
   return children;
 }

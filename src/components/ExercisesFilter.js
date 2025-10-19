@@ -2,24 +2,35 @@
 
 import { useState } from "react";
 
-export default function ExercisesFilter({ selectedGroup, setSelectedGroup, exercises }) {
+export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGroupChange, exercises }) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Получаем все уникальные группы мышц (без "All")
   const muscleGroups = Array.from(new Set(exercises.flatMap(ex => ex.muscleGroups)));
+  
+  // Используем правильную функцию для изменения группы
+  const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
     <div className="p-4">
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide max-w-[calc(100vw-32px)]">
+      <div 
+        className="flex gap-3 overflow-x-auto scrollbar-hide max-w-[calc(100vw-32px)]"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         {/* Кнопка "All" - основной триггер */}
         <button
           onClick={() => {
             if (isExpanded) {
               // Если закрываем фильтр, выбираем "All"
-              setSelectedGroup("All");
+              handleGroupChange("All");
             }
             setIsExpanded(!isExpanded);
           }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-300 text-sm flex-shrink-0 ${
             isExpanded 
               ? "bg-white text-black" 
@@ -36,12 +47,15 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, exerc
             onClick={() => {
               if (selectedGroup === group) {
                 // Если кликаем на уже выбранный фильтр, возвращаемся к "All"
-                setSelectedGroup("All");
+                handleGroupChange("All");
               } else {
                 // Иначе выбираем новый фильтр
-                setSelectedGroup(group);
+                handleGroupChange(group);
               }
             }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-200 text-sm flex-shrink-0 animate-fade-in ${
               selectedGroup === group 
                 ? "bg-white text-black" 
