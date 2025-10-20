@@ -12,9 +12,9 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
-    <div className="p-4 h-12 overflow-hidden">
+    <div className="p-2 h-10 overflow-visible">
       <div 
-        className="flex gap-3 overflow-x-auto scrollbar-hide max-w-[calc(100vw-32px)] h-full items-center"
+        className="flex gap-2 overflow-x-auto scrollbar-hide max-w-[calc(100vw-16px)] h-full items-center min-h-[32px]"
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
@@ -65,10 +65,10 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
             onTouchStart={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-200 text-sm flex-shrink-0 animate-fade-in ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all duration-200 text-sm flex-shrink-0 animate-fade-in ${
               selectedGroup === group 
-                ? "bg-white text-black" 
-                : "bg-transparent text-white"
+                ? "bg-white text-black shadow-[0_2px_8px_rgba(255,255,255,0.2)]" 
+                : "bg-transparent text-white border-0 hover:text-white/90"
             }`}
             style={{
               animationDelay: `${index * 0.1}s`,

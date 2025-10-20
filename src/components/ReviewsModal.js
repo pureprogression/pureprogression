@@ -154,7 +154,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-transparent backdrop-blur-2xl"
             onClick={handleClose}
           />
 
@@ -164,7 +164,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 30 }}
             transition={{ type: "spring", duration: 0.4, bounce: 0.1 }}
-            className="relative w-full max-w-sm bg-gray-100 rounded-2xl shadow-2xl overflow-hidden border border-gray-300"
+            className="relative w-full max-w-sm bg-white/10 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.25)] overflow-hidden border border-white/20 backdrop-blur-2xl"
           >
             {isSubmitted ? (
               /* Success State */
@@ -193,11 +193,11 @@ export default function ReviewsModal({ isOpen, onClose }) {
                   transition={{ delay: 0.3, duration: 0.3 }}
                   className="space-y-3"
                 >
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-white">
                     {t.success}
                   </h2>
                   
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-sm text-white/80 leading-relaxed">
                     {t.successSubtitle}
                   </p>
                 </motion.div>
@@ -210,7 +210,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                 >
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2 text-sm text-gray-700 hover:text-white transition-colors duration-200"
+                    className="px-4 py-2 text-sm text-white/80 hover:text-white transition-colors duration-200"
                   >
                     {t.close}
                   </button>
@@ -226,10 +226,10 @@ export default function ReviewsModal({ isOpen, onClose }) {
                   transition={{ duration: 0.3 }}
                   className="text-center mb-6"
                 >
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-2xl font-bold text-white mb-2">
                     {t.title}
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-white/80">
                     {t.subtitle}
                   </p>
                 </motion.div>
@@ -248,7 +248,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                     transition={{ delay: 0.3, duration: 0.3 }}
                     className="text-center"
                   >
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-white/80 mb-3">
                       {t.ratingLabel} *
                     </label>
                     <div className="flex justify-center space-x-1 mb-3">
@@ -259,7 +259,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="text-xs text-gray-400 font-medium"
+                        className="text-xs text-white/60 font-medium"
                       >
                         {rating === 1 && (language === 'en' ? 'Poor' : 'Плохо')}
                         {rating === 2 && (language === 'en' ? 'Fair' : 'Удовлетворительно')}
@@ -276,14 +276,14 @@ export default function ReviewsModal({ isOpen, onClose }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.3 }}
                   >
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-white/80 mb-1">
                       {t.nameLabel}
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all duration-200 text-sm"
+                      className="w-full px-3 py-2 bg-white/10 border border-white/10 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 text-sm"
                       placeholder={language === 'en' ? 'Your name' : 'Ваше имя'}
                     />
                   </motion.div>
@@ -294,14 +294,14 @@ export default function ReviewsModal({ isOpen, onClose }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.3 }}
                   >
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-white/80 mb-1">
                       {t.emailLabel}
                     </label>
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all duration-200 text-sm"
+                      className="w-full px-3 py-2 bg-white/10 border border-white/10 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 text-sm"
                       placeholder={language === 'en' ? 'your@email.com' : 'ваш@email.com'}
                     />
                   </motion.div>
@@ -312,14 +312,14 @@ export default function ReviewsModal({ isOpen, onClose }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6, duration: 0.3 }}
                   >
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-white/80 mb-1">
                       {t.reviewLabel}
                     </label>
                     <textarea
                       value={review}
                       onChange={(e) => setReview(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all duration-200 resize-none text-sm"
+                      className="w-full px-3 py-2 bg-white/10 border border-white/10 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 resize-none text-sm"
                       placeholder={t.reviewPlaceholder}
                     />
                   </motion.div>
@@ -331,7 +331,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                     transition={{ delay: 0.7, duration: 0.3 }}
                     type="submit"
                     disabled={rating === 0 || isSubmitting}
-                    className="w-full py-3 px-4 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
+                    className="w-full py-3 px-4 bg-white/15 text-white rounded-lg hover:bg-white/25 disabled:bg-white/10 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
                     whileHover={{ scale: rating > 0 ? 1.02 : 1 }}
                     whileTap={{ scale: rating > 0 ? 0.98 : 1 }}
                   >
@@ -349,7 +349,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                 {/* Close Button */}
                 <button
                   onClick={handleClose}
-                  className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-full"
+                  className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-full"
                 >
                   <span className="text-lg">×</span>
                 </button>

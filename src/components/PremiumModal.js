@@ -12,14 +12,14 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-transparent backdrop-blur-2xl z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="bg-black/95 backdrop-blur-xl border border-white/20 rounded-lg p-6 max-w-sm w-full mx-4"
+          className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -28,8 +28,8 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
         >
           {/* Icon */}
           <div className="text-center mb-4">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
-              <div className="w-4 h-4 rounded-full bg-black" />
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-4 h-4 rounded-full bg-white" />
             </div>
           </div>
 
@@ -38,7 +38,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
             <h2 className="text-xl font-bold text-white mb-3">
               {language === 'en' ? 'Premium Feature' : 'Премиум функция'}
             </h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-white/80 text-sm leading-relaxed">
               {language === 'en' 
                 ? `To access ${feature}, please upgrade to Premium for unlimited workouts, advanced analytics, and exclusive content.`
                 : `Для доступа к ${feature}, пожалуйста, обновитесь до Премиум для неограниченных тренировок, расширенной аналитики и эксклюзивного контента.`
@@ -50,7 +50,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
           <div className="space-y-2">
             <button
               onClick={onUpgrade}
-              className="w-full bg-white text-black py-3 px-6 rounded-lg font-medium hover:bg-white/90 transition-all duration-300"
+              className="w-full bg-white/15 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/25 transition-all duration-300"
             >
               {language === 'en' ? 'Upgrade to Premium' : 'Обновить до Премиум'}
             </button>
