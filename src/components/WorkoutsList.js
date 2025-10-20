@@ -128,7 +128,7 @@ export default function WorkoutsList({ workouts, user }) {
   }, [previewWorkoutId]);
 
 
-  // Оптимизированные анимации для слабых устройств
+  // Оптимизированные анимации для слабых устройств (moved before conditional return)
   const containerAnimation = useMemo(() => {
     if (isLowEndDevice || isReducedMotion) {
       return {};
