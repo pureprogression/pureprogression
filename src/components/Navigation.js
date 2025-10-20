@@ -137,7 +137,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
       {/* Боковое меню */}
       <motion.div
-        className="fixed top-3 left-3 right-3 h-[85vh] w-auto bg-white/5 backdrop-blur-3xl border border-white/10 rounded-2xl z-[9999] shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+        className="fixed top-3 left-3 right-3 h-[85vh] w-auto bg-white/3 backdrop-blur-3xl border border-white/5 rounded-2xl z-[9999] shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
         initial={{ x: "-120%", opacity: 0 }}
         animate={{ x: isMenuOpen ? 0 : "-120%", opacity: isMenuOpen ? 1 : 0 }}
         transition={{ type: "tween", duration: 0.35, ease: "easeOut" }}

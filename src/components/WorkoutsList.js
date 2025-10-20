@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { useRouter } from "next/navigation";
@@ -139,113 +140,84 @@ export default function WorkoutsList({ workouts, user }) {
   }
 
   return (
-    <div className="space-y-4" onWheel={stopPreview}>
-      {workouts.map((workout) => (
-        <div
-          key={workout.id}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 hover:bg-white/10 transition-all duration-300 cursor-pointer relative touch-pan-y"
-          onClick={() => handleStartWorkout(workout)}
-          onTouchStart={() => handleLongPressStart(workout.id)}
-          onTouchEnd={handleLongPressEnd}
-          onTouchCancel={handleLongPressEnd}
-          onMouseEnter={() => { if (!isTouchDevice) startPreview(workout.id); }}
-          onMouseLeave={stopPreview}
-          onWheel={stopPreview}
-          style={{
-            transform: swipedWorkout?.id === workout.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-            opacity: swipedWorkout?.id === workout.id ? swipeOpacity : 1,
-            transition: swipedWorkout?.id === workout.id && Math.abs(swipeOffset) < window.innerWidth ? 'none' : 'transform 0.4s ease-out, opacity 0.4s ease-out',
-            touchAction: 'pan-y'
-          }}
-        >
-
-          {/* Заголовок и дата (тач-зона для открытия/закрытия слайдера) */}
-          <div
-            className="flex justify-between items-start mb-3 md:mb-4 select-none cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStartWorkout(workout);
+    <motion.div 
+      className="space-y-4" 
+      onWheel={stopPreview}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <AnimatePresence>
+        {workouts.map((workout, index) => (
+          <motion.div
+            key={workout.id}
+            className="bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 hover:bg-white/10 transition-all duration-300 cursor-pointer relative touch-pan-y"
+            onClick={() => handleStartWorkout(workout)}
+            onTouchStart={() => handleLongPressStart(workout.id)}
+            onTouchEnd={handleLongPressEnd}
+            onTouchCancel={handleLongPressEnd}
+            onMouseEnter={() => { if (!isTouchDevice) startPreview(workout.id); }}
+            onMouseLeave={stopPreview}
+            onWheel={stopPreview}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ 
+              duration: 0.4, 
+              delay: index * 0.1,
+              ease: "easeOut"
             }}
-            role="button"
+            style={{
+              transform: swipedWorkout?.id === workout.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+              opacity: swipedWorkout?.id === workout.id ? swipeOpacity : 1,
+              transition: swipedWorkout?.id === workout.id && Math.abs(swipeOffset) < window.innerWidth ? 'none' : 'transform 0.4s ease-out, opacity 0.4s ease-out',
+              touchAction: 'pan-y'
+            }}
           >
-            <div className="cursor-pointer">
-              <h3 className="text-white text-xl font-semibold mb-1">{workout.name}</h3>
-              {workout.description && (
-                <p className="text-gray-300 text-sm">{workout.description}</p>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs px-2 py-1 rounded-lg">
-                <span>• {workout.exercises?.length || 0} ex</span>
-                <span className="text-white/30">|</span>
-                <span>{workout.createdAt?.toDate ? 
-                  workout.createdAt.toDate().toLocaleDateString('ru-RU') : 
-                  'Recently'}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Триптих-превью или встроенный слайдер видео при тапе */}
+          {/* Пустое пространство для отступа */}
+          <div className="mb-3 md:mb-4" />
+
+          {/* Триптих-превью только с картинками */}
           {workout.exercises && workout.exercises.length > 0 && (
             <div className="mb-3 md:mb-4">
-              {activeSliderFor === workout.id ? (
-                <div className="relative rounded-xl overflow-hidden bg-white/5 h-32 md:h-48" onClick={(e)=>{ e.stopPropagation(); setActiveSliderFor(null); }}>
-                  <Swiper
-                    spaceBetween={8}
-                    slidesPerView={1}
-                    onSlideChange={handleSliderChange}
-                    onSwiper={handleSliderChange}
-                  >
-                    {workout.exercises.map((ex, idx) => (
-                      <SwiperSlide key={idx}>
-                        <div className="relative w-full h-32 md:h-48">
-                          <video
+              <div className="relative rounded-xl overflow-hidden bg-white/5">
+                {(() => {
+                  const total = workout.exercises.length || 0;
+                  const columns = total <= 3 ? total : (total <= 6 ? 3 : 4);
+                  return (
+                    <div
+                      className="grid gap-1 h-32 md:h-48"
+                      style={{ gridTemplateColumns: `repeat(${columns || 1}, minmax(0, 1fr))` }}
+                    >
+                      {workout.exercises.map((ex, i) => (
+                        <div key={i} className="relative">
+                          <img
+                            src={getPosterFromExercise(ex)}
+                            alt={ex.title || 'Exercise'}
                             className="absolute inset-0 w-full h-full object-cover"
-                            muted
-                            loop
-                            playsInline
-                            preload="metadata"
-                            src={ex.video}
+                            loading="lazy"
                           />
                         </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="w-full text-left"
-                  onClick={(e) => { e.stopPropagation(); setActiveSliderFor(workout.id); setActiveSlideIndex(0); }}
-                >
-                  <div className="relative rounded-xl overflow-hidden bg-white/5">
-                    {(() => {
-                      const total = workout.exercises.length || 0;
-                      const columns = total <= 3 ? total : (total <= 6 ? 3 : 4);
-                      return (
-                        <div
-                          className="grid gap-1 h-32 md:h-48"
-                          style={{ gridTemplateColumns: `repeat(${columns || 1}, minmax(0, 1fr))` }}
-                        >
-                          {workout.exercises.map((ex, i) => (
-                            <div key={i} className="relative">
-                              <img
-                                src={getPosterFromExercise(ex)}
-                                alt={ex.title || 'Exercise'}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                    <div className="absolute bottom-2 right-2 text-white/80 text-xs bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">
-                      View & swipe
+                      ))}
                     </div>
-                  </div>
-                </button>
-              )}
+                  );
+                })()}
+              </div>
+              
+              {/* Название и дата под изображениями */}
+              <div className="mt-2 flex items-center justify-between">
+                <div className="min-w-0 pr-3">
+                  <h3 className="text-white text-sm font-medium truncate">{workout.name}</h3>
+                </div>
+                <div className="shrink-0 inline-flex items-center gap-2 bg-white/10 text-white/70 text-xs px-2 py-1 rounded-lg">
+                  <span>{workout.exercises?.length || 0} ex</span>
+                  <span className="text-white/30">|</span>
+                  <span>{workout.createdAt?.toDate ? 
+                    workout.createdAt.toDate().toLocaleDateString('ru-RU') : 
+                    'Recently'}</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -258,9 +230,9 @@ export default function WorkoutsList({ workouts, user }) {
             </div>
           )}
 
-        </div>
-      ))}
-
-    </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }

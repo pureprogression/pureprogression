@@ -24,6 +24,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [tabSwipeStart, setTabSwipeStart] = useState(null); // начальная позиция для swipe между вкладками
   const [tabSwipeOffset, setTabSwipeOffset] = useState(0); // смещение для анимации переключения вкладок
   const [filterTransitioning, setFilterTransitioning] = useState(false);
+  const [expandedBrowseId, setExpandedBrowseId] = useState(null);
 
   // Получаем уникальные категории из упражнений
   const categories = ["All", ...new Set(exercises.flatMap(ex => ex.muscleGroups))];
@@ -543,8 +544,19 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                     <div 
                       key={exercise.id}
                       data-exercise-card
-                      className={`exercise-item relative rounded-lg overflow-hidden group ${filterTransitioning ? "filter-transitioning" : ""}`}
-                      style={{ aspectRatio: '16/18' }}
+                      className={`exercise-item relative rounded-lg overflow-hidden group cursor-pointer transition-all duration-300 ease-out ${
+                        expandedBrowseId === exercise.id ? 'shadow-[0_8px_24px_rgba(0,0,0,0.35)] scale-[1.01]' : 'shadow-none'
+                      } ${filterTransitioning ? "filter-transitioning" : ""}`}
+                      onClick={(e) => {
+                        // не раскрывать при клике на +/галочку
+                        const t = e.target;
+                        if (t && t instanceof Element && t.closest('button')) return;
+                        setExpandedBrowseId(prev => prev === exercise.id ? null : exercise.id);
+                      }}
+                      style={{ 
+                        height: expandedBrowseId === exercise.id ? '18rem' : '7rem',
+                        transition: 'height 320ms ease, transform 320ms ease, box-shadow 320ms ease'
+                      }}
                     >
                       {/* Видео */}
                       <video 
@@ -553,6 +565,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                         muted
                         loop
                         playsInline
+                        preload={expandedBrowseId === exercise.id ? 'auto' : 'metadata'}
                       >
                         <source src={exercise.video} type="video/mp4" />
                       </video>
@@ -562,7 +575,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                         className={`absolute bottom-3 right-3 w-8 h-8 text-white transition-all duration-300 z-50 flex items-center justify-center cursor-pointer ${
                           clickedExercise === exercise.id ? 'opacity-50' : 'opacity-100'
                         }`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
                           if (isSelected) {
                             removeExercise(exercise.id);

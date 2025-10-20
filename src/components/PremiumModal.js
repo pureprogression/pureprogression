@@ -36,12 +36,12 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
           {/* Content */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-3">
-              {language === 'en' ? 'Premium Feature' : 'Премиум функция'}
+              {language === 'en' ? 'Sign In Required' : 'Требуется авторизация'}
             </h2>
             <p className="text-white/80 text-sm leading-relaxed">
               {language === 'en' 
-                ? `To access ${feature}, please upgrade to Premium for unlimited workouts, advanced analytics, and exclusive content.`
-                : `Для доступа к ${feature}, пожалуйста, обновитесь до Премиум для неограниченных тренировок, расширенной аналитики и эксклюзивного контента.`
+                ? `To access ${feature}, please sign in to your account.`
+                : `Для доступа к ${feature}, пожалуйста, войдите в свой аккаунт.`
               }
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
               onClick={onUpgrade}
               className="w-full bg-white/15 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/25 transition-all duration-300"
             >
-              {language === 'en' ? 'Upgrade to Premium' : 'Обновить до Премиум'}
+              {language === 'en' ? 'Sign In' : 'Войти'}
             </button>
             
             <button

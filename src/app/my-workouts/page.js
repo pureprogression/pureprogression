@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutsList from "@/components/WorkoutsList";
-import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -14,6 +14,7 @@ export default function MyWorkoutsPage() {
   const [workouts, setWorkouts] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { language } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((u) => {
@@ -73,24 +74,19 @@ export default function MyWorkoutsPage() {
     };
   }, []);
 
+  // Редирект для неавторизованных пользователей
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/auth');
+    }
+  }, [isLoading, user, router]);
+
   if (isLoading) {
     return null; // Убираем загрузочный экран
   }
 
   if (!user) {
-    return (
-      <>
-        <Navigation currentPage="my-workouts" user={null} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <PremiumModal
-            isOpen={true}
-            onClose={() => window.location.href = '/'}
-            onUpgrade={() => window.location.href = '/auth'}
-            feature="My Workouts"
-          />
-        </div>
-      </>
-    );
+    return null;
   }
   
   if (workouts === null) {
@@ -101,9 +97,6 @@ export default function MyWorkoutsPage() {
     <>
       <Navigation currentPage="my-workouts" user={user} />
       <div className="max-w-[1200px] mx-auto p-4 pt-20">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white">{TEXTS[language].workouts.myWorkouts}</h2>
-        </div>
         
         {workouts.length === 0 ? (
           <div className="text-center py-12">

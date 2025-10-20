@@ -61,7 +61,7 @@ export default function MobileHero() {
           src={posterSrc}
           alt="Hero background"
           className="absolute inset-0 w-full h-full object-cover"
-          onLoad={() => console.log('Fallback image loaded')}
+        onLoad={() => console.log('Fallback image loaded')}
         />
       )}
       

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
-import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -12,6 +12,7 @@ export default function WorkoutHistoryPage() {
   const [user, setUser] = useState(null);
   const [workoutHistory, setWorkoutHistory] = useState(null);
   const { language } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     let unsubscribe = null;
@@ -51,20 +52,15 @@ export default function WorkoutHistoryPage() {
     };
   }, []);
 
+  // Редирект для неавторизованных пользователей
+  useEffect(() => {
+    if (!user) {
+      router.push('/auth');
+    }
+  }, [user, router]);
+
   if (!user) {
-    return (
-      <>
-        <Navigation currentPage="workout-history" user={null} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <PremiumModal
-            isOpen={true}
-            onClose={() => window.location.href = '/'}
-            onUpgrade={() => window.location.href = '/auth'}
-            feature="Workout History"
-          />
-        </div>
-      </>
-    );
+    return null;
   }
   if (workoutHistory === null)
     return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;

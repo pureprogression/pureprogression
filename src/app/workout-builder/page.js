@@ -27,6 +27,13 @@ export default function WorkoutBuilderPage() {
     return () => unsubscribe();
   }, []);
 
+  // Редирект для неавторизованных пользователей
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/auth');
+    }
+  }, [isLoading, user, router]);
+
   const handleSaveWorkout = async (workout) => {
     setIsSaving(true);
     
@@ -66,19 +73,7 @@ export default function WorkoutBuilderPage() {
   }
 
   if (!user) {
-    return (
-      <>
-        <Navigation currentPage="workout-builder" user={null} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <PremiumModal
-            isOpen={true}
-            onClose={() => window.location.href = '/'}
-            onUpgrade={() => window.location.href = '/auth'}
-            feature="Workout Builder"
-          />
-        </div>
-      </>
-    );
+    return null;
   }
 
   return (

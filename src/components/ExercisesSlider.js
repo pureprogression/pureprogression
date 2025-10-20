@@ -6,7 +6,6 @@ import { Navigation } from "swiper/modules";
 import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import LazyVideo from "./LazyVideo";
-import PremiumModal from "./PremiumModal";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -182,7 +181,6 @@ export default function ExercisesSlider({
   const effectiveViewMode = controlledViewMode || viewMode;
   // Локальное состояние избранного для неавторизованных пользователей
   const [guestFavoriteIds, setGuestFavoriteIds] = useState([]);
-  const [showPremiumLimitModal, setShowPremiumLimitModal] = useState(false);
   
   const [hasAnimated, setHasAnimated] = useState(false);
   const [sliderMounted, setSliderMounted] = useState(false);
@@ -358,15 +356,11 @@ export default function ExercisesSlider({
     }
   }, []);
 
-  // Инициализация локального избранного для гостей
+  // Инициализация локального избранного для гостей - отключено
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Избранное доступно только для авторизованных пользователей
     if (!auth.currentUser) {
-      try {
-        const stored = JSON.parse(localStorage.getItem('favorites_unauthorized') || '[]');
-        const ids = stored.map((f) => f.exerciseId || f.id).filter(Boolean);
-        setGuestFavoriteIds(ids);
-      } catch {}
+      setGuestFavoriteIds([]);
     }
   }, []);
 
@@ -396,41 +390,11 @@ export default function ExercisesSlider({
 
   // --- Универсальная функция для работы с избранным ---
   const internalToggleFavorite = async (ex) => {
-    // Гость: сохраняем в localStorage с лимитом 5
+    // Избранное доступно только для авторизованных пользователей
     if (!auth.currentUser) {
-      if (typeof window === 'undefined') return;
-      const favoritesKey = 'favorites_unauthorized';
-      const exerciseId = ex.exerciseId || ex.id;
-      try {
-        const existing = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
-        const already = existing.some((f) => (f.exerciseId || f.id) === exerciseId);
-        if (already) {
-          const updated = existing.filter((f) => (f.exerciseId || f.id) !== exerciseId);
-          localStorage.setItem(favoritesKey, JSON.stringify(updated));
-          setGuestFavoriteIds((prev) => prev.filter((id) => id !== exerciseId));
-        } else {
-          // Если пытаемся добавить 5-е упражнение (0..3 уже добавлены)
-          if (existing.length >= 4) {
-            console.log('Достигнут лимит 4 для гостей — переход на авторизацию');
-            if (typeof window !== 'undefined') window.location.href = '/auth';
-            return;
-          }
-          const newEntry = {
-            id: exerciseId,
-            exerciseId,
-            title: ex.title,
-            video: ex.video,
-            poster: ex.poster,
-            createdAt: new Date().toISOString(),
-          };
-          const updated = [...existing, newEntry];
-          localStorage.setItem(favoritesKey, JSON.stringify(updated));
-          setGuestFavoriteIds((prev) => Array.from(new Set([...prev, exerciseId])));
-        }
-        // Сообщаем наружу (если кто-то слушает)
-        try { window.dispatchEvent(new Event('favorites-updated')); } catch {}
-      } catch (e) {
-        console.error('Guest favorites update error', e);
+      // Прямой редирект на страницу авторизации
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
       }
       return;
     }
@@ -487,15 +451,6 @@ export default function ExercisesSlider({
   return (
     <div className="w-full max-w-[1200px] mx-auto">
       <style dangerouslySetInnerHTML={{ __html: swiperStyles }} />
-      <PremiumModal
-        isOpen={showPremiumLimitModal}
-        onClose={() => setShowPremiumLimitModal(false)}
-        onUpgrade={() => {
-          try { setShowPremiumLimitModal(false); } catch {}
-          if (typeof window !== 'undefined') window.location.href = '/auth';
-        }}
-        feature={"Unlimited favorites"}
-      />
       {showToggle && (
         <div className="flex justify-end mb-4">
           <button

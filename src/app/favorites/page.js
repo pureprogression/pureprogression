@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
@@ -36,20 +37,28 @@ export default function FavoritesPage() {
   const [mounted, setMounted] = useState(false);
   const [filterTransitioning, setFilterTransitioning] = useState(false);
   const { language } = useLanguage();
+  const router = useRouter();
 
-  // Определяем URL видео
+  // Определяем URL видео - используем видео для неавторизованных пользователей
   const getVideoSrc = () => {
-    if (!mounted) return '/videos/FavVid.mp4'; // Fallback для SSR
+    const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
+    
+    if (!mounted) return `${baseUrl}webHero.mp4`; // Fallback для SSR
     
     const isMobile = isMobileDevice();
     const connectionSpeed = getConnectionSpeed();
     
-    // Временно используем локальные файлы
-    if (isMobile || connectionSpeed === 'slow') {
-      return '/videos/FavVid_mobile.mp4';
+    // Для всех пользователей на странице favorites используем видео для неавторизованных
+    if (isMobile && connectionSpeed === 'slow') {
+      // Мобильная медленная сеть - используем обычное видео (меньше размер)
+      return `${baseUrl}webHero.mp4`;
+    } else if (isMobile) {
+      // Мобильная быстрая сеть - используем видео для неавторизованных
+      return `${baseUrl}webHero.mp4`;
+    } else {
+      // Десктоп - используем видео для неавторизованных
+      return `${baseUrl}webHero.mp4`;
     }
-    
-    return '/videos/FavVid.mp4';
   };
 
   const videoSrc = getVideoSrc();
@@ -106,13 +115,8 @@ export default function FavoritesPage() {
           setFavorites(items);
         });
       } else {
-        // Для неавторизованных: подгружаем избранное из localStorage
-        try {
-          const stored = JSON.parse(localStorage.getItem('favorites_unauthorized') || '[]');
-          setFavorites(stored);
-        } catch {
-          setFavorites([]);
-        }
+        // Для неавторизованных: перенаправляем на страницу авторизации
+        router.push('/auth');
         if (unsubscribeFavorites) unsubscribeFavorites();
       }
     });
@@ -173,7 +177,7 @@ export default function FavoritesPage() {
       <div className="relative">
         <Navigation currentPage="favorites" user={user} disableSwipe={viewMode === "slider"} />
         
-        {/* Hero секция с видео */}
+        {/* Hero секция с видео - показываем всегда */}
         <div className="relative h-screen">
           <video
             autoPlay
@@ -185,26 +189,26 @@ export default function FavoritesPage() {
           >
             <source src={videoSrc} type="video/mp4" />
           </video>
-          
-          {/* Черный блюр внизу */}
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 to-transparent" />
         </div>
 
-        {/* Фильтры */}
-        <div className="relative">
-          <div className="flex items-center">
-            <ExercisesFilter
-              exercises={exercises}
-              selectedGroup={selectedGroup}
-              setSelectedGroup={setSelectedGroup}
-            />
+        {/* Фильтры показываем только если есть избранные */}
+        {favorites.length > 0 && (
+          <div className="relative">
+            <div className="flex items-center">
+              <ExercisesFilter
+                exercises={exercises}
+                selectedGroup={selectedGroup}
+                setSelectedGroup={setSelectedGroup}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Слайдер упражнений */}
         {favorites.length === 0 ? (
-          <div className="max-w-[1200px] mx-auto p-4">
-            <p className="text-center mt-10 text-white drop-shadow-lg">{TEXTS[language].favorites.noFavorites}</p>
+          <div className="min-h-screen flex items-center justify-center">
+            <p className="text-center text-white/80 text-sm">{TEXTS[language].favorites.noFavorites}</p>
           </div>
         ) : filteredExercises.length === 0 ? (
           <div className="max-w-[1200px] mx-auto p-4">

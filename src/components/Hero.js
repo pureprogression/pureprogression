@@ -48,22 +48,23 @@ export default function Hero() {
   // Адаптивный выбор видео в зависимости от устройства и соединения
   const getVideoSrc = () => {
     const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
+    const cacheBuster = `?v=${Date.now()}`;
     
     if (user) {
       // Для авторизованных пользователей
       if (isMobile && connectionSpeed === 'slow') {
         // Мобильная медленная сеть - используем обычное видео (меньше размер)
-        return `${baseUrl}webHero.mp4`;
+        return `${baseUrl}webHero.mp4${cacheBuster}`;
       } else if (isMobile) {
         // Мобильная быстрая сеть - используем авторизованное видео
-        return `${baseUrl}webHeroAuth.mp4`;
+        return `${baseUrl}webHeroAuth.mp4${cacheBuster}`;
       } else {
         // Десктоп - всегда авторизованное видео
-        return `${baseUrl}webHeroAuth.mp4`;
+        return `${baseUrl}webHeroAuth.mp4${cacheBuster}`;
       }
     } else {
-      // Для неавторизованных пользователей
-      return `${baseUrl}webHero.mp4`;
+      // Для неавторизованных пользователей - используем то же видео, что и для авторизованных
+      return `${baseUrl}webHeroAuth.mp4?v=2`;
     }
   };
 
