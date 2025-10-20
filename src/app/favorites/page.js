@@ -106,7 +106,13 @@ export default function FavoritesPage() {
           setFavorites(items);
         });
       } else {
-        setFavorites([]);
+        // Для неавторизованных: подгружаем избранное из localStorage
+        try {
+          const stored = JSON.parse(localStorage.getItem('favorites_unauthorized') || '[]');
+          setFavorites(stored);
+        } catch {
+          setFavorites([]);
+        }
         if (unsubscribeFavorites) unsubscribeFavorites();
       }
     });
@@ -159,48 +165,7 @@ export default function FavoritesPage() {
     }
   }, [viewMode]);
 
-  if (!user) {
-    return (
-      <>
-        {/* Видео фон для неавторизованных */}
-        <div className="fixed inset-0 z-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-            key={videoSrc}
-          >
-            <source src={videoSrc} type="video/mp4" />
-          </video>
-          
-          {/* Градиентный блюр */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-        </div>
-
-        {/* Контент поверх видео */}
-        <div className="relative z-10 min-h-screen" style={{ paddingTop: '20vh' }}>
-          <div className="max-w-[1200px] mx-auto p-4">
-            <h2 className="text-2xl font-bold text-white mb-6 drop-shadow-lg">{TEXTS[language].favorites.title}</h2>
-            
-            <div className="text-center py-20">
-              <div className="text-white text-xl font-light mb-6 tracking-wide drop-shadow-lg">
-                {TEXTS[language].favorites.loginRequired || "Sign in to save favorites"}
-              </div>
-              <button 
-                onClick={() => window.location.href = '/auth'}
-                className="text-white/60 hover:text-white text-sm font-light border border-white/20 hover:border-white/40 py-3 px-8 rounded-lg transition-all duration-300 backdrop-blur-sm bg-black/20"
-              >
-                {TEXTS[language].auth.signIn || "Sign In"}
-              </button>
-            </div>
-          </div>
-        </div>
-        <Navigation currentPage="favorites" user={null} />
-      </>
-    );
-  }
+  // Страница избранного доступна всем: неавторизованные видят локальные избранные, авторизованные — из Firebase
 
   return (
     <>
