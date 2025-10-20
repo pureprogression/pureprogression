@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -9,10 +9,13 @@ import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 
 export default function WorkoutsList({ workouts, user }) {
   const router = useRouter();
   const { language } = useLanguage();
+  const { isLowEndDevice, isReducedMotion } = usePerformanceOptimization();
+  
   // Удаление теперь по долгому нажатию (swipe отключен)
   const [swipedWorkout, setSwipedWorkout] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -139,13 +142,35 @@ export default function WorkoutsList({ workouts, user }) {
     );
   }
 
+  // Оптимизированные анимации для слабых устройств
+  const containerAnimation = useMemo(() => {
+    if (isLowEndDevice || isReducedMotion) {
+      return {};
+    }
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      transition: { duration: 0.3 }
+    };
+  }, [isLowEndDevice, isReducedMotion]);
+
+  const itemAnimation = useMemo(() => {
+    if (isLowEndDevice || isReducedMotion) {
+      return {};
+    }
+    return {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: -20 },
+      transition: { duration: 0.4, delay: 0, ease: "easeOut" }
+    };
+  }, [isLowEndDevice, isReducedMotion]);
+
   return (
     <motion.div 
       className="space-y-4" 
       onWheel={stopPreview}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      {...containerAnimation}
     >
       <AnimatePresence>
         {workouts.map((workout, index) => (
@@ -159,14 +184,7 @@ export default function WorkoutsList({ workouts, user }) {
             onMouseEnter={() => { if (!isTouchDevice) startPreview(workout.id); }}
             onMouseLeave={stopPreview}
             onWheel={stopPreview}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ 
-              duration: 0.4, 
-              delay: index * 0.1,
-              ease: "easeOut"
-            }}
+            {...itemAnimation}
             style={{
               transform: swipedWorkout?.id === workout.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
               opacity: swipedWorkout?.id === workout.id ? swipeOpacity : 1,

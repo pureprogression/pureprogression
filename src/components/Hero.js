@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { auth } from "@/lib/firebase";
 import MobileHero from "./MobileHero";
+import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 
 export default function Hero() {
   const [user, setUser] = useState(null);
@@ -11,6 +12,8 @@ export default function Hero() {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [connectionSpeed, setConnectionSpeed] = useState('fast');
+  const [videoError, setVideoError] = useState(false);
+  const { isLowEndDevice, isReducedMotion } = usePerformanceOptimization();
 
   useEffect(() => {
     // Определяем мобильное устройство СРАЗУ при инициализации
@@ -46,9 +49,14 @@ export default function Hero() {
   }, []);
 
   // Адаптивный выбор видео в зависимости от устройства и соединения
-  const getVideoSrc = () => {
+  const getVideoSrc = useCallback(() => {
     const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
     const cacheBuster = `?v=${Date.now()}`;
+    
+    // Для слабых устройств всегда используем легкое видео
+    if (isLowEndDevice) {
+      return `${baseUrl}webHero.mp4${cacheBuster}`;
+    }
     
     if (user) {
       // Для авторизованных пользователей
@@ -66,7 +74,7 @@ export default function Hero() {
       // Для неавторизованных пользователей - используем то же видео, что и для авторизованных
       return `${baseUrl}webHeroAuth.mp4?v=2`;
     }
-  };
+  }, [user, isMobile, connectionSpeed, isLowEndDevice]);
 
   const videoSrc = getVideoSrc();
 
@@ -107,6 +115,11 @@ export default function Hero() {
         playsInline
         webkit-playsinline="true"
         preload={isMobile && connectionSpeed === 'slow' ? 'none' : 'metadata'}
+        onError={(e) => {
+          console.error('Video loading error:', e);
+          setVideoError(true);
+        }}
+        onLoadStart={() => setVideoError(false)}
         style={{
           willChange: 'transform',
           transform: 'translateZ(0)',
@@ -116,6 +129,16 @@ export default function Hero() {
         <source src={videoSrc} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      
+      {/* Fallback для ошибок видео */}
+      {videoError && (
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center z-10">
+          <div className="text-center text-white">
+            <h2 className="text-2xl font-bold mb-4">PureP</h2>
+            <p className="text-gray-300">Loading your fitness experience...</p>
+          </div>
+        </div>
+      )}
 
 
          {/* Чистый градиент без текста и motion */}

@@ -2,6 +2,38 @@
 @import 'swiper/css';
 @import 'swiper/css/pagination';
 
+/* Оптимизация производительности для слабых устройств */
+.low-performance * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.low-performance video {
+  will-change: auto;
+}
+
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Оптимизация для мобильных устройств */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  video {
+    will-change: auto;
+  }
+  
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+}
+
 
 :root {
   --background: #ffffff;
