@@ -128,20 +128,6 @@ export default function WorkoutsList({ workouts, user }) {
   }, [previewWorkoutId]);
 
 
-  if (!workouts || workouts.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 text-lg mb-4">You don&apos;t have any saved workouts yet</div>
-        <button
-          onClick={() => router.push('/workout-builder')}
-          className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300"
-        >
-          Create First Workout
-        </button>
-      </div>
-    );
-  }
-
   // Оптимизированные анимации для слабых устройств
   const containerAnimation = useMemo(() => {
     if (isLowEndDevice || isReducedMotion) {
@@ -165,6 +151,20 @@ export default function WorkoutsList({ workouts, user }) {
       transition: { duration: 0.4, delay: 0, ease: "easeOut" }
     };
   }, [isLowEndDevice, isReducedMotion]);
+
+  if (!workouts || workouts.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-400 text-lg mb-4">You don&apos;t have any saved workouts yet</div>
+        <button
+          onClick={() => router.push('/workout-builder')}
+          className="bg-white text-black py-2 px-6 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300"
+        >
+          Create First Workout
+        </button>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
