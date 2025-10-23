@@ -39,6 +39,7 @@ export default function AuthForm() {
       <form 
         onSubmit={handleSubmit} 
         className="p-8 w-full max-w-sm mx-4"
+        autoComplete="off"
       >
         {/* Minimal header */}
         <div className="text-center mb-5">
@@ -58,6 +59,7 @@ export default function AuthForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="off"
           className="w-full p-2 mb-3 rounded-md bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all duration-300"
         />
         <input
@@ -66,6 +68,7 @@ export default function AuthForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="new-password"
           className="w-full p-2 mb-4 rounded-md bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all duration-300"
         />
         <button

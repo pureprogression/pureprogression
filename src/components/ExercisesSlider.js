@@ -51,7 +51,7 @@ const swiperStyles = `
 `;
 
 // --- Карточка упражнения ---
-const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none", isActive = true, showRemoveAnimation = false }) {
+const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavorite, readOnly, showRemoveButton, eager = false, preloadLevel = "none", isActive = true, showRemoveAnimation = false, showInfo = false }) {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -115,7 +115,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       }`}>
         <button
           aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
-          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
+          className="group relative p-1 rounded-full bg-transparent transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
           onClick={handleToggle}
         >
           {/* ripple */}
@@ -123,7 +123,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           {/* indicator - фиксированный размер */}
           <span
             style={{ width: '16px', height: '16px' }}
-            className={`relative block rounded-full border-2 transition-all duration-[1200ms] ease-in-out drop-shadow
+            className={`relative block rounded-full border transition-all duration-[1200ms] ease-in-out drop-shadow
               ${showIndicator ? 'scale-100' : 'scale-50'}
               ${isFavorite ? "bg-white border-white shadow-lg" : "bg-transparent border-white/80 group-hover:border-white"}`}
           />
@@ -138,7 +138,7 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
       }`}>
         <button
           aria-label="Удалить из избранного"
-          className="group relative p-2 rounded-full bg-black/35 hover:bg-black/55 shadow-md transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
+          className="group relative p-1 rounded-full bg-transparent transition-all duration-300 ease-out w-9 h-9 flex items-center justify-center"
           onClick={handleToggle}
         >
           {/* ripple */}
@@ -146,16 +146,33 @@ const ExerciseCard = memo(function ExerciseCard({ ex, isFavorite, onToggleFavori
           {/* indicator - фиксированный размер */}
           <span 
             style={{ width: '16px', height: '16px' }}
-            className={`relative block rounded-full border-2 bg-white border-white shadow-lg transition-all duration-[1200ms] ease-in-out drop-shadow
+            className={`relative block rounded-full border bg-white border-white shadow-lg transition-all duration-[1200ms] ease-in-out drop-shadow
               ${showIndicator ? 'scale-100' : 'scale-50'}`}
           />
         </button>
       </div>
     )}
     
-    {/* <p className="absolute bottom-2 left-2 text-white text-sm font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pr-2">
-      {ex.title}
-    </p> */}
+    {/* Информация об упражнении внутри карточки - только для слайдера */}
+    {showInfo && (
+      <div className="absolute bottom-3 left-3 right-3 z-20">
+        <h3 className="text-white font-normal text-base mb-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          {ex.title}
+        </h3>
+        {ex.muscleGroups && ex.muscleGroups.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {ex.muscleGroups.slice(0, 3).map((group, idx) => (
+              <span
+                key={idx}
+                className="text-white/60 font-light text-xs px-2 py-0.5 rounded-full bg-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+              >
+                {group}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
     </div>
   );
 });
@@ -534,6 +551,7 @@ export default function ExercisesSlider({
                     eager={shouldFullyLoad}
                     preloadLevel={shouldFullyLoad ? "auto" : "none"}
                     showRemoveAnimation={mode === "favorites-page"}
+                    showInfo={true}
                   />
                 </SwiperSlide>
               );
@@ -582,6 +600,7 @@ export default function ExercisesSlider({
                   eager={index < 6}
                   preloadLevel={index < 6 ? "metadata" : "none"}
                   showRemoveAnimation={mode === "favorites-page"}
+                  showInfo={false}
                 />
               </div>
             ))}
