@@ -178,44 +178,36 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   </button>
                 </li>
 
-                {/* Конструктор тренировок */}
+                {/* Конструктор тренировок - в разработке */}
                 <li>
                   <button
-                    onClick={handleWorkoutBuilderClick}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    onClick={(e) => e.preventDefault()}
+                    disabled
+                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
                   >
                     <span>{TEXTS[language].navigation.workoutBuilder}</span>
-                    {user ? (
-                      <span className="text-green-500 text-xs">✓</span>
-                    ) : (
-                      <span className="text-gray-500 text-xs">🔒</span>
-                    )}
                   </button>
                 </li>
 
-                {/* Мои тренировки */}
+                {/* Мои тренировки - в разработке */}
                 <li>
                   <button
-                    onClick={handleMyWorkoutsClick}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    onClick={(e) => e.preventDefault()}
+                    disabled
+                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
                   >
                     <span>{TEXTS[language].navigation.myWorkouts}</span>
-                    {user ? (
-                      <span className="text-green-500 text-xs">✓</span>
-                    ) : (
-                      <span className="text-gray-500 text-xs">🔒</span>
-                    )}
                   </button>
                 </li>
 
-                {/* История тренировок */}
+                {/* История тренировок - в разработке */}
                 <li>
                   <button
-                    onClick={handleWorkoutHistoryClick}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    onClick={(e) => e.preventDefault()}
+                    disabled
+                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
                   >
                     <span>{TEXTS[language].navigation.workoutHistory}</span>
-                    <span className="text-gray-500 text-xs">🔒</span>
                   </button>
                 </li>
 

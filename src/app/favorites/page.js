@@ -39,25 +39,20 @@ export default function FavoritesPage() {
   const { language } = useLanguage();
   const router = useRouter();
 
-  // Определяем URL видео - используем видео для неавторизованных пользователей
+  // Определяем URL видео для страницы favorites
   const getVideoSrc = () => {
     const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
     
     if (!mounted) return `${baseUrl}webHero.mp4`; // Fallback для SSR
     
     const isMobile = isMobileDevice();
-    const connectionSpeed = getConnectionSpeed();
     
-    // Для всех пользователей на странице favorites используем видео для неавторизованных
-    if (isMobile && connectionSpeed === 'slow') {
-      // Мобильная медленная сеть - используем обычное видео (меньше размер)
-      return `${baseUrl}webHero.mp4`;
-    } else if (isMobile) {
-      // Мобильная быстрая сеть - используем видео для неавторизованных
-      return `${baseUrl}webHero.mp4`;
+    // На странице favorites используем FavVid_mobile для мобилок
+    if (isMobile) {
+      return `${baseUrl}FavVid_mobile.mp4`;
     } else {
-      // Десктоп - используем видео для неавторизованных
-      return `${baseUrl}webHero.mp4`;
+      // Десктоп - используем FavVid
+      return `${baseUrl}FavVid.mp4`;
     }
   };
 

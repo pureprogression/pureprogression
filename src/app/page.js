@@ -6,7 +6,6 @@ import Hero from "@/components/Hero";
 import Navigation from "@/components/Navigation";
 import ExercisesSlider from "@/components/ExercisesSlider";
 import ExercisesFilter from "@/components/ExercisesFilter";
-import ViewToggle from "@/components/ViewToggle";
 import { exercises } from "@/data/exercises";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";

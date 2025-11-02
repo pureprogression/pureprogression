@@ -20,7 +20,7 @@ export const exercises = [
         title: "L Pull-ups",
         video: `${R2_CDN_URL}/videos/x51web.mp4`,
         poster: `${R2_CDN_URL}/posters/x51web.jpg`,
-        muscleGroups: ["back", "abs", "arms"]
+        muscleGroups: ["back", "abs", "arms", "core"]
     },
     {
         id: "4",
@@ -41,27 +41,27 @@ export const exercises = [
         title: "Handstand",
         video: `${R2_CDN_URL}/videos/x113.mp4`,
         poster: `${R2_CDN_URL}/posters/x113.jpg`,
-        muscleGroups: ["core", "abs"]
+        muscleGroups: ["shoulders", "arms", "core", "abs"]
     },
     {
         id: "7",
         title: "Push-ups",
         video: `${R2_CDN_URL}/videos/x84.mp4`,
         poster: `${R2_CDN_URL}/posters/x84.jpg`,
-        muscleGroups: ["full body", "cardio"]
+        muscleGroups: ["chest", "shoulders", "arms"]
     },
     {
         id: "8",
         title: "Decline Push-ups",
         video: `${R2_CDN_URL}/videos/x124.mp4`,
         poster: `${R2_CDN_URL}/posters/x124.jpg`,
-        muscleGroups: ["core", "cardio", "legs"]
+        muscleGroups: ["chest", "shoulders"]
     },
     {
         id: "9",
         title: "Push-ups",
         video: `${R2_CDN_URL}/videos/x32.mp4`,
         poster: `${R2_CDN_URL}/posters/x32.jpg`,
-        muscleGroups: ["cardio", "legs", "arms"]
+        muscleGroups: ["chest", "shoulders", "arms"]
     }
 ]

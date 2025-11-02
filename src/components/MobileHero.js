@@ -36,9 +36,7 @@ export default function MobileHero() {
   }, [videoLoaded]);
 
   // Выбираем видео в зависимости от авторизации
-  const videoSrc = user 
-    ? "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHeroAuth.mp4"
-    : "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4";
+  const videoSrc = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4";
 
   const posterSrc = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg";
 
@@ -66,8 +64,7 @@ export default function MobileHero() {
       )}
       
       {/* Видео с улучшенными мобильными настройками */}
-      <video 
-        key={user ? 'auth' : 'guest'}
+      <video
         className="absolute inset-0 w-full h-full object-cover"
         autoPlay
         loop

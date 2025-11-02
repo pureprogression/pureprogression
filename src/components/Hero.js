@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion"
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import MobileHero from "./MobileHero";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
@@ -49,34 +49,8 @@ export default function Hero() {
   }, []);
 
   // Адаптивный выбор видео в зависимости от устройства и соединения
-  const getVideoSrc = useCallback(() => {
-    const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
-    const cacheBuster = `?v=${Date.now()}`;
-    
-    // Для слабых устройств всегда используем легкое видео
-    if (isLowEndDevice) {
-      return `${baseUrl}webHero.mp4${cacheBuster}`;
-    }
-    
-    if (user) {
-      // Для авторизованных пользователей
-      if (isMobile && connectionSpeed === 'slow') {
-        // Мобильная медленная сеть - используем обычное видео (меньше размер)
-        return `${baseUrl}webHero.mp4${cacheBuster}`;
-      } else if (isMobile) {
-        // Мобильная быстрая сеть - используем авторизованное видео
-        return `${baseUrl}webHeroAuth.mp4${cacheBuster}`;
-      } else {
-        // Десктоп - всегда авторизованное видео
-        return `${baseUrl}webHeroAuth.mp4${cacheBuster}`;
-      }
-    } else {
-      // Для неавторизованных пользователей - используем то же видео, что и для авторизованных
-      return `${baseUrl}webHeroAuth.mp4?v=2`;
-    }
-  }, [user, isMobile, connectionSpeed, isLowEndDevice]);
-
-  const videoSrc = getVideoSrc();
+  const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
+  const videoSrc = `${baseUrl}webHero.mp4`;
 
   // Отладочная информация
   console.log('Hero Debug:', { 
@@ -106,8 +80,7 @@ export default function Hero() {
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       
-      <video 
-        key={`${user ? 'auth' : 'guest'}-${isMobile ? 'mobile' : 'desktop'}-${connectionSpeed}`} // Принудительное обновление при смене параметров
+      <video
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
         autoPlay
         loop
