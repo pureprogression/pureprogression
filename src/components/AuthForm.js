@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { 
   createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
+  signInWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { trackRegistration, trackLogin } from "@/lib/analytics";
@@ -13,6 +15,7 @@ import { trackRegistration, trackLogin } from "@/lib/analytics";
 export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false); // переключение между входом и регистрацией
   const { language } = useLanguage();
 
@@ -20,10 +23,49 @@ export default function AuthForm() {
     e.preventDefault();
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Обновляем displayName в Firebase Auth, если указано
+        if (displayName.trim()) {
+          await updateProfile(user, {
+            displayName: displayName.trim()
+          });
+        }
+        
+        // Создаем документ пользователя в коллекции users
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        // Создаем документ только если его еще нет
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            email: user.email,
+            displayName: displayName.trim() || null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
+        
+        setDisplayName("");
         trackRegistration('email');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Создаем документ пользователя в коллекции users, если его еще нет
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            email: user.email,
+            displayName: user.displayName || null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
+        
         trackLogin('email');
       }
       setEmail("");
@@ -53,6 +95,16 @@ export default function AuthForm() {
             {language === 'en' ? 'Unlock your personal workout space' : 'Откройте свой личный фитнес‑пространство'}
           </p>
         </div>
+        {isSignUp && (
+          <input
+            type="text"
+            placeholder={language === 'ru' ? 'Ваше имя' : 'Your name'}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            autoComplete="name"
+            className="w-full p-2 mb-3 rounded-md bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all duration-300"
+          />
+        )}
         <input
           type="email"
           placeholder={TEXTS[language].auth.email}

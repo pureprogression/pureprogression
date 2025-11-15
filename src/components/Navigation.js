@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth } from "@/lib/firebase";
+import { auth, isAdmin } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -65,6 +65,20 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
   const handleWorkoutHistoryClick = () => {
     router.push('/workout-history');
+    setIsMenuOpen(false);
+  };
+
+  const handleWeeklyPlanClick = () => {
+    if (user) {
+      router.push('/weekly-plan');
+    } else {
+      router.push('/auth');
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleAdminPanelClick = () => {
+    router.push('/admin/weekly-plans');
     setIsMenuOpen(false);
   };
 
@@ -210,6 +224,32 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                     <span>{TEXTS[language].navigation.workoutHistory}</span>
                   </button>
                 </li>
+
+                {/* Недельный план */}
+                {user && (
+                  <li>
+                    <button
+                      onClick={handleWeeklyPlanClick}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    >
+                      <span>{TEXTS[language].navigation.weeklyPlan}</span>
+                      <span className="text-yellow-500 text-xs">📅</span>
+                    </button>
+                  </li>
+                )}
+
+                {/* Админ-панель */}
+                {user && isAdmin(user) && (
+                  <li>
+                    <button
+                      onClick={handleAdminPanelClick}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
+                    >
+                      <span>{TEXTS[language].navigation.adminPanel}</span>
+                      <span className="text-yellow-500 text-xs">⚙️</span>
+                    </button>
+                  </li>
+                )}
 
                 {/* Разделитель */}
                 <li className="my-2">

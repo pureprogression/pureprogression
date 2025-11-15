@@ -11,6 +11,8 @@ export const TEXTS = {
       workoutHistory: "Workout History",
       favorites: "Favorites",
       profile: "Profile",
+      weeklyPlan: "Weekly Plan",
+      adminPanel: "Admin Panel",
       logout: "Logout"
     },
 
@@ -122,6 +124,55 @@ export const TEXTS = {
       corePullups: "Core Pull-ups"
     },
 
+    // Weekly Plan
+    weeklyPlan: {
+      title: "Weekly Plan",
+      noPlan: "You don't have an active weekly plan yet",
+      waitingForPlan: "Your coach will create a personalized plan for you soon",
+      weekGoals: "Week Goals",
+      day: "Day",
+      tasks: "Tasks",
+      addComment: "Add comment",
+      comment: "Comment",
+      saveComment: "Save",
+      editTask: "Edit task",
+      deleteTask: "Delete task",
+      completeWeek: "Complete Week",
+      completed: "Completed",
+      active: "Active",
+      progress: "Progress",
+      ofTasksCompleted: "of tasks completed",
+      history: "History",
+      viewHistory: "View History"
+    },
+
+    // Admin Weekly Plans
+    adminWeeklyPlans: {
+      title: "Weekly Plans Management",
+      createPlan: "Create New Plan",
+      activePlans: "Active Plans",
+      allPlans: "All Plans",
+      selectUser: "Select User",
+      searchUser: "Search user by email...",
+      weekStartDate: "Week Start Date",
+      weekGoals: "Week Goals",
+      addGoal: "Add Goal",
+      day: "Day",
+      addTask: "Add Task",
+      taskText: "Task text",
+      savePlan: "Save Plan",
+      cancel: "Cancel",
+      editPlan: "Edit Plan",
+      viewPlan: "View Plan",
+      assignedTo: "Assigned to",
+      status: "Status",
+      createdAt: "Created at",
+      noPlans: "No plans found",
+      planCreated: "Plan created successfully",
+      planUpdated: "Plan updated successfully",
+      error: "Error occurred"
+    },
+
     // Common
     common: {
       loading: "Loading...",
@@ -147,6 +198,8 @@ export const TEXTS = {
       workoutHistory: "История тренировок",
       favorites: "Избранное",
       profile: "Профиль",
+      weeklyPlan: "Недельный план",
+      adminPanel: "Админ-панель",
       logout: "Выйти"
     },
 
@@ -248,6 +301,53 @@ export const TEXTS = {
       bandMuscleUps: "Подтягивания на резине", 
       lPullups: "L-подтягивания",
       corePullups: "Подтягивания на пресс"
+    },
+
+    weeklyPlan: {
+      title: "Недельный план",
+      noPlan: "У вас пока нет активного недельного плана",
+      waitingForPlan: "Ваш тренер скоро создаст для вас персональный план",
+      weekGoals: "Цели недели",
+      day: "День",
+      tasks: "Задачи",
+      addComment: "Добавить комментарий",
+      comment: "Комментарий",
+      saveComment: "Сохранить",
+      editTask: "Редактировать задачу",
+      deleteTask: "Удалить задачу",
+      completeWeek: "Завершить неделю",
+      completed: "Завершено",
+      active: "Активен",
+      progress: "Прогресс",
+      ofTasksCompleted: "задач выполнено",
+      history: "История",
+      viewHistory: "Посмотреть историю"
+    },
+
+    adminWeeklyPlans: {
+      title: "Управление недельными планами",
+      createPlan: "Создать новый план",
+      activePlans: "Активные планы",
+      allPlans: "Все планы",
+      selectUser: "Выберите пользователя",
+      searchUser: "Поиск пользователя по email...",
+      weekStartDate: "Дата начала недели",
+      weekGoals: "Цели недели",
+      addGoal: "Добавить цель",
+      day: "День",
+      addTask: "Добавить задачу",
+      taskText: "Текст задачи",
+      savePlan: "Сохранить план",
+      cancel: "Отмена",
+      editPlan: "Редактировать план",
+      viewPlan: "Просмотр плана",
+      assignedTo: "Назначено",
+      status: "Статус",
+      createdAt: "Создано",
+      noPlans: "Планы не найдены",
+      planCreated: "План успешно создан",
+      planUpdated: "План успешно обновлен",
+      error: "Произошла ошибка"
     },
 
     common: {
