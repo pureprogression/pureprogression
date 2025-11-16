@@ -1,7 +1,7 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, where, Timestamp } from "firebase/firestore";
+import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, where, Timestamp, deleteDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -319,6 +319,17 @@ export const completeWeeklyPlan = async (planId) => {
   }
 };
 
+export const deleteWeeklyPlan = async (planId) => {
+  try {
+    const planRef = doc(db, 'weeklyPlans', planId);
+    await deleteDoc(planRef);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка при удалении плана:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Функция проверки админа (пока по email)
 export const isAdmin = (user) => {
   if (!user || !user.email) return false;
@@ -337,4 +348,96 @@ export const isAdmin = (user) => {
   }
   
   return user.email === adminEmail;
+};
+
+// Функции для работы с запросами планов
+export const createPlanRequest = async (userId, requestData) => {
+  try {
+    const requestRef = await addDoc(collection(db, 'planRequests'), {
+      userId: userId,
+      categories: requestData.categories || [],
+      goals: requestData.goals || '',
+      currentLevel: requestData.currentLevel || 'medium',
+      limitations: requestData.limitations || '',
+      additionalInfo: requestData.additionalInfo || '',
+      status: 'new', // new, in_progress, plan_created
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return { success: true, requestId: requestRef.id };
+  } catch (error) {
+    console.error('Ошибка при создании запроса плана:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getUserPlanRequests = async (userId) => {
+  try {
+    const requestsRef = collection(db, 'planRequests');
+    const q = query(requestsRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    const requests = [];
+    querySnapshot.forEach((doc) => {
+      requests.push({ id: doc.id, ...doc.data() });
+    });
+    // Сортируем вручную по дате создания (новые сначала)
+    requests.sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.() || new Date(0);
+      const bTime = b.createdAt?.toDate?.() || new Date(0);
+      return bTime - aTime;
+    });
+    return { success: true, requests };
+  } catch (error) {
+    console.error('Ошибка при получении запросов пользователя:', error);
+    return { success: false, error: error.message, requests: [] };
+  }
+};
+
+export const getAllPlanRequests = async () => {
+  try {
+    const requestsRef = collection(db, 'planRequests');
+    const querySnapshot = await getDocs(requestsRef);
+    const requests = [];
+    querySnapshot.forEach((doc) => {
+      requests.push({ id: doc.id, ...doc.data() });
+    });
+    // Сортируем по дате создания (новые сначала)
+    requests.sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.() || new Date(0);
+      const bTime = b.createdAt?.toDate?.() || new Date(0);
+      return bTime - aTime;
+    });
+    return { success: true, requests };
+  } catch (error) {
+    console.error('Ошибка при получении всех запросов:', error);
+    return { success: false, error: error.message, requests: [] };
+  }
+};
+
+export const updatePlanRequestStatus = async (requestId, status) => {
+  try {
+    const requestRef = doc(db, 'planRequests', requestId);
+    await updateDoc(requestRef, {
+      status: status,
+      updatedAt: serverTimestamp()
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка при обновлении статуса запроса:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getPlanRequest = async (requestId) => {
+  try {
+    const requestRef = doc(db, 'planRequests', requestId);
+    const requestDoc = await getDoc(requestRef);
+    if (!requestDoc.exists()) {
+      return { success: false, error: 'Request not found' };
+    }
+    return { success: true, request: { id: requestDoc.id, ...requestDoc.data() } };
+  } catch (error) {
+    console.error('Ошибка при получении запроса:', error);
+    return { success: false, error: error.message };
+  }
 };

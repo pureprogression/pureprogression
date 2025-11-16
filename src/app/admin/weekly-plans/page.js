@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { auth, isAdmin, createWeeklyPlan, getAllWeeklyPlans, getUserIdByEmail, getAllUsers, updateWeeklyPlan, db } from "@/lib/firebase";
+import { auth, isAdmin, createWeeklyPlan, getAllWeeklyPlans, getUserIdByEmail, getAllUsers, updateWeeklyPlan, db, getAllPlanRequests, getPlanRequest, updatePlanRequestStatus, deleteWeeklyPlan } from "@/lib/firebase";
 import { getDoc, doc, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Navigation from "@/components/Navigation";
@@ -15,10 +15,13 @@ export default function AdminWeeklyPlansPage() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState([]);
+  const [planRequests, setPlanRequests] = useState([]);
   const [users, setUsers] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [viewingPlan, setViewingPlan] = useState(null);
+  const [viewingRequest, setViewingRequest] = useState(null);
+  const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'requests'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchEmail, setSearchEmail] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -29,7 +32,7 @@ export default function AdminWeeklyPlansPage() {
   const [formData, setFormData] = useState({
     weekStartDate: new Date().toISOString().split('T')[0],
     goals: [''],
-    days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: false, comments: [] }] }))
+    days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
   });
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function AdminWeeklyPlansPage() {
         }
         await loadPlans(u.uid);
         await loadUsers();
+        await loadPlanRequests();
       } else {
         router.push('/auth');
       }
@@ -70,6 +74,17 @@ export default function AdminWeeklyPlansPage() {
       }
     } catch (error) {
       console.error("Ошибка при загрузке пользователей:", error);
+    }
+  };
+
+  const loadPlanRequests = async () => {
+    try {
+      const result = await getAllPlanRequests();
+      if (result.success) {
+        setPlanRequests(result.requests);
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке запросов:", error);
     }
   };
 
@@ -114,7 +129,7 @@ export default function AdminWeeklyPlansPage() {
     newDays[dayIndex].tasks.push({
       id: `task_${Date.now()}_${Math.random()}`,
       text: '',
-      completed: false,
+      completed: null,
       comments: []
     });
     setFormData({ ...formData, days: newDays });
@@ -163,10 +178,10 @@ export default function AdminWeeklyPlansPage() {
           ? planData.days.map(day => ({
               tasks: day.tasks && day.tasks.length > 0 
                 ? day.tasks 
-                : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: false, comments: [] }],
+                : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
               dayNotes: day.dayNotes || ''
             }))
-          : Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: false, comments: [] }] }))
+          : Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
       });
       
       setEditingPlan(plan.id);
@@ -270,7 +285,7 @@ export default function AdminWeeklyPlansPage() {
     setFormData({
       weekStartDate: new Date().toISOString().split('T')[0],
       goals: [''],
-      days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: false, comments: [] }] }))
+      days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
     });
     setSelectedUser(null);
     setSearchEmail('');
@@ -280,6 +295,20 @@ export default function AdminWeeklyPlansPage() {
     setShowCreateForm(false);
     setEditingPlan(null);
     resetForm();
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm(language === 'ru' ? 'Вы уверены, что хотите удалить этот план? Это действие нельзя отменить.' : 'Are you sure you want to delete this plan? This action cannot be undone.')) {
+      return;
+    }
+    
+    const result = await deleteWeeklyPlan(planId);
+    if (result.success) {
+      alert(language === 'ru' ? 'План успешно удален' : 'Plan deleted successfully');
+      await loadPlans(user.uid);
+    } else {
+      alert(language === 'ru' ? 'Ошибка при удалении плана: ' + result.error : 'Error deleting plan: ' + result.error);
+    }
   };
 
   const formatDate = (timestamp) => {
@@ -314,19 +343,59 @@ export default function AdminWeeklyPlansPage() {
         <div className="max-w-[1400px] mx-auto p-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">{TEXTS[language].adminWeeklyPlans.title}</h2>
+            {activeTab === 'plans' && (
+              <button
+                onClick={() => {
+                  if (showCreateForm) {
+                    handleCancelForm();
+                  } else {
+                    setEditingPlan(null);
+                    resetForm();
+                    setShowCreateForm(true);
+                  }
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-lg font-medium hover:from-yellow-400 hover:to-orange-400 transition-all"
+              >
+                {showCreateForm ? TEXTS[language].common.cancel : TEXTS[language].adminWeeklyPlans.createPlan}
+              </button>
+            )}
+          </div>
+
+          {/* Табы */}
+          <div className="flex gap-2 mb-6 border-b border-white/10">
             <button
               onClick={() => {
-                if (showCreateForm) {
-                  handleCancelForm();
-                } else {
-                  setEditingPlan(null);
-                  resetForm();
-                  setShowCreateForm(true);
-                }
+                setActiveTab('plans');
+                setShowCreateForm(false);
+                setViewingRequest(null);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-lg font-medium hover:from-yellow-400 hover:to-orange-400 transition-all"
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === 'plans'
+                  ? 'text-yellow-500 border-b-2 border-yellow-500'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              {showCreateForm ? TEXTS[language].common.cancel : TEXTS[language].adminWeeklyPlans.createPlan}
+              {language === 'ru' ? 'Планы' : 'Plans'}
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('requests');
+                setShowCreateForm(false);
+                setViewingPlan(null);
+                loadPlanRequests();
+              }}
+              className={`px-4 py-2 font-medium transition-colors relative ${
+                activeTab === 'requests'
+                  ? 'text-yellow-500 border-b-2 border-yellow-500'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {language === 'ru' ? 'Запросы' : 'Requests'}
+              {planRequests.filter(r => r.status === 'new').length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+                  {planRequests.filter(r => r.status === 'new').length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -529,8 +598,9 @@ export default function AdminWeeklyPlansPage() {
           )}
 
           {/* Список планов */}
-          <div>
-            <h3 className="text-xl font-bold text-white mb-4">{TEXTS[language].adminWeeklyPlans.allPlans}</h3>
+          {activeTab === 'plans' && (
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">{TEXTS[language].adminWeeklyPlans.allPlans}</h3>
             {plans.length === 0 ? (
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 text-center">
                 <p className="text-gray-400">{TEXTS[language].adminWeeklyPlans.noPlans}</p>
@@ -576,12 +646,127 @@ export default function AdminWeeklyPlansPage() {
                       >
                         {TEXTS[language].adminWeeklyPlans.editPlan}
                       </button>
+                      <button
+                        onClick={() => handleDeletePlan(plan.id)}
+                        className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                      >
+                        {language === 'ru' ? 'Удалить' : 'Delete'}
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+          )}
+
+          {/* Список запросов */}
+          {activeTab === 'requests' && (
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">
+                {language === 'ru' ? 'Запросы планов' : 'Plan Requests'}
+              </h3>
+              {planRequests.length === 0 ? (
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 text-center">
+                  <p className="text-gray-400">{language === 'ru' ? 'Запросы не найдены' : 'No requests found'}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {planRequests.map((request) => {
+                    const requestUser = users.find(u => u.id === request.userId);
+                    return (
+                      <div key={request.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            request.status === 'new' ? 'bg-yellow-500/20 text-yellow-400' :
+                            request.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-green-500/20 text-green-400'
+                          }`}>
+                            {request.status === 'new' ? TEXTS[language].planRequest.statusNew :
+                             request.status === 'in_progress' ? TEXTS[language].planRequest.statusInProgress :
+                             TEXTS[language].planRequest.statusPlanCreated}
+                          </span>
+                          <span className="text-gray-400 text-xs">
+                            {formatDate(request.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-white font-medium mb-2">
+                          {requestUser?.displayName || requestUser?.email || request.userId}
+                        </p>
+                        {request.goals && (
+                          <p className="text-gray-400 text-sm mb-2 line-clamp-2">{request.goals}</p>
+                        )}
+                        {request.categories && request.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {request.categories.map((cat) => (
+                              <span key={cat} className="px-2 py-0.5 bg-white/10 text-white text-xs rounded">
+                                {TEXTS[language].planRequest[cat] || cat}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={async () => {
+                              const result = await getPlanRequest(request.id);
+                              if (result.success) {
+                                setViewingRequest(result.request);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                          >
+                            {language === 'ru' ? 'Просмотр' : 'View'}
+                          </button>
+                          {request.status === 'new' && (
+                            <button
+                              onClick={async () => {
+                                const result = await updatePlanRequestStatus(request.id, 'in_progress');
+                                if (result.success) {
+                                  await loadPlanRequests();
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors text-sm"
+                            >
+                              {language === 'ru' ? 'В работу' : 'Start'}
+                            </button>
+                          )}
+                          {request.status === 'in_progress' && (
+                            <button
+                              onClick={async () => {
+                                // Открываем форму создания плана с предзаполненными данными
+                                const result = await getPlanRequest(request.id);
+                                if (result.success) {
+                                  const req = result.request;
+                                  const reqUser = users.find(u => u.id === req.userId);
+                                  if (reqUser) {
+                                    setSelectedUser({ id: reqUser.id, email: reqUser.email, displayName: reqUser.displayName });
+                                    setSearchEmail(reqUser.email);
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      goals: req.goals ? [req.goals] : ['']
+                                    }));
+                                    setViewingRequest(null);
+                                    setActiveTab('plans');
+                                    setShowCreateForm(true);
+                                    // Обновляем статус запроса
+                                    await updatePlanRequestStatus(request.id, 'plan_created');
+                                    await loadPlanRequests();
+                                  }
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
+                            >
+                              {language === 'ru' ? 'Создать план' : 'Create Plan'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -591,6 +776,16 @@ export default function AdminWeeklyPlansPage() {
           plan={viewingPlan} 
           users={users}
           onClose={() => setViewingPlan(null)}
+          language={language}
+        />
+      )}
+
+      {/* Модальное окно просмотра запроса */}
+      {viewingRequest && (
+        <RequestViewModal
+          request={viewingRequest}
+          users={users}
+          onClose={() => setViewingRequest(null)}
           language={language}
         />
       )}
@@ -775,6 +970,146 @@ function PlanViewModal({ plan, users, onClose, language }) {
         </div>
       </motion.div>
     </motion.div>
+    </AnimatePresence>,
+    document.body
+  );
+}
+
+// Компонент модального окна для просмотра запроса
+function RequestViewModal({ request, users, onClose, language }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const requestUser = users.find(u => u.id === request.userId);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6">
+            {/* Заголовок */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {language === 'ru' ? 'Просмотр запроса' : 'Request View'}
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  {requestUser?.displayName || requestUser?.email || request.userId}
+                </p>
+                <p className="text-gray-400 text-xs mt-1">
+                  {formatDate(request.createdAt)}
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Статус */}
+            <div className="mb-6">
+              <span className={`px-3 py-1 rounded-full text-sm ${
+                request.status === 'new' ? 'bg-yellow-500/20 text-yellow-400' :
+                request.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
+                'bg-green-500/20 text-green-400'
+              }`}>
+                {request.status === 'new' ? (language === 'ru' ? 'Новый' : 'New') :
+                 request.status === 'in_progress' ? (language === 'ru' ? 'В работе' : 'In Progress') :
+                 (language === 'ru' ? 'План создан' : 'Plan Created')}
+              </span>
+            </div>
+
+            {/* Категории */}
+            {request.categories && request.categories.length > 0 && (
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">
+                  {language === 'ru' ? 'Категории' : 'Categories'}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {request.categories.map((cat) => (
+                    <span key={cat} className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg">
+                      {TEXTS[language].planRequest[cat] || cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Цели */}
+            {request.goals && (
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">
+                  {language === 'ru' ? 'Цели' : 'Goals'}
+                </h3>
+                <p className="text-gray-300 whitespace-pre-wrap">{request.goals}</p>
+              </div>
+            )}
+
+            {/* Уровень активности */}
+            {request.currentLevel && (
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">
+                  {language === 'ru' ? 'Текущий уровень активности' : 'Current Activity Level'}
+                </h3>
+                <p className="text-gray-300">
+                  {request.currentLevel === 'low' ? (language === 'ru' ? 'Низкий' : 'Low') :
+                   request.currentLevel === 'medium' ? (language === 'ru' ? 'Средний' : 'Medium') :
+                   (language === 'ru' ? 'Высокий' : 'High')}
+                </p>
+              </div>
+            )}
+
+            {/* Ограничения */}
+            {request.limitations && (
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">
+                  {language === 'ru' ? 'Ограничения и особые примечания' : 'Limitations & Special Notes'}
+                </h3>
+                <p className="text-gray-300 whitespace-pre-wrap">{request.limitations}</p>
+              </div>
+            )}
+
+            {/* Дополнительная информация */}
+            {request.additionalInfo && (
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">
+                  {language === 'ru' ? 'Дополнительная информация' : 'Additional Information'}
+                </h3>
+                <p className="text-gray-300 whitespace-pre-wrap">{request.additionalInfo}</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
     </AnimatePresence>,
     document.body
   );

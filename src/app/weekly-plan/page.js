@@ -35,12 +35,37 @@ export default function WeeklyPlanPage() {
     return () => unsubscribe();
   }, [router]);
 
+  // Нормализуем план: преобразуем completed: false в null для задач, которые еще не были изменены
+  const normalizePlan = (plan) => {
+    if (!plan || !plan.days) return plan;
+    
+    const normalizedDays = plan.days.map(day => ({
+      ...day,
+      tasks: day.tasks?.map(task => {
+        // Если completed === false и нет меток времени (задача не была изменена пользователем),
+        // преобразуем в null
+        if (task.completed === false && !task.completedAt && !task.failedAt) {
+          return {
+            ...task,
+            completed: null
+          };
+        }
+        return task;
+      }) || []
+    }));
+    
+    return {
+      ...plan,
+      days: normalizedDays
+    };
+  };
+
   const loadPlan = async (userId) => {
     try {
       setIsLoading(true);
       const result = await getActiveWeeklyPlan(userId);
-      if (result.success) {
-        setPlan(result.plan);
+      if (result.success && result.plan) {
+        setPlan(normalizePlan(result.plan));
       }
     } catch (error) {
       console.error("Ошибка при загрузке плана:", error);
@@ -60,7 +85,8 @@ export default function WeeklyPlanPage() {
     return onFirestoreSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const planDoc = snapshot.docs[0];
-        setPlan({ id: planDoc.id, ...planDoc.data() });
+        const planData = { id: planDoc.id, ...planDoc.data() };
+        setPlan(normalizePlan(planData));
       } else {
         setPlan(null);
       }

@@ -49,7 +49,7 @@ export default function Hero() {
   }, []);
 
   // Адаптивный выбор видео в зависимости от устройства и соединения
-  const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
+  const baseUrl = `${process.env.NEXT_PUBLIC_ASSETS_BASE_URL || 'https://pub-24028780ba564e299106a5335d66f54c.r2.dev'}/videos/`;
   const videoSrc = `${baseUrl}webHero.mp4`;
 
   // Отладочная информация

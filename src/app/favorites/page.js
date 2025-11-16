@@ -41,7 +41,7 @@ export default function FavoritesPage() {
 
   // Определяем URL видео для страницы favorites
   const getVideoSrc = () => {
-    const baseUrl = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/";
+    const baseUrl = `${process.env.NEXT_PUBLIC_ASSETS_BASE_URL || 'https://pub-24028780ba564e299106a5335d66f54c.r2.dev'}/videos/`;
     
     if (!mounted) return `${baseUrl}webHero.mp4`; // Fallback для SSR
     
