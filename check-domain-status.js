@@ -112,3 +112,6 @@ checkBothDomains().catch(console.error);
 
 
 
+
+
+

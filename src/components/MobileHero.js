@@ -36,9 +36,9 @@ export default function MobileHero() {
   }, [videoLoaded]);
 
   // Выбираем видео в зависимости от авторизации
-  const videoSrc = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4";
-
-  const posterSrc = "https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg";
+  const ASSETS_BASE_URL = process.env.NEXT_PUBLIC_ASSETS_BASE_URL || "https://pub-24028780ba564e299106a5335d66f54c.r2.dev";
+  const videoSrc = `${ASSETS_BASE_URL}/videos/webHero.mp4`;
+  const posterSrc = `${ASSETS_BASE_URL}/posters/webHero.jpg`;
 
   // Показываем загрузку до монтирования
   if (!mounted) {

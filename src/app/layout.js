@@ -21,8 +21,8 @@ export const metadata = {
   // Предзагрузка критичных ресурсов
   other: {
     'preload': [
-      'https://pub-24028780ba564e299106a5335d66f54c.r2.dev/videos/webHero.mp4',
-      'https://pub-24028780ba564e299106a5335d66f54c.r2.dev/posters/webHero.jpg'
+      `${process.env.NEXT_PUBLIC_ASSETS_BASE_URL || 'https://pub-24028780ba564e299106a5335d66f54c.r2.dev'}/videos/webHero.mp4`,
+      `${process.env.NEXT_PUBLIC_ASSETS_BASE_URL || 'https://pub-24028780ba564e299106a5335d66f54c.r2.dev'}/posters/webHero.jpg`
     ].join(', ')
   }
 };

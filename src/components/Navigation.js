@@ -82,6 +82,15 @@ export default function Navigation({ currentPage = "home", user = null, disableS
     setIsMenuOpen(false);
   };
 
+  const handleRequestPlanClick = () => {
+    if (user) {
+      router.push('/request-plan');
+    } else {
+      router.push('/auth');
+    }
+    setIsMenuOpen(false);
+  };
+
   const handleHomeClick = () => {
     router.push('/');
     setIsMenuOpen(false);
@@ -227,15 +236,26 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
                 {/* Недельный план */}
                 {user && (
-                  <li>
-                    <button
-                      onClick={handleWeeklyPlanClick}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
-                    >
-                      <span>{TEXTS[language].navigation.weeklyPlan}</span>
-                      <span className="text-yellow-500 text-xs">📅</span>
-                    </button>
-                  </li>
+                  <>
+                    <li>
+                      <button
+                        onClick={handleRequestPlanClick}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                      >
+                        <span>{language === 'ru' ? 'Запрос плана' : 'Request Plan'}</span>
+                        <span className="text-yellow-500 text-xs">📝</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={handleWeeklyPlanClick}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                      >
+                        <span>{TEXTS[language].navigation.weeklyPlan}</span>
+                        <span className="text-yellow-500 text-xs">📅</span>
+                      </button>
+                    </li>
+                  </>
                 )}
 
                 {/* Админ-панель */}
