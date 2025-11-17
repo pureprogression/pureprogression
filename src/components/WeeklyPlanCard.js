@@ -229,16 +229,9 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
         )}
       </div>
 
-      {/* Прогресс */}
-      <AnimatePresence>
-        {isDayExpanded && totalTasks > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mb-4"
-          >
+      {/* Прогресс - всегда виден */}
+      {totalTasks > 0 && (
+        <div className="mb-4">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>
               <span className="text-green-400">{completedTasks}</span> / 
@@ -255,19 +248,32 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
               className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full"
             />
           </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Цель дня */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isDayExpanded && day.dayGoal && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
+            initial={{ opacity: 0, scaleY: 0 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={{ 
+              opacity: 0, 
+              scaleY: 0,
+              transition: { duration: 0.2, ease: [0.4, 0, 1, 1] }
+            }}
+            transition={{ 
+              duration: 0.3,
+              ease: [0, 0, 0.2, 1],
+              opacity: { duration: 0.2 },
+              scaleY: { duration: 0.3, ease: [0, 0, 0.2, 1] }
+            }}
+            style={{ 
+              transformOrigin: 'top',
+              overflow: 'hidden',
+              marginBottom: 16
+            }}
+            className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
           >
             <p className="text-yellow-400 text-sm font-medium">
               {language === 'ru' ? 'Цель:' : 'Goal:'} {day.dayGoal}
@@ -277,13 +283,19 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
       </AnimatePresence>
 
       {/* Задачи */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isDayExpanded && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ 
+              duration: 0.4,
+              ease: [0.4, 0, 0.2, 1],
+              opacity: { duration: 0.3 },
+              height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+            }}
+            style={{ overflow: 'hidden' }}
             className="space-y-4"
           >
         {/* Утро */}
