@@ -68,6 +68,11 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
         <div>
           <h3 className="text-white font-semibold text-lg">
             {TEXTS[language].weeklyPlan.day} {day.dayNumber}
+            {day.dayTitle && (
+              <span className="ml-2 text-yellow-400 font-normal text-base">
+                • {day.dayTitle}
+              </span>
+            )}
           </h3>
           <p className="text-gray-400 text-sm">{formatDate(day.date)}</p>
         </div>

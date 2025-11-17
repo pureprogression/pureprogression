@@ -98,6 +98,7 @@ export const createWeeklyPlan = async (planData) => {
       days.push({
         dayNumber: i + 1,
         date: Timestamp.fromDate(dayDate),
+        dayTitle: planData.days[i]?.dayTitle || '',
         tasks: planData.days[i]?.tasks || [],
         dayNotes: planData.days[i]?.dayNotes || ''
       });
@@ -438,6 +439,17 @@ export const getPlanRequest = async (requestId) => {
     return { success: true, request: { id: requestDoc.id, ...requestDoc.data() } };
   } catch (error) {
     console.error('Ошибка при получении запроса:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deletePlanRequest = async (requestId) => {
+  try {
+    const requestRef = doc(db, 'planRequests', requestId);
+    await deleteDoc(requestRef);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка при удалении запроса плана:', error);
     return { success: false, error: error.message };
   }
 };

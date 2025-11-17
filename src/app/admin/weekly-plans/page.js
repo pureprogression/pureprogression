@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { auth, isAdmin, createWeeklyPlan, getAllWeeklyPlans, getUserIdByEmail, getAllUsers, updateWeeklyPlan, db, getAllPlanRequests, getPlanRequest, updatePlanRequestStatus, deleteWeeklyPlan } from "@/lib/firebase";
+import { auth, isAdmin, createWeeklyPlan, getAllWeeklyPlans, getUserIdByEmail, getAllUsers, updateWeeklyPlan, db, getAllPlanRequests, getPlanRequest, updatePlanRequestStatus, deleteWeeklyPlan, deletePlanRequest } from "@/lib/firebase";
 import { getDoc, doc, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Navigation from "@/components/Navigation";
@@ -32,7 +32,10 @@ export default function AdminWeeklyPlansPage() {
   const [formData, setFormData] = useState({
     weekStartDate: new Date().toISOString().split('T')[0],
     goals: [''],
-    days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
+    days: Array(7).fill(null).map(() => ({ 
+      dayTitle: '',
+      tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+    }))
   });
 
   useEffect(() => {
@@ -147,6 +150,12 @@ export default function AdminWeeklyPlansPage() {
     setFormData({ ...formData, days: newDays });
   };
 
+  const handleDayTitleChange = (dayIndex, value) => {
+    const newDays = [...formData.days];
+    newDays[dayIndex].dayTitle = value;
+    setFormData({ ...formData, days: newDays });
+  };
+
   const handleEditPlan = async (plan) => {
     try {
       // Загружаем план для редактирования
@@ -176,12 +185,16 @@ export default function AdminWeeklyPlansPage() {
         goals: planData.goals && planData.goals.length > 0 ? planData.goals : [''],
         days: planData.days && planData.days.length === 7 
           ? planData.days.map(day => ({
+              dayTitle: day.dayTitle || '',
               tasks: day.tasks && day.tasks.length > 0 
                 ? day.tasks 
                 : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
               dayNotes: day.dayNotes || ''
             }))
-          : Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
+          : Array(7).fill(null).map(() => ({ 
+              dayTitle: '',
+              tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+            }))
       });
       
       setEditingPlan(plan.id);
@@ -212,6 +225,7 @@ export default function AdminWeeklyPlansPage() {
       // Фильтруем пустые задачи и цели (можно создать план даже без них)
       const filteredGoals = formData.goals.filter(g => g.trim());
       const filteredDays = formData.days.map(day => ({
+        dayTitle: day.dayTitle || '',
         tasks: day.tasks.filter(t => t.text.trim()),
         dayNotes: day.dayNotes || ''
       }));
@@ -231,6 +245,7 @@ export default function AdminWeeklyPlansPage() {
           days.push({
             dayNumber: i + 1,
             date: Timestamp.fromDate(dayDate),
+            dayTitle: filteredDays[i]?.dayTitle || '',
             tasks: filteredDays[i]?.tasks || [],
             dayNotes: filteredDays[i]?.dayNotes || ''
           });
@@ -285,7 +300,10 @@ export default function AdminWeeklyPlansPage() {
     setFormData({
       weekStartDate: new Date().toISOString().split('T')[0],
       goals: [''],
-      days: Array(7).fill(null).map(() => ({ tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] }))
+      days: Array(7).fill(null).map(() => ({ 
+        dayTitle: '',
+        tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+      }))
     });
     setSelectedUser(null);
     setSearchEmail('');
@@ -308,6 +326,18 @@ export default function AdminWeeklyPlansPage() {
       await loadPlans(user.uid);
     } else {
       alert(language === 'ru' ? 'Ошибка при удалении плана: ' + result.error : 'Error deleting plan: ' + result.error);
+    }
+  };
+
+  const handleDeletePlanRequest = async (requestId) => {
+    if (!window.confirm(language === 'ru' ? 'Удалить этот запрос? Действие необратимо.' : 'Delete this request? This cannot be undone.')) {
+      return;
+    }
+    const result = await deletePlanRequest(requestId);
+    if (result.success) {
+      await loadPlanRequests();
+    } else {
+      alert(language === 'ru' ? `Ошибка при удалении запроса: ${result.error}` : `Error deleting request: ${result.error}`);
     }
   };
 
@@ -542,6 +572,19 @@ export default function AdminWeeklyPlansPage() {
                         <h4 className="text-white font-medium mb-3">
                           {TEXTS[language].adminWeeklyPlans.day} {dayIndex + 1} - {dayNames[dayIndex]}
                         </h4>
+                        {/* Название дня */}
+                        <div className="mb-3">
+                          <label className="block text-white text-xs font-medium mb-1">
+                            {language === 'ru' ? 'Название дня (например: ПЕРЕЗАГРУЗКА)' : 'Day Title (e.g., RESET)'}
+                          </label>
+                          <input
+                            type="text"
+                            value={day.dayTitle || ''}
+                            onChange={(e) => handleDayTitleChange(dayIndex, e.target.value)}
+                            placeholder={language === 'ru' ? 'ДЕНЬ 1. ПЕРЕЗАГРУЗКА' : 'DAY 1. RESET'}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
+                          />
+                        </div>
                         <div className="space-y-2">
                           {day.tasks.map((task, taskIndex) => (
                             <div key={task.id} className="flex gap-2">
@@ -759,6 +802,12 @@ export default function AdminWeeklyPlansPage() {
                               {language === 'ru' ? 'Создать план' : 'Create Plan'}
                             </button>
                           )}
+                          <button
+                            onClick={() => handleDeletePlanRequest(request.id)}
+                            className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                          >
+                            {language === 'ru' ? 'Удалить' : 'Delete'}
+                          </button>
                         </div>
                       </div>
                     );
@@ -888,6 +937,11 @@ function PlanViewModal({ plan, users, onClose, language }) {
                     <div>
                       <h4 className="text-white font-semibold">
                         {language === 'ru' ? 'День' : 'Day'} {day.dayNumber} - {dayNames[dayIndex]}
+                        {day.dayTitle && (
+                          <span className="ml-2 text-yellow-400 font-normal text-sm">
+                            • {day.dayTitle}
+                          </span>
+                        )}
                       </h4>
                       <p className="text-gray-400 text-sm">{formatDate(day.date)}</p>
                     </div>
