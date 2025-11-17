@@ -1150,18 +1150,16 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                     }`}>
                                       {task.text}
                                     </p>
-                                    {task.comments && task.comments.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        {task.comments.map((comment, commentIdx) => (
-                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
-                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
-                                            {comment.createdAt && (
-                                              <p className="text-xs text-gray-500">
-                                                {formatDateTime(comment.createdAt)}
-                                              </p>
-                                            )}
-                                          </div>
-                                        ))}
+                                    {task.userComment && (
+                                      <div className="mt-2">
+                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                          <p className="text-xs text-blue-300 mb-1">{task.userComment.text}</p>
+                                          {task.userComment.updatedAt && (
+                                            <p className="text-xs text-gray-500">
+                                              {formatDateTime(task.userComment.updatedAt)}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1210,18 +1208,16 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                     }`}>
                                       {task.text}
                                     </p>
-                                    {task.comments && task.comments.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        {task.comments.map((comment, commentIdx) => (
-                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
-                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
-                                            {comment.createdAt && (
-                                              <p className="text-xs text-gray-500">
-                                                {formatDateTime(comment.createdAt)}
-                                              </p>
-                                            )}
-                                          </div>
-                                        ))}
+                                    {task.userComment && (
+                                      <div className="mt-2">
+                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                          <p className="text-xs text-blue-300 mb-1">{task.userComment.text}</p>
+                                          {task.userComment.updatedAt && (
+                                            <p className="text-xs text-gray-500">
+                                              {formatDateTime(task.userComment.updatedAt)}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1270,18 +1266,16 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                     }`}>
                                       {task.text}
                                     </p>
-                                    {task.comments && task.comments.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        {task.comments.map((comment, commentIdx) => (
-                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
-                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
-                                            {comment.createdAt && (
-                                              <p className="text-xs text-gray-500">
-                                                {formatDateTime(comment.createdAt)}
-                                              </p>
-                                            )}
-                                          </div>
-                                        ))}
+                                    {task.userComment && (
+                                      <div className="mt-2">
+                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                          <p className="text-xs text-blue-300 mb-1">{task.userComment.text}</p>
+                                          {task.userComment.updatedAt && (
+                                            <p className="text-xs text-gray-500">
+                                              {formatDateTime(task.userComment.updatedAt)}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1328,21 +1322,19 @@ function PlanViewModal({ plan, users, onClose, language }) {
                               </p>
                               
                               {/* Комментарии пользователя */}
-                              {task.comments && task.comments.length > 0 && (
+                              {task.userComment && (
                                 <div className="mt-3 space-y-2">
                                   <p className="text-xs text-gray-400 font-medium">
-                                    {language === 'ru' ? 'Комментарии пользователя:' : 'User comments:'}
+                                    {language === 'ru' ? 'Комментарий пользователя:' : 'User comment:'}
                                   </p>
-                                  {task.comments.map((comment, commentIdx) => (
-                                    <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
-                                      <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
-                                      {comment.createdAt && (
-                                        <p className="text-xs text-gray-500">
-                                          {formatDateTime(comment.createdAt)}
-                                        </p>
-                                      )}
-                                    </div>
-                                  ))}
+                                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                    <p className="text-xs text-blue-300 mb-1">{task.userComment.text}</p>
+                                    {task.userComment.updatedAt && (
+                                      <p className="text-xs text-gray-500">
+                                        {formatDateTime(task.userComment.updatedAt)}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>

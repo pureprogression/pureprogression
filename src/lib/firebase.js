@@ -328,13 +328,16 @@ export const addTaskComment = async (planId, dayIndex, taskId, comment, userId) 
       return { success: false, error: 'Task not found' };
     }
     
-    const comments = taskArray[taskIndex].comments || [];
-    comments.push({
-      text: comment,
-      createdAt: new Date(),
-      userId: userId
-    });
-    taskArray[taskIndex] = { ...taskArray[taskIndex], comments };
+    // Сохраняем один комментарий пользователя (обновляем существующий или создаем новый)
+    taskArray[taskIndex] = { 
+      ...taskArray[taskIndex], 
+      userComment: {
+        text: comment,
+        createdAt: taskArray[taskIndex].userComment?.createdAt || new Date(),
+        updatedAt: new Date(),
+        userId: userId
+      }
+    };
     days[dayIndex] = { ...days[dayIndex], [taskArrayKey]: taskArray };
     await updateDoc(planRef, {
       days: days,

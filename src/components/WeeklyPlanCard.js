@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { updateTaskStatus, addTaskComment } from "@/lib/firebase";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -10,6 +10,7 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
   const [expandedTask, setExpandedTask] = useState(null);
   const [commentText, setCommentText] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDayExpanded, setIsDayExpanded] = useState(false); // Все дни закрыты по умолчанию
   const { language } = useLanguage();
 
   const formatDate = (timestamp) => {
@@ -115,29 +116,38 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
               {task.text}
             </p>
             
-            {/* Кнопка добавить комментарий */}
+            {/* Кнопка добавить/редактировать комментарий */}
             {expandedTask !== task.id && (
               <button
-                onClick={() => setExpandedTask(task.id)}
+                onClick={() => {
+                  setExpandedTask(task.id);
+                  // Загружаем существующий комментарий в поле ввода, если он есть
+                  // Поддержка обратной совместимости: если есть старый массив comments, берем последний
+                  const existingComment = task.userComment?.text || 
+                                        (task.comments && task.comments.length > 0 ? task.comments[task.comments.length - 1].text : '');
+                  if (existingComment) {
+                    setCommentText({ ...commentText, [task.id]: existingComment });
+                  }
+                }}
                 className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors whitespace-nowrap"
               >
-                {TEXTS[language].weeklyPlan.addComment}
+                {(task.userComment || (task.comments && task.comments.length > 0)) 
+                  ? (language === 'ru' ? 'Редактировать' : 'Edit') 
+                  : TEXTS[language].weeklyPlan.addComment}
               </button>
             )}
           </div>
           
-          {/* Комментарии */}
-          {task.comments && task.comments.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {task.comments.map((comment, idx) => (
-                <div key={idx} className="text-xs text-gray-400 bg-white/5 rounded p-2">
-                  {comment.text}
-                </div>
-              ))}
+          {/* Комментарий пользователя */}
+          {expandedTask !== task.id && (task.userComment || (task.comments && task.comments.length > 0)) && (
+            <div className="mt-2">
+              <div className="text-xs text-gray-400 bg-white/5 rounded p-2">
+                {task.userComment?.text || (task.comments && task.comments.length > 0 ? task.comments[task.comments.length - 1].text : '')}
+              </div>
             </div>
           )}
 
-          {/* Форма добавления комментария */}
+          {/* Форма добавления/редактирования комментария */}
           {expandedTask === task.id && (
             <div className="mt-2 space-y-2">
               <textarea
@@ -153,7 +163,9 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
                   disabled={isSubmitting || !commentText[task.id]?.trim()}
                   className="px-3 py-1 bg-yellow-500 text-black text-xs rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {TEXTS[language].weeklyPlan.saveComment}
+                  {(task.userComment || (task.comments && task.comments.length > 0)) 
+                    ? (language === 'ru' ? 'Сохранить' : 'Save') 
+                    : TEXTS[language].weeklyPlan.saveComment}
                 </button>
                 <button
                   onClick={() => {
@@ -183,27 +195,50 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
     >
       {/* Заголовок дня */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-white font-semibold text-lg">
-            {TEXTS[language].weeklyPlan.day} {day.dayNumber}
-            {day.dayTitle && (
-              <span className="ml-2 text-yellow-400 font-normal text-base">
-                • {day.dayTitle}
-              </span>
-            )}
-          </h3>
-          <p className="text-gray-400 text-sm">{formatDate(day.date)}</p>
-        </div>
+        <button
+          onClick={() => setIsDayExpanded(!isDayExpanded)}
+          className="flex items-center gap-2 flex-1 text-left cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <div className="flex-1">
+            <h3 className="text-white font-semibold text-lg">
+              {TEXTS[language].weeklyPlan.day} {day.dayNumber}
+              {day.dayTitle && (
+                <span className="ml-2 text-yellow-400 font-normal text-base">
+                  • {day.dayTitle}
+                </span>
+              )}
+            </h3>
+            <p className="text-gray-400 text-sm">{formatDate(day.date)}</p>
+          </div>
+          {/* Иконка раскрытия/сворачивания */}
+          <motion.svg
+            animate={{ rotate: isDayExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-5 h-5 text-white/60"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </motion.svg>
+        </button>
         {isCurrentDay && (
-          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
+          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full ml-2">
             {TEXTS[language].weeklyPlan.active}
           </span>
         )}
       </div>
 
       {/* Прогресс */}
-      {totalTasks > 0 && (
-        <div className="mb-4">
+      <AnimatePresence>
+        {isDayExpanded && totalTasks > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-4"
+          >
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>
               <span className="text-green-400">{completedTasks}</span> / 
@@ -220,20 +255,37 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
               className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full"
             />
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Цель дня */}
-      {day.dayGoal && (
-        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <p className="text-yellow-400 text-sm font-medium">
-            {language === 'ru' ? 'Цель:' : 'Goal:'} {day.dayGoal}
-          </p>
-        </div>
-      )}
+      <AnimatePresence>
+        {isDayExpanded && day.dayGoal && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
+          >
+            <p className="text-yellow-400 text-sm font-medium">
+              {language === 'ru' ? 'Цель:' : 'Goal:'} {day.dayGoal}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Задачи */}
-      <div className="space-y-4">
+      <AnimatePresence>
+        {isDayExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
         {/* Утро */}
         {day.morningTasks && day.morningTasks.length > 0 && (
           <div>
@@ -283,7 +335,9 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
             {TEXTS[language].weeklyPlan.tasks} {TEXTS[language].common.loading.toLowerCase()}
           </p>
         )}
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
