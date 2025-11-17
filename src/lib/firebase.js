@@ -99,7 +99,10 @@ export const createWeeklyPlan = async (planData) => {
         dayNumber: i + 1,
         date: Timestamp.fromDate(dayDate),
         dayTitle: planData.days[i]?.dayTitle || '',
-        tasks: planData.days[i]?.tasks || [],
+        dayGoal: planData.days[i]?.dayGoal || '',
+        morningTasks: planData.days[i]?.morningTasks || [],
+        dayTasks: planData.days[i]?.dayTasks || [],
+        eveningTasks: planData.days[i]?.eveningTasks || [],
         dayNotes: planData.days[i]?.dayNotes || ''
       });
     }
@@ -212,28 +215,60 @@ export const updateTaskStatus = async (planId, dayIndex, taskId, status) => {
     }
     const planData = planDoc.data();
     const days = [...planData.days];
-    const tasks = [...days[dayIndex].tasks];
-    // Приводим к строке для надежного сравнения (на случай если ID сохранен как число)
-    const taskIndex = tasks.findIndex(t => String(t.id) === String(taskId));
+    const day = days[dayIndex];
+    
+    // Поддержка новой структуры (morningTasks/dayTasks/eveningTasks) и старой (tasks)
+    let taskArray = null;
+    let taskArrayKey = null;
+    
+    if (day.morningTasks || day.dayTasks || day.eveningTasks) {
+      // Новая структура - ищем в трех массивах
+      const taskArrays = [
+        { key: 'morningTasks', arr: day.morningTasks || [] },
+        { key: 'dayTasks', arr: day.dayTasks || [] },
+        { key: 'eveningTasks', arr: day.eveningTasks || [] }
+      ];
+      
+      for (const { key, arr } of taskArrays) {
+        const taskIndex = arr.findIndex(t => String(t.id) === String(taskId));
+        if (taskIndex !== -1) {
+          taskArray = [...arr];
+          taskArrayKey = key;
+          break;
+        }
+      }
+    } else {
+      // Старая структура
+      taskArray = [...(day.tasks || [])];
+      taskArrayKey = 'tasks';
+    }
+    
+    if (!taskArray) {
+      console.error('Task not found:', { taskId });
+      return { success: false, error: 'Task not found' };
+    }
+    
+    const taskIndex = taskArray.findIndex(t => String(t.id) === String(taskId));
     if (taskIndex === -1) {
-      console.error('Task not found:', { taskId, availableIds: tasks.map(t => t.id) });
+      console.error('Task not found:', { taskId });
       return { success: false, error: 'Task not found' };
     }
     
     // Если нажимаем на уже активный статус, отжимаем его (устанавливаем null)
-    const currentStatus = tasks[taskIndex].completed;
+    const currentStatus = taskArray[taskIndex].completed;
     let newStatus = status;
     if (currentStatus === status) {
       newStatus = null; // Отжимаем кнопку
     }
     
-    tasks[taskIndex] = {
-      ...tasks[taskIndex],
+    taskArray[taskIndex] = {
+      ...taskArray[taskIndex],
       completed: newStatus,
       completedAt: newStatus === true ? new Date() : null,
       failedAt: newStatus === false ? new Date() : null
     };
-    days[dayIndex] = { ...days[dayIndex], tasks };
+    
+    days[dayIndex] = { ...days[dayIndex], [taskArrayKey]: taskArray };
     await updateDoc(planRef, {
       days: days,
       updatedAt: serverTimestamp()
@@ -254,21 +289,53 @@ export const addTaskComment = async (planId, dayIndex, taskId, comment, userId) 
     }
     const planData = planDoc.data();
     const days = [...planData.days];
-    const tasks = [...days[dayIndex].tasks];
-    // Приводим к строке для надежного сравнения (на случай если ID сохранен как число)
-    const taskIndex = tasks.findIndex(t => String(t.id) === String(taskId));
-    if (taskIndex === -1) {
-      console.error('Task not found for comment:', { taskId, availableIds: tasks.map(t => t.id) });
+    const day = days[dayIndex];
+    
+    // Поддержка новой структуры (morningTasks/dayTasks/eveningTasks) и старой (tasks)
+    let taskArray = null;
+    let taskArrayKey = null;
+    
+    if (day.morningTasks || day.dayTasks || day.eveningTasks) {
+      // Новая структура - ищем в трех массивах
+      const taskArrays = [
+        { key: 'morningTasks', arr: day.morningTasks || [] },
+        { key: 'dayTasks', arr: day.dayTasks || [] },
+        { key: 'eveningTasks', arr: day.eveningTasks || [] }
+      ];
+      
+      for (const { key, arr } of taskArrays) {
+        const taskIndex = arr.findIndex(t => String(t.id) === String(taskId));
+        if (taskIndex !== -1) {
+          taskArray = [...arr];
+          taskArrayKey = key;
+          break;
+        }
+      }
+    } else {
+      // Старая структура
+      taskArray = [...(day.tasks || [])];
+      taskArrayKey = 'tasks';
+    }
+    
+    if (!taskArray) {
+      console.error('Task not found for comment:', { taskId });
       return { success: false, error: 'Task not found' };
     }
-    const comments = tasks[taskIndex].comments || [];
+    
+    const taskIndex = taskArray.findIndex(t => String(t.id) === String(taskId));
+    if (taskIndex === -1) {
+      console.error('Task not found for comment:', { taskId });
+      return { success: false, error: 'Task not found' };
+    }
+    
+    const comments = taskArray[taskIndex].comments || [];
     comments.push({
       text: comment,
       createdAt: new Date(),
       userId: userId
     });
-    tasks[taskIndex] = { ...tasks[taskIndex], comments };
-    days[dayIndex] = { ...days[dayIndex], tasks };
+    taskArray[taskIndex] = { ...taskArray[taskIndex], comments };
+    days[dayIndex] = { ...days[dayIndex], [taskArrayKey]: taskArray };
     await updateDoc(planRef, {
       days: days,
       updatedAt: serverTimestamp()

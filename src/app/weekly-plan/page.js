@@ -39,9 +39,9 @@ export default function WeeklyPlanPage() {
   const normalizePlan = (plan) => {
     if (!plan || !plan.days) return plan;
     
-    const normalizedDays = plan.days.map(day => ({
-      ...day,
-      tasks: day.tasks?.map(task => {
+    const normalizeTasks = (tasks) => {
+      if (!tasks) return [];
+      return tasks.map(task => {
         // Если completed === false и нет меток времени (задача не была изменена пользователем),
         // преобразуем в null
         if (task.completed === false && !task.completedAt && !task.failedAt) {
@@ -51,8 +51,24 @@ export default function WeeklyPlanPage() {
           };
         }
         return task;
-      }) || []
-    }));
+      });
+    };
+    
+    const normalizedDays = plan.days.map(day => {
+      const normalizedDay = { ...day };
+      
+      // Нормализуем новую структуру (morningTasks/dayTasks/eveningTasks)
+      if (day.morningTasks || day.dayTasks || day.eveningTasks) {
+        normalizedDay.morningTasks = normalizeTasks(day.morningTasks);
+        normalizedDay.dayTasks = normalizeTasks(day.dayTasks);
+        normalizedDay.eveningTasks = normalizeTasks(day.eveningTasks);
+      } else {
+        // Нормализуем старую структуру (tasks)
+        normalizedDay.tasks = normalizeTasks(day.tasks);
+      }
+      
+      return normalizedDay;
+    });
     
     return {
       ...plan,

@@ -34,7 +34,10 @@ export default function AdminWeeklyPlansPage() {
     goals: [''],
     days: Array(7).fill(null).map(() => ({ 
       dayTitle: '',
-      tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+      dayGoal: '',
+      morningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+      dayTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+      eveningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }]
     }))
   });
 
@@ -127,9 +130,10 @@ export default function AdminWeeklyPlansPage() {
     setFormData({ ...formData, goals: newGoals });
   };
 
-  const handleAddTask = (dayIndex) => {
+  const handleAddTask = (dayIndex, taskType) => {
     const newDays = [...formData.days];
-    newDays[dayIndex].tasks.push({
+    const taskKey = `${taskType}Tasks`;
+    newDays[dayIndex][taskKey].push({
       id: `task_${Date.now()}_${Math.random()}`,
       text: '',
       completed: null,
@@ -138,21 +142,29 @@ export default function AdminWeeklyPlansPage() {
     setFormData({ ...formData, days: newDays });
   };
 
-  const handleTaskChange = (dayIndex, taskIndex, value) => {
+  const handleTaskChange = (dayIndex, taskIndex, value, taskType) => {
     const newDays = [...formData.days];
-    newDays[dayIndex].tasks[taskIndex].text = value;
+    const taskKey = `${taskType}Tasks`;
+    newDays[dayIndex][taskKey][taskIndex].text = value;
     setFormData({ ...formData, days: newDays });
   };
 
-  const handleRemoveTask = (dayIndex, taskIndex) => {
+  const handleRemoveTask = (dayIndex, taskIndex, taskType) => {
     const newDays = [...formData.days];
-    newDays[dayIndex].tasks = newDays[dayIndex].tasks.filter((_, i) => i !== taskIndex);
+    const taskKey = `${taskType}Tasks`;
+    newDays[dayIndex][taskKey] = newDays[dayIndex][taskKey].filter((_, i) => i !== taskIndex);
     setFormData({ ...formData, days: newDays });
   };
 
   const handleDayTitleChange = (dayIndex, value) => {
     const newDays = [...formData.days];
     newDays[dayIndex].dayTitle = value;
+    setFormData({ ...formData, days: newDays });
+  };
+
+  const handleDayGoalChange = (dayIndex, value) => {
+    const newDays = [...formData.days];
+    newDays[dayIndex].dayGoal = value;
     setFormData({ ...formData, days: newDays });
   };
 
@@ -184,16 +196,43 @@ export default function AdminWeeklyPlansPage() {
         weekStartDate: weekStartDate,
         goals: planData.goals && planData.goals.length > 0 ? planData.goals : [''],
         days: planData.days && planData.days.length === 7 
-          ? planData.days.map(day => ({
-              dayTitle: day.dayTitle || '',
-              tasks: day.tasks && day.tasks.length > 0 
-                ? day.tasks 
-                : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+          ? planData.days.map(day => {
+              // Поддержка старой структуры (tasks) и новой (morningTasks/dayTasks/eveningTasks)
+              const hasNewStructure = day.morningTasks || day.dayTasks || day.eveningTasks;
+              if (hasNewStructure) {
+                return {
+                  dayTitle: day.dayTitle || '',
+                  dayGoal: day.dayGoal || '',
+                  morningTasks: day.morningTasks && day.morningTasks.length > 0 
+                    ? day.morningTasks 
+                    : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+                  dayTasks: day.dayTasks && day.dayTasks.length > 0 
+                    ? day.dayTasks 
+                    : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+                  eveningTasks: day.eveningTasks && day.eveningTasks.length > 0 
+                    ? day.eveningTasks 
+                    : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
               dayNotes: day.dayNotes || ''
-            }))
+                };
+              } else {
+                // Конвертируем старую структуру в новую
+                const oldTasks = day.tasks && day.tasks.length > 0 ? day.tasks : [];
+                return {
+                  dayTitle: day.dayTitle || '',
+                  dayGoal: day.dayGoal || '',
+                  morningTasks: oldTasks.length > 0 ? [oldTasks[0]] : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+                  dayTasks: oldTasks.length > 1 ? oldTasks.slice(1, Math.ceil(oldTasks.length / 2) + 1) : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+                  eveningTasks: oldTasks.length > 2 ? oldTasks.slice(Math.ceil(oldTasks.length / 2) + 1) : [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+                  dayNotes: day.dayNotes || ''
+                };
+              }
+            })
           : Array(7).fill(null).map(() => ({ 
               dayTitle: '',
-              tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+              dayGoal: '',
+              morningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+              dayTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+              eveningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }]
             }))
       });
       
@@ -226,7 +265,10 @@ export default function AdminWeeklyPlansPage() {
       const filteredGoals = formData.goals.filter(g => g.trim());
       const filteredDays = formData.days.map(day => ({
         dayTitle: day.dayTitle || '',
-        tasks: day.tasks.filter(t => t.text.trim()),
+        dayGoal: day.dayGoal || '',
+        morningTasks: (day.morningTasks || []).filter(t => t.text.trim()),
+        dayTasks: (day.dayTasks || []).filter(t => t.text.trim()),
+        eveningTasks: (day.eveningTasks || []).filter(t => t.text.trim()),
         dayNotes: day.dayNotes || ''
       }));
 
@@ -246,7 +288,10 @@ export default function AdminWeeklyPlansPage() {
             dayNumber: i + 1,
             date: Timestamp.fromDate(dayDate),
             dayTitle: filteredDays[i]?.dayTitle || '',
-            tasks: filteredDays[i]?.tasks || [],
+            dayGoal: filteredDays[i]?.dayGoal || '',
+            morningTasks: filteredDays[i]?.morningTasks || [],
+            dayTasks: filteredDays[i]?.dayTasks || [],
+            eveningTasks: filteredDays[i]?.eveningTasks || [],
             dayNotes: filteredDays[i]?.dayNotes || ''
           });
         }
@@ -302,7 +347,10 @@ export default function AdminWeeklyPlansPage() {
       goals: [''],
       days: Array(7).fill(null).map(() => ({ 
         dayTitle: '',
-        tasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }] 
+        dayGoal: '',
+        morningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+        dayTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }],
+        eveningTasks: [{ id: `task_${Date.now()}_${Math.random()}`, text: '', completed: null, comments: [] }]
       }))
     });
     setSelectedUser(null);
@@ -585,20 +633,26 @@ export default function AdminWeeklyPlansPage() {
                             className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
                           />
                         </div>
+
+                        {/* Утро */}
+                        <div className="mb-4">
+                          <label className="block text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'Утро:' : 'Morning:'}
+                          </label>
                         <div className="space-y-2">
-                          {day.tasks.map((task, taskIndex) => (
+                            {(day.morningTasks || []).map((task, taskIndex) => (
                             <div key={task.id} className="flex gap-2">
                               <input
                                 type="text"
                                 value={task.text}
-                                onChange={(e) => handleTaskChange(dayIndex, taskIndex, e.target.value)}
-                                placeholder={TEXTS[language].adminWeeklyPlans.taskText}
+                                  onChange={(e) => handleTaskChange(dayIndex, taskIndex, e.target.value, 'morning')}
+                                  placeholder={language === 'ru' ? 'Wake up at 07:30' : 'Wake up at 07:30'}
                                 className="flex-1 bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
                               />
-                              {day.tasks.length > 1 && (
+                                {(day.morningTasks || []).length > 1 && (
                                 <button
                                   type="button"
-                                  onClick={() => handleRemoveTask(dayIndex, taskIndex)}
+                                    onClick={() => handleRemoveTask(dayIndex, taskIndex, 'morning')}
                                   className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
                                 >
                                   {TEXTS[language].common.delete}
@@ -608,11 +662,98 @@ export default function AdminWeeklyPlansPage() {
                           ))}
                           <button
                             type="button"
-                            onClick={() => handleAddTask(dayIndex)}
+                              onClick={() => handleAddTask(dayIndex, 'morning')}
                             className="w-full px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm"
                           >
-                            + {TEXTS[language].adminWeeklyPlans.addTask}
+                              + {language === 'ru' ? 'Добавить задачу' : 'Add task'}
                           </button>
+                        </div>
+                        </div>
+
+                        {/* День */}
+                        <div className="mb-4">
+                          <label className="block text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'День:' : 'Day:'}
+                          </label>
+                          <div className="space-y-2">
+                            {(day.dayTasks || []).map((task, taskIndex) => (
+                              <div key={task.id} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={task.text}
+                                  onChange={(e) => handleTaskChange(dayIndex, taskIndex, e.target.value, 'day')}
+                                  placeholder={language === 'ru' ? '6,000–7,000 steps' : '6,000–7,000 steps'}
+                                  className="flex-1 bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
+                                />
+                                {(day.dayTasks || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTask(dayIndex, taskIndex, 'day')}
+                                    className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                                  >
+                                    {TEXTS[language].common.delete}
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => handleAddTask(dayIndex, 'day')}
+                              className="w-full px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm"
+                            >
+                              + {language === 'ru' ? 'Добавить задачу' : 'Add task'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Вечер */}
+                        <div className="mb-4">
+                          <label className="block text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'Вечер:' : 'Evening:'}
+                          </label>
+                          <div className="space-y-2">
+                            {(day.eveningTasks || []).map((task, taskIndex) => (
+                              <div key={task.id} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={task.text}
+                                  onChange={(e) => handleTaskChange(dayIndex, taskIndex, e.target.value, 'evening')}
+                                  placeholder={language === 'ru' ? 'No screen 30 minutes before bed' : 'No screen 30 minutes before bed'}
+                                  className="flex-1 bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
+                                />
+                                {(day.eveningTasks || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTask(dayIndex, taskIndex, 'evening')}
+                                    className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                                  >
+                                    {TEXTS[language].common.delete}
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => handleAddTask(dayIndex, 'evening')}
+                              className="w-full px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm"
+                            >
+                              + {language === 'ru' ? 'Добавить задачу' : 'Add task'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Цель дня */}
+                        <div className="mb-3">
+                          <label className="block text-white text-xs font-medium mb-1">
+                            {language === 'ru' ? 'Цель дня:' : 'Goal:'}
+                          </label>
+                          <input
+                            type="text"
+                            value={day.dayGoal || ''}
+                            onChange={(e) => handleDayGoalChange(dayIndex, e.target.value)}
+                            placeholder={language === 'ru' ? 'Reboot mind, stabilize energy' : 'Reboot mind, stabilize energy'}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-yellow-500/50"
+                          />
                         </div>
                       </div>
                     ))}
@@ -927,9 +1068,14 @@ function PlanViewModal({ plan, users, onClose, language }) {
           {/* Дни недели */}
           <div className="space-y-4">
             {plan.days && plan.days.map((day, dayIndex) => {
-              const completedTasks = day.tasks?.filter(t => t.completed === true).length || 0;
-              const failedTasks = day.tasks?.filter(t => t.completed === false).length || 0;
-              const totalTasks = day.tasks?.length || 0;
+              // Поддержка новой структуры (morningTasks/dayTasks/eveningTasks) и старой (tasks)
+              const allTasks = day.morningTasks || day.dayTasks || day.eveningTasks 
+                ? [...(day.morningTasks || []), ...(day.dayTasks || []), ...(day.eveningTasks || [])]
+                : (day.tasks || []);
+              
+              const completedTasks = allTasks.filter(t => t.completed === true).length;
+              const failedTasks = allTasks.filter(t => t.completed === false).length;
+              const totalTasks = allTasks.length;
               
               return (
                 <div key={dayIndex} className="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -954,9 +1100,201 @@ function PlanViewModal({ plan, users, onClose, language }) {
                     )}
                   </div>
 
+                  {/* Цель дня */}
+                  {day.dayGoal && (
+                    <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                      <p className="text-yellow-400 text-sm font-medium">
+                        {language === 'ru' ? 'Цель:' : 'Goal:'} {day.dayGoal}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Задачи */}
-                  {day.tasks && day.tasks.length > 0 ? (
-                    <div className="space-y-3">
+                  {allTasks.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Утро */}
+                      {day.morningTasks && day.morningTasks.length > 0 && (
+                        <div>
+                          <h5 className="text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'Утро:' : 'Morning:'}
+                          </h5>
+                          <div className="space-y-2">
+                            {day.morningTasks.map((task) => (
+                              <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                <div className="flex items-start gap-3">
+                                  <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                    task.completed === true
+                                      ? 'bg-green-500 border-green-500'
+                                      : task.completed === false
+                                      ? 'bg-red-500 border-red-500'
+                                      : 'border-gray-400'
+                                  }`}>
+                                    {task.completed === true && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    {task.completed === false && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className={`text-sm ${
+                                      task.completed === true 
+                                        ? 'text-green-400 line-through' 
+                                        : task.completed === false
+                                        ? 'text-red-400'
+                                        : 'text-white'
+                                    }`}>
+                                      {task.text}
+                                    </p>
+                                    {task.comments && task.comments.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {task.comments.map((comment, commentIdx) => (
+                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
+                                            {comment.createdAt && (
+                                              <p className="text-xs text-gray-500">
+                                                {formatDateTime(comment.createdAt)}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* День */}
+                      {day.dayTasks && day.dayTasks.length > 0 && (
+                        <div>
+                          <h5 className="text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'День:' : 'Day:'}
+                          </h5>
+                          <div className="space-y-2">
+                            {day.dayTasks.map((task) => (
+                              <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                <div className="flex items-start gap-3">
+                                  <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                    task.completed === true
+                                      ? 'bg-green-500 border-green-500'
+                                      : task.completed === false
+                                      ? 'bg-red-500 border-red-500'
+                                      : 'border-gray-400'
+                                  }`}>
+                                    {task.completed === true && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    {task.completed === false && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className={`text-sm ${
+                                      task.completed === true 
+                                        ? 'text-green-400 line-through' 
+                                        : task.completed === false
+                                        ? 'text-red-400'
+                                        : 'text-white'
+                                    }`}>
+                                      {task.text}
+                                    </p>
+                                    {task.comments && task.comments.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {task.comments.map((comment, commentIdx) => (
+                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
+                                            {comment.createdAt && (
+                                              <p className="text-xs text-gray-500">
+                                                {formatDateTime(comment.createdAt)}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Вечер */}
+                      {day.eveningTasks && day.eveningTasks.length > 0 && (
+                        <div>
+                          <h5 className="text-white text-xs font-semibold mb-2">
+                            {language === 'ru' ? 'Вечер:' : 'Evening:'}
+                          </h5>
+                          <div className="space-y-2">
+                            {day.eveningTasks.map((task) => (
+                              <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                <div className="flex items-start gap-3">
+                                  <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                    task.completed === true
+                                      ? 'bg-green-500 border-green-500'
+                                      : task.completed === false
+                                      ? 'bg-red-500 border-red-500'
+                                      : 'border-gray-400'
+                                  }`}>
+                                    {task.completed === true && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    {task.completed === false && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className={`text-sm ${
+                                      task.completed === true 
+                                        ? 'text-green-400 line-through' 
+                                        : task.completed === false
+                                        ? 'text-red-400'
+                                        : 'text-white'
+                                    }`}>
+                                      {task.text}
+                                    </p>
+                                    {task.comments && task.comments.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {task.comments.map((comment, commentIdx) => (
+                                          <div key={commentIdx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                                            <p className="text-xs text-blue-300 mb-1">{comment.text}</p>
+                                            {comment.createdAt && (
+                                              <p className="text-xs text-gray-500">
+                                                {formatDateTime(comment.createdAt)}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Старая структура (для обратной совместимости) */}
+                      {(!day.morningTasks && !day.dayTasks && !day.eveningTasks) && day.tasks && day.tasks.length > 0 && (
+                        <div>
                       {day.tasks.map((task) => (
                         <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
                           <div className="flex items-start gap-3">
@@ -1011,6 +1349,8 @@ function PlanViewModal({ plan, users, onClose, language }) {
                           </div>
                         </div>
                       ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-gray-400 text-sm text-center py-2">
