@@ -1,7 +1,7 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, where, Timestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, where, Timestamp, deleteDoc, FieldValue } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -328,24 +328,141 @@ export const addTaskComment = async (planId, dayIndex, taskId, comment, userId) 
       return { success: false, error: 'Task not found' };
     }
     
-    // Сохраняем один комментарий пользователя (обновляем существующий или создаем новый)
-    taskArray[taskIndex] = { 
-      ...taskArray[taskIndex], 
-      userComment: {
-        text: comment,
-        createdAt: taskArray[taskIndex].userComment?.createdAt || new Date(),
-        updatedAt: new Date(),
-        userId: userId
-      }
+    // Сохраняем комментарий (только если он не пустой)
+    const trimmedComment = comment ? String(comment).trim() : '';
+    if (!trimmedComment) {
+      return { success: false, error: 'Comment cannot be empty' };
+    }
+    
+    const currentTask = { ...taskArray[taskIndex] };
+    currentTask.userComment = {
+      text: trimmedComment,
+      createdAt: taskArray[taskIndex].userComment?.createdAt || new Date(),
+      updatedAt: new Date(),
+      userId: userId
     };
-    days[dayIndex] = { ...days[dayIndex], [taskArrayKey]: taskArray };
+    taskArray[taskIndex] = currentTask;
+    
+    // Создаем полностью новый массив days для гарантии обновления
+    const newDays = days.map((d, idx) => {
+      if (idx === dayIndex) {
+        return { ...d, [taskArrayKey]: taskArray };
+      }
+      return d;
+    });
+    
     await updateDoc(planRef, {
-      days: days,
+      days: newDays,
       updatedAt: serverTimestamp()
     });
+    
     return { success: true };
   } catch (error) {
     console.error('Ошибка при добавлении комментария:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteTaskComment = async (planId, dayIndex, taskId) => {
+  try {
+    const planRef = doc(db, 'weeklyPlans', planId);
+    const planDoc = await getDoc(planRef);
+    if (!planDoc.exists()) {
+      return { success: false, error: 'Plan not found' };
+    }
+    const planData = planDoc.data();
+    const days = [...planData.days];
+    const day = days[dayIndex];
+    
+    // Поддержка новой структуры (morningTasks/dayTasks/eveningTasks) и старой (tasks)
+    let taskArray = null;
+    let taskArrayKey = null;
+    
+    if (day.morningTasks || day.dayTasks || day.eveningTasks) {
+      // Новая структура - ищем в трех массивах
+      const taskArrays = [
+        { key: 'morningTasks', arr: day.morningTasks || [] },
+        { key: 'dayTasks', arr: day.dayTasks || [] },
+        { key: 'eveningTasks', arr: day.eveningTasks || [] }
+      ];
+      
+      for (const { key, arr } of taskArrays) {
+        const taskIndex = arr.findIndex(t => String(t.id) === String(taskId));
+        if (taskIndex !== -1) {
+          taskArray = [...arr];
+          taskArrayKey = key;
+          break;
+        }
+      }
+    } else {
+      // Старая структура
+      taskArray = [...(day.tasks || [])];
+      taskArrayKey = 'tasks';
+    }
+    
+    if (!taskArray) {
+      console.error('Task not found for comment deletion:', { taskId });
+      return { success: false, error: 'Task not found' };
+    }
+    
+    const taskIndex = taskArray.findIndex(t => String(t.id) === String(taskId));
+    if (taskIndex === -1) {
+      console.error('Task not found for comment deletion:', { taskId });
+      return { success: false, error: 'Task not found' };
+    }
+    
+    // Удаляем userComment - полностью пересоздаем объект задачи без этого поля
+    const taskToUpdate = taskArray[taskIndex];
+    
+    // Создаем новый объект задачи, явно исключая userComment
+    const taskWithoutComment = {
+      id: taskToUpdate.id,
+      text: taskToUpdate.text,
+      completed: taskToUpdate.completed,
+      completedAt: taskToUpdate.completedAt,
+      failedAt: taskToUpdate.failedAt,
+      comments: taskToUpdate.comments
+    };
+    
+    // Добавляем другие поля, если они есть, но НЕ добавляем userComment
+    if (taskToUpdate.createdAt) taskWithoutComment.createdAt = taskToUpdate.createdAt;
+    if (taskToUpdate.updatedAt) taskWithoutComment.updatedAt = taskToUpdate.updatedAt;
+    
+    // Создаем новый массив с обновленной задачей
+    const newTaskArray = taskArray.map((t, idx) => 
+      idx === taskIndex ? taskWithoutComment : t
+    );
+    
+    // Создаем полностью новый массив days
+    const newDays = days.map((d, idx) => {
+      if (idx === dayIndex) {
+        return { ...d, [taskArrayKey]: newTaskArray };
+      }
+      return d;
+    });
+    
+    console.log('Удаляем комментарий - задача до:', JSON.stringify(taskToUpdate, null, 2));
+    console.log('Удаляем комментарий - задача после:', JSON.stringify(taskWithoutComment, null, 2));
+    console.log('userComment в новой задаче:', 'userComment' in taskWithoutComment);
+    
+    await updateDoc(planRef, {
+      days: newDays,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Проверяем, что обновление прошло успешно
+    const updatedPlanDoc = await getDoc(planRef);
+    if (updatedPlanDoc.exists()) {
+      const updatedData = updatedPlanDoc.data();
+      const updatedTask = updatedData.days[dayIndex][taskArrayKey][taskIndex];
+      console.log('Проверка после обновления - задача в Firestore:', JSON.stringify(updatedTask, null, 2));
+      console.log('userComment в Firestore:', updatedTask.userComment);
+      console.log('userComment присутствует в Firestore:', 'userComment' in updatedTask);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка при удалении комментария:', error);
     return { success: false, error: error.message };
   }
 };
