@@ -16,7 +16,7 @@
     "firebase": "^12.3.0",
     "framer-motion": "^12.23.19",
     "gsap": "^3.13.0",
-    "next": "15.5.4",
+    "next": "^16.0.10",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "swiper": "^12.0.2",
@@ -26,7 +26,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "^16.0.10",
     "tailwindcss": "^4"
   }
 }
