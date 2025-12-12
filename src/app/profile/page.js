@@ -7,8 +7,12 @@ import { updateProfile } from "firebase/auth";
 import Navigation from "@/components/Navigation";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { user: subscriptionUser, hasSubscription, subscription } = useSubscription();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [stats, setStats] = useState({
@@ -27,15 +31,22 @@ export default function ProfilePage() {
       if (u) {
         await loadUserStats(u.uid);
         await loadUserData(u.uid);
-        } else {
-          setStats({ completedWorkouts: 0 });
-          setUserData(null);
-          setIsLoading(false);
-        }
+      } else {
+        setStats({ completedWorkouts: 0 });
+        setUserData(null);
+        setIsLoading(false);
+      }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Синхронизируем user из subscription hook
+  useEffect(() => {
+    if (subscriptionUser) {
+      setUser(subscriptionUser);
+    }
+  }, [subscriptionUser]);
 
   const loadUserData = async (userId) => {
     try {
@@ -176,17 +187,50 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Текущий план */}
+          {/* Текущий план / Подписка */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4">
-            <div className="flex justify-between items-center">
+            {hasSubscription && subscription ? (
               <div>
-                <div className="text-white font-medium text-sm">{TEXTS[language].profile.freePlan}</div>
-                <div className="text-gray-400 text-xs">{TEXTS[language].profile.limitedFeatures}</div>
+                <div className="flex justify-between items-center mb-3">
+                  <div>
+                    <div className="text-green-400 font-medium text-sm flex items-center gap-2">
+                      <span>✓</span>
+                      <span>{language === 'en' ? 'Active Subscription' : 'Активная подписка'}</span>
+                    </div>
+                    <div className="text-gray-400 text-xs mt-1">
+                      {subscription.type === 'monthly' && (language === 'en' ? 'Monthly plan' : 'Месячный план')}
+                      {subscription.type === '3months' && (language === 'en' ? '3 months plan' : 'План на 3 месяца')}
+                      {subscription.type === 'yearly' && (language === 'en' ? 'Yearly plan' : 'Годовой план')}
+                    </div>
+                  </div>
+                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-3 py-1">
+                    <span className="text-green-400 text-xs font-medium">PREMIUM</span>
+                  </div>
+                </div>
+                {subscription.expiresAt && (
+                  <div className="text-gray-400 text-xs">
+                    {language === 'en' ? 'Expires:' : 'Истекает:'} {new Date(subscription.expiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                )}
               </div>
-              <button className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black py-2 px-3 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-orange-400 transition-all duration-300">
-                {TEXTS[language].profile.upgrade}
-              </button>
-            </div>
+            ) : (
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-white font-medium text-sm">{TEXTS[language].profile.freePlan}</div>
+                  <div className="text-gray-400 text-xs">{TEXTS[language].profile.limitedFeatures}</div>
+                </div>
+                <button 
+                  onClick={() => router.push('/subscribe')}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-3 rounded-lg font-medium text-sm hover:from-green-400 hover:to-emerald-400 transition-all duration-300"
+                >
+                  {language === 'en' ? 'Subscribe' : 'Оформить подписку'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Статистика активности */}

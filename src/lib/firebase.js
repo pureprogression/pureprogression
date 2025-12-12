@@ -1,7 +1,7 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, where, Timestamp, deleteDoc, FieldValue } from "firebase/firestore";
+import { getFirestore, initializeFirestore, setLogLevel, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, setDoc, where, Timestamp, deleteDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -414,19 +414,8 @@ export const deleteTaskComment = async (planId, dayIndex, taskId) => {
     // Удаляем userComment - полностью пересоздаем объект задачи без этого поля
     const taskToUpdate = taskArray[taskIndex];
     
-    // Создаем новый объект задачи, явно исключая userComment
-    const taskWithoutComment = {
-      id: taskToUpdate.id,
-      text: taskToUpdate.text,
-      completed: taskToUpdate.completed,
-      completedAt: taskToUpdate.completedAt,
-      failedAt: taskToUpdate.failedAt,
-      comments: taskToUpdate.comments
-    };
-    
-    // Добавляем другие поля, если они есть, но НЕ добавляем userComment
-    if (taskToUpdate.createdAt) taskWithoutComment.createdAt = taskToUpdate.createdAt;
-    if (taskToUpdate.updatedAt) taskWithoutComment.updatedAt = taskToUpdate.updatedAt;
+    // Создаем новый объект задачи, копируя все поля кроме userComment
+    const { userComment, ...taskWithoutComment } = taskToUpdate;
     
     // Создаем новый массив с обновленной задачей
     const newTaskArray = taskArray.map((t, idx) => 
@@ -441,24 +430,10 @@ export const deleteTaskComment = async (planId, dayIndex, taskId) => {
       return d;
     });
     
-    console.log('Удаляем комментарий - задача до:', JSON.stringify(taskToUpdate, null, 2));
-    console.log('Удаляем комментарий - задача после:', JSON.stringify(taskWithoutComment, null, 2));
-    console.log('userComment в новой задаче:', 'userComment' in taskWithoutComment);
-    
     await updateDoc(planRef, {
       days: newDays,
       updatedAt: serverTimestamp()
     });
-    
-    // Проверяем, что обновление прошло успешно
-    const updatedPlanDoc = await getDoc(planRef);
-    if (updatedPlanDoc.exists()) {
-      const updatedData = updatedPlanDoc.data();
-      const updatedTask = updatedData.days[dayIndex][taskArrayKey][taskIndex];
-      console.log('Проверка после обновления - задача в Firestore:', JSON.stringify(updatedTask, null, 2));
-      console.log('userComment в Firestore:', updatedTask.userComment);
-      console.log('userComment присутствует в Firestore:', 'userComment' in updatedTask);
-    }
     
     return { success: true };
   } catch (error) {

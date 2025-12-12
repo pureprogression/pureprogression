@@ -148,11 +148,22 @@ export default function WeeklyPlanPage() {
     let failedTasks = 0;
     
     plan.days.forEach(day => {
-      if (day.tasks) {
-        totalTasks += day.tasks.length;
-        completedTasks += day.tasks.filter(t => t.completed === true).length;
-        failedTasks += day.tasks.filter(t => t.completed === false).length;
+      // Поддержка новой структуры (morningTasks/dayTasks/eveningTasks) и старой (tasks)
+      let dayTasks = [];
+      
+      if (day.morningTasks || day.dayTasks || day.eveningTasks) {
+        dayTasks = [
+          ...(day.morningTasks || []),
+          ...(day.dayTasks || []),
+          ...(day.eveningTasks || [])
+        ];
+      } else if (day.tasks) {
+        dayTasks = day.tasks;
       }
+      
+      totalTasks += dayTasks.length;
+      completedTasks += dayTasks.filter(t => t.completed === true).length;
+      failedTasks += dayTasks.filter(t => t.completed === false).length;
     });
     
     return {

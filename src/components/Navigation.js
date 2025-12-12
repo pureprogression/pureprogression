@@ -10,6 +10,8 @@ import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import DonationModal from "./DonationModal";
 import ReviewsModal from "./ReviewsModal";
+import PremiumModal from "./PremiumModal";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
@@ -17,9 +19,11 @@ export default function Navigation({ currentPage = "home", user = null, disableS
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { hasSubscription } = useSubscription();
 
   useEffect(() => {
     setMounted(true);
@@ -49,6 +53,17 @@ export default function Navigation({ currentPage = "home", user = null, disableS
   };
 
   const handleWorkoutBuilderClick = () => {
+    if (!user) {
+      router.push('/auth');
+      setIsMenuOpen(false);
+      return;
+    }
+    // Админы имеют доступ без подписки
+    if (!hasSubscription && !isAdmin(user)) {
+      router.push('/subscribe');
+      setIsMenuOpen(false);
+      return;
+    }
     router.push('/workout-builder');
     setIsMenuOpen(false);
   };
@@ -59,6 +74,17 @@ export default function Navigation({ currentPage = "home", user = null, disableS
   };
 
   const handleMyWorkoutsClick = () => {
+    if (!user) {
+      router.push('/auth');
+      setIsMenuOpen(false);
+      return;
+    }
+    // Админы имеют доступ без подписки
+    if (!hasSubscription && !isAdmin(user)) {
+      router.push('/subscribe');
+      setIsMenuOpen(false);
+      return;
+    }
     router.push('/my-workouts');
     setIsMenuOpen(false);
   };
@@ -77,8 +103,22 @@ export default function Navigation({ currentPage = "home", user = null, disableS
     setIsMenuOpen(false);
   };
 
+  const handleTrainingProgramClick = () => {
+    if (user) {
+      router.push('/training-program');
+    } else {
+      router.push('/auth');
+    }
+    setIsMenuOpen(false);
+  };
+
   const handleAdminPanelClick = () => {
     router.push('/admin/weekly-plans');
+    setIsMenuOpen(false);
+  };
+
+  const handleAdminSubscriptionsClick = () => {
+    router.push('/admin/subscriptions');
     setIsMenuOpen(false);
   };
 
@@ -201,41 +241,50 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   </button>
                 </li>
 
-                {/* Конструктор тренировок - в разработке */}
-                <li>
-                  <button
-                    onClick={(e) => e.preventDefault()}
-                    disabled
-                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
-                  >
-                    <span>{TEXTS[language].navigation.workoutBuilder}</span>
-                  </button>
-                </li>
-
-                {/* Мои тренировки - в разработке */}
-                <li>
-                  <button
-                    onClick={(e) => e.preventDefault()}
-                    disabled
-                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
-                  >
-                    <span>{TEXTS[language].navigation.myWorkouts}</span>
-                  </button>
-                </li>
-
-                {/* История тренировок - в разработке */}
-                <li>
-                  <button
-                    onClick={(e) => e.preventDefault()}
-                    disabled
-                    className="w-full flex items-center p-2.5 rounded-lg text-white/50 hover:bg-white/5 transition-colors duration-200 text-left cursor-not-allowed opacity-60"
-                  >
-                    <span>{TEXTS[language].navigation.workoutHistory}</span>
-                  </button>
-                </li>
-
-                {/* Недельный план */}
+                {/* Workout Builder - для всех пользователей */}
                 {user && (
+                  <li>
+                    <button
+                      onClick={handleWorkoutBuilderClick}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-colors duration-200 text-left ${
+                        hasSubscription || isAdmin(user)
+                          ? 'text-white hover:bg-white/10'
+                          : 'text-white/70 hover:bg-white/10 cursor-pointer'
+                      }`}
+                    >
+                      <span>{TEXTS[language].navigation.workoutBuilder}</span>
+                      {hasSubscription || isAdmin(user) ? (
+                        <span className="text-green-500 text-xs">✓</span>
+                      ) : (
+                        <span className="text-yellow-500 text-xs">🔒</span>
+                      )}
+                    </button>
+                  </li>
+                )}
+
+                {/* My Workouts - для всех пользователей */}
+                {user && (
+                  <li>
+                    <button
+                      onClick={handleMyWorkoutsClick}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-colors duration-200 text-left ${
+                        hasSubscription || isAdmin(user)
+                          ? 'text-white hover:bg-white/10'
+                          : 'text-white/70 hover:bg-white/10 cursor-pointer'
+                      }`}
+                    >
+                      <span>{TEXTS[language].navigation.myWorkouts}</span>
+                      {hasSubscription || isAdmin(user) ? (
+                        <span className="text-green-500 text-xs">✓</span>
+                      ) : (
+                        <span className="text-yellow-500 text-xs">🔒</span>
+                      )}
+                    </button>
+                  </li>
+                )}
+
+                {/* Недельный план - временно скрыто, будет добавлено позже */}
+                {/* {user && (
                   <>
                     <li>
                       <button
@@ -255,20 +304,43 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                         <span className="text-yellow-500 text-xs">📅</span>
                       </button>
                     </li>
+                    <li>
+                      <button
+                        onClick={handleTrainingProgramClick}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                      >
+                        <span>{TEXTS[language].navigation.trainingProgram}</span>
+                        <span className="text-yellow-500 text-xs">💪</span>
+                      </button>
+                    </li>
                   </>
-                )}
+                )} */}
 
                 {/* Админ-панель */}
                 {user && isAdmin(user) && (
-                  <li>
-                    <button
-                      onClick={handleAdminPanelClick}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
-                    >
-                      <span>{TEXTS[language].navigation.adminPanel}</span>
-                      <span className="text-yellow-500 text-xs">⚙️</span>
-                    </button>
-                  </li>
+                  <>
+                    <li className="my-2">
+                      <div className="h-px bg-white/20 mx-3"></div>
+                    </li>
+                    <li>
+                      <button
+                        onClick={handleAdminPanelClick}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
+                      >
+                        <span>{TEXTS[language].navigation.adminPanel}</span>
+                        <span className="text-yellow-500 text-xs">⚙️</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={handleAdminSubscriptionsClick}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
+                      >
+                        <span>{TEXTS[language].navigation.subscriptions}</span>
+                        <span className="text-yellow-500 text-xs">💳</span>
+                      </button>
+                    </li>
+                  </>
                 )}
 
                 {/* Разделитель */}
@@ -366,6 +438,18 @@ export default function Navigation({ currentPage = "home", user = null, disableS
       <ReviewsModal 
         isOpen={isReviewsModalOpen} 
         onClose={() => setIsReviewsModalOpen(false)} 
+      />
+
+      {/* Модалка подписки */}
+      <PremiumModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={() => {
+          setShowPremiumModal(false);
+          router.push('/subscribe');
+        }}
+        feature={language === 'en' ? 'this feature' : 'этой функции'}
+        requiresAuth={false}
       />
     </>
   );

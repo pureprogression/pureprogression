@@ -63,12 +63,17 @@ export async function POST(request) {
       }
     };
 
+    // Генерируем короткий Idempotence-Key (максимум 36 символов для Юкассы)
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 15);
+    const idempotenceKey = `don_${timestamp}_${random}`.substring(0, 36);
+
     const response = await fetch('https://api.yookassa.ru/v3/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_YOOKASSA_SHOP_ID}:${process.env.YOOKASSA_SECRET_KEY}`).toString('base64')}`,
         'Content-Type': 'application/json',
-        'Idempotence-Key': `donation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        'Idempotence-Key': idempotenceKey
       },
       body: JSON.stringify(paymentData)
     });

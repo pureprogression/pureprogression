@@ -1,13 +1,20 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "this feature" }) {
+export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "this feature", requiresAuth = false, customMessage }) {
   const { language } = useLanguage();
+  const router = useRouter();
+  
   if (!isOpen) return null;
+
+  const handleSubscribe = () => {
+    onClose();
+    router.push('/subscribe');
+  };
 
   return (
     <AnimatePresence>
@@ -36,31 +43,59 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
           {/* Content */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-3">
-              {language === 'en' ? 'Sign In Required' : 'Требуется авторизация'}
+              {requiresAuth 
+                ? (language === 'en' ? 'Sign In Required' : 'Требуется авторизация')
+                : (language === 'en' ? 'Premium Subscription Required' : 'Требуется подписка')
+              }
             </h2>
             <p className="text-white/80 text-sm leading-relaxed">
-              {language === 'en' 
-                ? `To access ${feature}, please sign in to your account.`
-                : `Для доступа к ${feature}, пожалуйста, войдите в свой аккаунт.`
-              }
+              {customMessage || (
+                requiresAuth
+                  ? (language === 'en' 
+                      ? `To access ${feature}, please sign in to your account.`
+                      : `Для доступа к ${feature}, пожалуйста, войдите в свой аккаунт.`)
+                  : (language === 'en'
+                      ? `To access ${feature}, you need an active subscription. Subscribe now to get full access!`
+                      : `Для доступа к ${feature} требуется активная подписка. Оформите подписку прямо сейчас!`)
+              )}
             </p>
           </div>
 
           {/* Buttons */}
           <div className="space-y-2">
-            <button
-              onClick={onUpgrade}
-              className="w-full bg-white/15 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/25 transition-all duration-300"
-            >
-              {language === 'en' ? 'Sign In' : 'Войти'}
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="w-full bg-white/10 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
-            >
-              {language === 'en' ? 'Maybe Later' : 'Возможно позже'}
-            </button>
+            {requiresAuth ? (
+              <>
+                <button
+                  onClick={onUpgrade}
+                  className="w-full bg-white/15 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/25 transition-all duration-300"
+                >
+                  {language === 'en' ? 'Sign In' : 'Войти'}
+                </button>
+                
+                <button
+                  onClick={onClose}
+                  className="w-full bg-white/10 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
+                >
+                  {language === 'en' ? 'Maybe Later' : 'Возможно позже'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleSubscribe}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-6 rounded-lg font-medium hover:from-green-400 hover:to-emerald-400 transition-all duration-300"
+                >
+                  {language === 'en' ? 'Subscribe Now' : 'Оформить подписку'}
+                </button>
+                
+                <button
+                  onClick={onClose}
+                  className="w-full bg-white/10 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
+                >
+                  {language === 'en' ? 'Maybe Later' : 'Возможно позже'}
+                </button>
+              </>
+            )}
           </div>
 
         </motion.div>

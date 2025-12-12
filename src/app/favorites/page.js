@@ -10,6 +10,7 @@ import ExercisesFilter from "@/components/ExercisesFilter";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // Определяем мобильное устройство
 const isMobileDevice = () => {
@@ -38,6 +39,7 @@ export default function FavoritesPage() {
   const [filterTransitioning, setFilterTransitioning] = useState(false);
   const { language } = useLanguage();
   const router = useRouter();
+  const { hasSubscription } = useSubscription();
 
   // Определяем URL видео для страницы favorites
   const getVideoSrc = () => {
@@ -187,15 +189,27 @@ export default function FavoritesPage() {
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 to-transparent" />
         </div>
 
-        {/* Фильтры показываем только если есть избранные */}
+        {/* Фильтры и индикатор избранного */}
         {favorites.length > 0 && (
           <div className="relative">
-            <div className="flex items-center">
-              <ExercisesFilter
-                exercises={exercises}
-                selectedGroup={selectedGroup}
-                setSelectedGroup={setSelectedGroup}
-              />
+            <div className="flex items-center justify-between px-4 mb-4">
+              <div className="flex items-center">
+                <ExercisesFilter
+                  exercises={exercises}
+                  selectedGroup={selectedGroup}
+                  setSelectedGroup={setSelectedGroup}
+                />
+              </div>
+              
+              {/* Индикатор количества избранных для бесплатных пользователей */}
+              {!hasSubscription && (
+                <div className="text-white/80 text-sm">
+                  {language === 'ru' 
+                    ? `Избранное: ${favorites.length}/5`
+                    : `Favorites: ${favorites.length}/5`
+                  }
+                </div>
+              )}
             </div>
           </div>
         )}

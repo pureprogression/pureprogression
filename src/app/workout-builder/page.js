@@ -5,34 +5,38 @@ import { useRouter } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import WorkoutBuilder from "@/components/WorkoutBuilder";
 import PremiumModal from "@/components/PremiumModal";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, isAdmin } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { trackWorkoutCreated } from "@/lib/analytics";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export default function WorkoutBuilderPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const { user, hasSubscription, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const { language } = useLanguage();
   const [isSaving, setIsSaving] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    setIsLoading(false);
   }, []);
 
   // Редирект для неавторизованных пользователей
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !subscriptionLoading && !user) {
       router.push('/auth');
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, subscriptionLoading, user, router]);
+
+  // Проверка подписки при загрузке страницы (админы имеют доступ без подписки)
+  useEffect(() => {
+    if (!isLoading && !subscriptionLoading && user && !hasSubscription && !isAdmin(user)) {
+      setShowPremiumModal(true);
+    }
+  }, [isLoading, subscriptionLoading, user, hasSubscription]);
 
   const handleSaveWorkout = async (workout) => {
     setIsSaving(true);
@@ -68,12 +72,45 @@ export default function WorkoutBuilderPage() {
     router.push('/my-workouts');
   };
 
-  if (isLoading) {
+  if (isLoading || subscriptionLoading) {
     return null; // Убираем загрузочный экран
   }
 
   if (!user) {
     return null;
+  }
+
+  // Если нет подписки и пользователь не админ, показываем модалку и блокируем доступ
+  if (!hasSubscription && !isAdmin(user)) {
+    return (
+      <>
+        <Navigation currentPage="workout-builder" user={user} />
+        <PremiumModal
+          isOpen={showPremiumModal}
+          onClose={() => {
+            setShowPremiumModal(false);
+            router.push('/');
+          }}
+          feature={language === 'en' ? 'Workout Builder' : 'Конструктор тренировок'}
+          requiresAuth={false}
+        />
+        <div className="min-h-screen bg-black pt-20 flex items-center justify-center">
+          <div className="text-center text-white">
+            <p className="text-xl mb-4">
+              {language === 'en' 
+                ? 'This feature requires an active subscription'
+                : 'Эта функция требует активной подписки'}
+            </p>
+            <button
+              onClick={() => router.push('/subscribe')}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-400 hover:to-emerald-400 transition-all"
+            >
+              {language === 'en' ? 'Subscribe Now' : 'Оформить подписку'}
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

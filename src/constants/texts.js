@@ -12,7 +12,9 @@ export const TEXTS = {
       favorites: "Favorites",
       profile: "Profile",
       weeklyPlan: "Weekly Plan",
+      trainingProgram: "Training Program",
       adminPanel: "Admin Panel",
+      subscriptions: "Subscriptions",
       logout: "Logout"
     },
 
@@ -173,6 +175,39 @@ export const TEXTS = {
       error: "Error occurred"
     },
 
+    // Training Program Builder
+    trainingProgram: {
+      title: "Training Program Builder",
+      selectUser: "Select User",
+      searchUser: "Search user by email...",
+      weekStartDate: "Week Start Date",
+      weekGoals: "Week Goals",
+      addGoal: "Add Goal",
+      exercisesLibrary: "Exercises Library",
+      filterByMuscleGroup: "Filter by muscle group",
+      allGroups: "All Groups",
+      addExercise: "Add Exercise",
+      addTextExercise: "Add Text Exercise",
+      textExercise: "Text Exercise",
+      exerciseName: "Exercise Name",
+      sets: "Sets",
+      reps: "Reps",
+      notes: "Notes",
+      morning: "Morning",
+      day: "Day",
+      evening: "Evening",
+      dayTitle: "Day Title",
+      dayGoal: "Day Goal",
+      saveProgram: "Save Program",
+      cancel: "Cancel",
+      programCreated: "Program created successfully",
+      programUpdated: "Program updated successfully",
+      error: "Error occurred",
+      removeExercise: "Remove",
+      noExercises: "No exercises added",
+      clickToAdd: "Click to add exercises"
+    },
+
     // Plan Request
     planRequest: {
       title: "Request Weekly Plan",
@@ -240,7 +275,9 @@ export const TEXTS = {
       favorites: "Избранное",
       profile: "Профиль",
       weeklyPlan: "Недельный план",
+      trainingProgram: "Программа тренировок",
       adminPanel: "Админ-панель",
+      subscriptions: "Подписки",
       logout: "Выйти"
     },
 
@@ -389,6 +426,39 @@ export const TEXTS = {
       planCreated: "План успешно создан",
       planUpdated: "План успешно обновлен",
       error: "Произошла ошибка"
+    },
+
+    // Training Program Builder
+    trainingProgram: {
+      title: "Составление программы тренировок",
+      selectUser: "Выберите пользователя",
+      searchUser: "Поиск пользователя по email...",
+      weekStartDate: "Дата начала недели",
+      weekGoals: "Цели недели",
+      addGoal: "Добавить цель",
+      exercisesLibrary: "Библиотека упражнений",
+      filterByMuscleGroup: "Фильтр по группе мышц",
+      allGroups: "Все группы",
+      addExercise: "Добавить упражнение",
+      addTextExercise: "Добавить текстовое упражнение",
+      textExercise: "Текстовое упражнение",
+      exerciseName: "Название упражнения",
+      sets: "Подходы",
+      reps: "Повторения",
+      notes: "Заметки",
+      morning: "Утро",
+      day: "День",
+      evening: "Вечер",
+      dayTitle: "Название дня",
+      dayGoal: "Цель дня",
+      saveProgram: "Сохранить программу",
+      cancel: "Отмена",
+      programCreated: "Программа успешно создана",
+      programUpdated: "Программа успешно обновлена",
+      error: "Произошла ошибка",
+      removeExercise: "Удалить",
+      noExercises: "Упражнения не добавлены",
+      clickToAdd: "Нажмите, чтобы добавить упражнения"
     },
 
     // Plan Request

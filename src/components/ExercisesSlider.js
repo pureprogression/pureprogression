@@ -3,8 +3,11 @@
 import { useRef, useState, useEffect, memo, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useRouter } from "next/navigation";
+import PremiumModal from "./PremiumModal";
 import LazyVideo from "./LazyVideo";
 
 import "swiper/css";
@@ -192,6 +195,9 @@ export default function ExercisesSlider({
   filterTransitioning = false,
 }) {
   const swiperRef = useRef(null);
+  const router = useRouter();
+  const { hasSubscription } = useSubscription();
+  const [showFavoritesLimitModal, setShowFavoritesLimitModal] = useState(false);
   const gridRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(true);
   const [viewMode, setViewMode] = useState("slider");
@@ -431,8 +437,28 @@ export default function ExercisesSlider({
         // В слайдере переключаем состояние, проверяя существование документа напрямую
         const snap = await getDoc(docRef);
         if (snap.exists()) {
+          // Удаление - всегда разрешено
           await deleteDoc(docRef);
         } else {
+            // Добавление - проверяем ограничение для бесплатных пользователей
+          if (!hasSubscription) {
+            // Получаем текущее количество избранных
+            const favoritesQuery = query(
+              collection(db, "favorites"),
+              where("userId", "==", userId)
+            );
+            const favoritesSnapshot = await getDocs(favoritesQuery);
+            const currentFavoritesCount = favoritesSnapshot.size;
+            
+            // Ограничение: максимум 5 упражнений для бесплатных пользователей
+            if (currentFavoritesCount >= 5) {
+              // Показываем модальное окно
+              setShowFavoritesLimitModal(true);
+              return;
+            }
+          }
+          
+          // Добавляем в избранное
           await setDoc(docRef, {
             userId,
             exerciseId,
@@ -607,6 +633,21 @@ export default function ExercisesSlider({
         </div>
         </div>
       </div>
+      
+      {/* Модальное окно для ограничения избранного */}
+      <PremiumModal
+        isOpen={showFavoritesLimitModal}
+        onClose={() => setShowFavoritesLimitModal(false)}
+        onUpgrade={() => {
+          setShowFavoritesLimitModal(false);
+          router.push('/subscribe');
+        }}
+        feature=""
+        requiresAuth={false}
+        customMessage={typeof window !== 'undefined' && (window.navigator.language === 'ru' || window.navigator.language.startsWith('ru'))
+          ? 'Бесплатные пользователи могут добавить максимум 5 упражнений в избранное. Оформите подписку для неограниченного доступа!'
+          : 'Free users can add up to 5 exercises to favorites. Subscribe for unlimited access!'}
+      />
     </div>
   );
 }

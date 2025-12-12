@@ -97,3 +97,63 @@ export async function checkPaymentStatus(paymentId) {
     throw error;
   }
 }
+
+// Функция для создания подписки через Юкассу
+export async function createSubscription(userId, subscriptionType = 'monthly') {
+  const subscriptionPlans = {
+    monthly: { amount: 990, description: 'Подписка на 1 месяц' },
+    '3months': { amount: 2490, description: 'Подписка на 3 месяца' },
+    yearly: { amount: 8290, description: 'Подписка на 1 год' }
+  };
+
+  const plan = subscriptionPlans[subscriptionType];
+  if (!plan) {
+    throw new Error(`Invalid subscription type: ${subscriptionType}`);
+  }
+
+  try {
+    const response = await fetch('/api/payments/create-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: userId,
+        subscriptionType: subscriptionType,
+        amount: plan.amount,
+        description: plan.description
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Subscription creation failed');
+    }
+
+    const paymentData = await response.json();
+    return paymentData;
+
+  } catch (error) {
+    console.error('Subscription creation error:', error);
+    throw error;
+  }
+}
+
+// Функция для проверки статуса подписки пользователя
+export async function checkUserSubscription(userId) {
+  try {
+    const response = await fetch(`/api/subscription/check?userId=${userId}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Subscription check failed');
+    }
+
+    const subscriptionData = await response.json();
+    return subscriptionData;
+
+  } catch (error) {
+    console.error('Subscription check error:', error);
+    throw error;
+  }
+}

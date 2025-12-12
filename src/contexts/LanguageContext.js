@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback } 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState('en'); // ENG по умолчанию
+  const [language, setLanguage] = useState('ru'); // RU по умолчанию
   const [isChanging, setIsChanging] = useState(false);
 
   // Загружаем язык из localStorage при инициализации
