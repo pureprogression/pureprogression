@@ -15,9 +15,21 @@ export async function POST(request) {
     }
 
     // Проверяем наличие ключей
-    if (!process.env.NEXT_PUBLIC_YOOKASSA_SHOP_ID || !process.env.YOOKASSA_SECRET_KEY) {
+    const missingVars = [];
+    if (!process.env.NEXT_PUBLIC_YOOKASSA_SHOP_ID) {
+      missingVars.push('NEXT_PUBLIC_YOOKASSA_SHOP_ID');
+    }
+    if (!process.env.YOOKASSA_SECRET_KEY) {
+      missingVars.push('YOOKASSA_SECRET_KEY');
+    }
+    
+    if (missingVars.length > 0) {
+      console.error('[Subscription Payment] Missing environment variables:', missingVars);
       return NextResponse.json(
-        { error: 'Payment configuration missing' },
+        { 
+          error: 'Payment configuration missing',
+          details: `Missing environment variables: ${missingVars.join(', ')}. Please configure them in Vercel project settings.`
+        },
         { status: 500 }
       );
     }
