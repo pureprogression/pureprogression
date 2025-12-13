@@ -2,6 +2,147 @@
 @import 'swiper/css';
 @import 'swiper/css/pagination';
 
+/* Стили для статей */
+.article-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.article-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.article-content p {
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+}
+
+.article-content ul,
+.article-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.article-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.8;
+}
+
+.article-content strong {
+  font-weight: 600;
+  color: white;
+}
+
+/* Минималистичные точки-индикаторы в стиле Apple */
+.swiper-pagination {
+  position: relative !important;
+  bottom: 0 !important;
+  margin-top: 1rem;
+}
+
+.swiper-pagination-bullet {
+  width: 6px !important;
+  height: 6px !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  opacity: 1 !important;
+  margin: 0 4px !important;
+  transition: all 0.3s ease !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: rgba(255, 255, 255, 1) !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+/* Центрирование для режима large в WorkoutBuilder - Mobile First */
+.workout-builder-swiper-large {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.workout-builder-large-container {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.workout-builder-swiper-large .swiper-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Скрываем соседние слайды в режиме large */
+.workout-builder-swiper-large .swiper-slide {
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.workout-builder-swiper-large .swiper-slide-active {
+  opacity: 1 !important;
+}
+
+.swiper-slide.workout-builder-large {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.swiper-slide.workout-builder-large > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.swiper-slide.workout-builder-large > div > div {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .swiper-slide.workout-builder-large > div {
+    max-width: 28rem !important; /* max-w-md для десктопа */
+  }
+}
+
+/* Убираем обрезание карточек в Swiper только для WorkoutBuilder */
+.workout-builder-swiper,
+.workout-builder-swiper .swiper,
+.workout-builder-swiper .swiper-wrapper,
+.workout-builder-swiper .swiper-slide,
+.workout-builder-swiper .swiper-slide > div {
+  overflow: visible !important;
+}
+
 /* Оптимизация производительности для слабых устройств */
 .low-performance * {
   animation-duration: 0.01ms !important;
@@ -111,6 +252,13 @@ body > * {
 }
 
 .swiper-wrapper {
+  overflow: visible !important;
+}
+
+/* Для WorkoutBuilder разрешаем overflow: visible */
+.workout-builder-swiper-large,
+.workout-builder-swiper-large .swiper,
+.workout-builder-swiper-large .swiper-wrapper {
   overflow: visible !important;
 }
 

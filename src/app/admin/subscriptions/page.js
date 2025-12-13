@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db, isAdmin } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,8 +13,13 @@ export default function AdminSubscriptionsPage() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // Все пользователи для поиска
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'expired', 'monthly', '3months', 'yearly'
   const [searchEmail, setSearchEmail] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedUserForSubscription, setSelectedUserForSubscription] = useState(null);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [subscriptionType, setSubscriptionType] = useState('monthly');
   const router = useRouter();
   const { language } = useLanguage();
 
@@ -42,9 +47,21 @@ export default function AdminSubscriptionsPage() {
       const usersRef = collection(db, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      const allUsers = [];
+      const subscribersList = [];
+      const allUsersList = [];
+      
       querySnapshot.forEach((doc) => {
         const userData = doc.data();
+        const userInfo = {
+          id: doc.id,
+          email: userData.email || 'No email',
+          displayName: userData.displayName || 'No name',
+        };
+        
+        // Сохраняем всех пользователей для поиска
+        allUsersList.push(userInfo);
+        
+        // Если есть подписка, обрабатываем её
         if (userData.subscription) {
           const subscription = userData.subscription;
           
@@ -68,10 +85,8 @@ export default function AdminSubscriptionsPage() {
             isActive = true; // Если active=true, но нет даты, считаем активной
           }
           
-          allUsers.push({
-            id: doc.id,
-            email: userData.email || 'No email',
-            displayName: userData.displayName || 'No name',
+          subscribersList.push({
+            ...userInfo,
             subscription: {
               ...subscription,
               isActive,
@@ -87,7 +102,7 @@ export default function AdminSubscriptionsPage() {
       });
       
       // Сортируем по дате окончания (активные сначала, затем истекшие)
-      allUsers.sort((a, b) => {
+      subscribersList.sort((a, b) => {
         if (a.subscription.isActive && !b.subscription.isActive) return -1;
         if (!a.subscription.isActive && b.subscription.isActive) return 1;
         if (a.subscription.endDate && b.subscription.endDate) {
@@ -96,12 +111,29 @@ export default function AdminSubscriptionsPage() {
         return 0;
       });
       
-      setSubscribers(allUsers);
+      setSubscribers(subscribersList);
+      setAllUsers(allUsersList);
     } catch (error) {
       console.error('Error loading subscribers:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Поиск пользователей по email
+  const handleSearchUser = () => {
+    if (!searchEmail.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const searchLower = searchEmail.toLowerCase().trim();
+    const results = allUsers.filter(user => 
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.displayName && user.displayName.toLowerCase().includes(searchLower))
+    );
+    
+    setSearchResults(results.slice(0, 10)); // Показываем максимум 10 результатов
   };
 
   const filteredSubscribers = subscribers.filter(sub => {
@@ -158,7 +190,9 @@ export default function AdminSubscriptionsPage() {
   };
 
   const handleCancelSubscription = async (userId) => {
-    if (!confirm('Отменить подписку? Пользователь потеряет доступ к премиум функциям.')) return;
+    if (!confirm(language === 'en' 
+      ? 'Cancel subscription? User will lose access to premium features.' 
+      : 'Отменить подписку? Пользователь потеряет доступ к премиум функциям.')) return;
     
     try {
       const userRef = doc(db, 'users', userId);
@@ -167,11 +201,89 @@ export default function AdminSubscriptionsPage() {
         'subscription.updatedAt': serverTimestamp()
       });
       
-      alert('Подписка отменена!');
+      alert(language === 'en' ? 'Subscription canceled!' : 'Подписка отменена!');
       await loadSubscribers();
     } catch (error) {
       console.error('Error canceling subscription:', error);
-      alert('Ошибка при отмене подписки: ' + error.message);
+      alert((language === 'en' ? 'Error canceling subscription: ' : 'Ошибка при отмене подписки: ') + error.message);
+    }
+  };
+
+  const handleActivateSubscription = async (userId, type = 'monthly') => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      
+      // Вычисляем дату окончания подписки
+      const now = new Date();
+      const endDate = new Date(now);
+      switch (type) {
+        case 'monthly':
+          endDate.setMonth(endDate.getMonth() + 1);
+          break;
+        case '3months':
+          endDate.setMonth(endDate.getMonth() + 3);
+          break;
+        case 'yearly':
+          endDate.setFullYear(endDate.getFullYear() + 1);
+          break;
+        default:
+          endDate.setMonth(endDate.getMonth() + 1);
+      }
+
+      const subscriptionData = {
+        active: true,
+        type: type,
+        startDate: Timestamp.fromDate(now),
+        endDate: Timestamp.fromDate(endDate),
+        paymentId: `manual_${Date.now()}`,
+        amount: type === 'monthly' ? 1 : type === '3months' ? 2490 : 8290, // ВРЕМЕННО ДЛЯ ТЕСТА (обычно monthly: 990)
+        updatedAt: serverTimestamp()
+      };
+
+      // Проверяем, существует ли документ пользователя
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        // Создаем документ пользователя
+        await setDoc(userRef, {
+          subscription: subscriptionData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        // Обновляем подписку
+        await updateDoc(userRef, {
+          subscription: subscriptionData,
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      alert(language === 'en' ? 'Subscription activated!' : 'Подписка активирована!');
+      setShowActivateModal(false);
+      setSelectedUserForSubscription(null);
+      await loadSubscribers();
+    } catch (error) {
+      console.error('Error activating subscription:', error);
+      alert((language === 'en' ? 'Error activating subscription: ' : 'Ошибка при активации подписки: ') + error.message);
+    }
+  };
+
+  const handleDeactivateSubscription = async (userId) => {
+    if (!confirm(language === 'en' 
+      ? 'Deactivate subscription? User will lose access to premium features.' 
+      : 'Деактивировать подписку? Пользователь потеряет доступ к премиум функциям.')) return;
+    
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        'subscription.active': false,
+        'subscription.updatedAt': serverTimestamp()
+      });
+      
+      alert(language === 'en' ? 'Subscription deactivated!' : 'Подписка деактивирована!');
+      await loadSubscribers();
+    } catch (error) {
+      console.error('Error deactivating subscription:', error);
+      alert((language === 'en' ? 'Error deactivating subscription: ' : 'Ошибка при деактивации подписки: ') + error.message);
     }
   };
 
@@ -239,20 +351,83 @@ export default function AdminSubscriptionsPage() {
 
           {/* Фильтры и поиск */}
           <motion.div
-            className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/10"
+            className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/10 relative"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             <div className="flex flex-col md:flex-row gap-4">
               {/* Поиск */}
-              <input
-                type="text"
-                placeholder={language === 'en' ? 'Search by email...' : 'Поиск по email...'}
-                value={searchEmail}
-                onChange={(e) => setSearchEmail(e.target.value)}
-                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-green-500"
-              />
+              <div className="flex-1 flex gap-2 relative">
+                <input
+                  type="text"
+                  placeholder={language === 'en' ? 'Search by email or name...' : 'Поиск по email или имени...'}
+                  value={searchEmail}
+                  onChange={(e) => {
+                    setSearchEmail(e.target.value);
+                    if (e.target.value.trim()) {
+                      handleSearchUser();
+                    } else {
+                      setSearchResults([]);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchUser();
+                    }
+                  }}
+                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-green-500"
+                />
+                <button
+                  onClick={handleSearchUser}
+                  className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                >
+                  {language === 'en' ? 'Search' : 'Найти'}
+                </button>
+                
+                {/* Результаты поиска */}
+                {searchResults.length > 0 && (
+                  <div className="absolute z-10 top-full left-0 right-0 mt-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((user) => {
+                      const hasSubscription = subscribers.find(s => s.id === user.id);
+                      return (
+                        <div
+                          key={user.id}
+                          className="p-3 hover:bg-white/10 cursor-pointer border-b border-white/10 last:border-b-0"
+                          onClick={() => {
+                            setSelectedUserForSubscription(user);
+                            setShowActivateModal(true);
+                            setSearchEmail('');
+                            setSearchResults([]);
+                          }}
+                        >
+                          <div className="text-white font-medium">{user.displayName}</div>
+                          <div className="text-white/60 text-sm">{user.email}</div>
+                          {hasSubscription && (
+                            <div className="text-xs mt-1">
+                              <span className={`px-2 py-0.5 rounded ${
+                                hasSubscription.subscription.isActive
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-red-500/20 text-red-400'
+                              }`}>
+                                {hasSubscription.subscription.isActive 
+                                  ? (language === 'en' ? 'Active' : 'Активна')
+                                  : (language === 'en' ? 'Expired' : 'Истекла')}
+                              </span>
+                            </div>
+                          )}
+                          {!hasSubscription && (
+                            <div className="text-xs mt-1 text-yellow-400">
+                              {language === 'en' ? 'No subscription' : 'Нет подписки'}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               
               {/* Фильтры */}
               <div className="flex flex-wrap gap-2">
@@ -344,6 +519,23 @@ export default function AdminSubscriptionsPage() {
                             >
                               +30
                             </button>
+                            {subscriber.subscription.isActive ? (
+                              <button
+                                onClick={() => handleDeactivateSubscription(subscriber.id)}
+                                className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-lg text-sm hover:bg-yellow-500/30 transition-colors"
+                                title={language === 'en' ? 'Deactivate subscription' : 'Деактивировать подписку'}
+                              >
+                                ⏸
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleActivateSubscription(subscriber.id, subscriber.subscription.type)}
+                                className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
+                                title={language === 'en' ? 'Activate subscription' : 'Активировать подписку'}
+                              >
+                                ▶
+                              </button>
+                            )}
                             <button
                               onClick={() => handleCancelSubscription(subscriber.id)}
                               className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
@@ -362,6 +554,69 @@ export default function AdminSubscriptionsPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Модалка для активации подписки */}
+      {showActivateModal && selectedUserForSubscription && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6 max-w-md w-full mx-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <h3 className="text-2xl font-bold text-white mb-4">
+              {language === 'en' ? 'Activate Subscription' : 'Активировать подписку'}
+            </h3>
+            <div className="mb-4">
+              <p className="text-white/80 mb-2">
+                {language === 'en' ? 'User:' : 'Пользователь:'}
+              </p>
+              <p className="text-white font-medium">{selectedUserForSubscription.displayName}</p>
+              <p className="text-white/60 text-sm">{selectedUserForSubscription.email}</p>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-white/80 mb-3">
+                {language === 'en' ? 'Subscription Type:' : 'Тип подписки:'}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {['monthly', '3months', 'yearly'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setSubscriptionType(type)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      subscriptionType === type
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    {type === 'monthly' && (language === 'en' ? 'Monthly' : 'Месячная')}
+                    {type === '3months' && (language === 'en' ? '3 Months' : '3 месяца')}
+                    {type === 'yearly' && (language === 'en' ? 'Yearly' : 'Годовая')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowActivateModal(false);
+                  setSelectedUserForSubscription(null);
+                }}
+                className="flex-1 bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-colors"
+              >
+                {language === 'en' ? 'Cancel' : 'Отмена'}
+              </button>
+              <button
+                onClick={() => handleActivateSubscription(selectedUserForSubscription.id, subscriptionType)}
+                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-400 transition-colors"
+              >
+                {language === 'en' ? 'Activate' : 'Активировать'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </>
   );
 }

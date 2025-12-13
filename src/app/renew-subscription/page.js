@@ -25,7 +25,7 @@ const SUBSCRIPTION_PLANS = {
   '3months': {
     name: 'Подписка на 3 месяца',
     nameEn: '3 Months Subscription',
-    price: 2490, // 830 руб/мес, экономия 16%
+    price: 2490,
     period: '3 месяца',
     periodEn: '3 months',
     description: 'Экономия 16% при оплате за 3 месяца',
@@ -35,7 +35,7 @@ const SUBSCRIPTION_PLANS = {
   yearly: {
     name: 'Годовая подписка',
     nameEn: 'Yearly Subscription',
-    price: 8290, // 691 руб/мес, экономия 30%
+    price: 8290,
     period: '1 год',
     periodEn: '1 year',
     description: 'Максимальная экономия - 30%',
@@ -44,10 +44,10 @@ const SUBSCRIPTION_PLANS = {
   }
 };
 
-export default function SubscribePage() {
+export default function RenewSubscriptionPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const { user, hasSubscription, isLoading: subscriptionLoading } = useSubscription();
+  const { user, hasSubscription, subscription, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState('3months');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -57,69 +57,31 @@ export default function SubscribePage() {
     setIsLoading(false);
   }, []);
 
-  // Функция для сохранения тренировки из localStorage
-  const savePendingWorkout = useCallback(async () => {
-    try {
-      const pendingWorkoutStr = localStorage.getItem('pending_workout');
-      if (!pendingWorkoutStr || !user) return;
-
-      const pendingWorkout = JSON.parse(pendingWorkoutStr);
-      console.log('[Subscribe] Saving pending workout:', pendingWorkout);
-
-      const workoutData = {
-        name: pendingWorkout.name,
-        description: pendingWorkout.description || "",
-        exercises: pendingWorkout.exercises,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        estimatedDuration: pendingWorkout.estimatedDuration
-      };
-
-      await addDoc(collection(db, 'workouts'), workoutData);
-      trackWorkoutCreated(pendingWorkout.exercises.length);
-      
-      // Удаляем из localStorage после успешного сохранения
-      localStorage.removeItem('pending_workout');
-      console.log('✅ [Subscribe] Workout saved successfully!');
-      
-      // Редиректим на страницу тренировок
-      router.replace('/my-workouts');
-    } catch (error) {
-      console.error('[Subscribe] Error saving pending workout:', error);
+  // Устанавливаем текущий план по умолчанию
+  useEffect(() => {
+    if (subscription?.type) {
+      setSelectedPlan(subscription.type);
     }
-  }, [user, router]);
+  }, [subscription]);
 
   // Редирект неавторизованных пользователей
   useEffect(() => {
-    if (subscriptionLoading) return; // Ждем загрузки подписки
+    if (subscriptionLoading) return;
     
     if (!user) {
-      // Проверяем есть ли сохраненная тренировка
-      const pendingWorkout = typeof window !== 'undefined' && localStorage.getItem('pending_workout');
-      if (pendingWorkout) {
-        // Если есть тренировка, редиректим на авторизацию с параметром
-        router.replace('/auth?redirect=/subscribe&hasWorkout=true');
-      } else {
-        router.replace('/auth?redirect=/subscribe');
-      }
+      router.replace('/auth?redirect=/renew-subscription');
       return;
     }
 
-    // Если пользователь авторизован и имеет активную подписку - проверяем есть ли pending workout
-    // НЕ редиректим автоматически, чтобы пользователь мог продлить подписку
-    if (user && (hasSubscription || isAdmin(user))) {
-      const hasPendingWorkout = typeof window !== 'undefined' && localStorage.getItem('pending_workout');
-      if (hasPendingWorkout) {
-        // Сохраняем тренировку и редиректим
-        savePendingWorkout();
-      }
-      // Не редиректим на /my-workouts, позволяем пользователю продлить подписку
+    // Если нет активной подписки - редиректим на обычную страницу подписок
+    if (!hasSubscription && !isAdmin(user)) {
+      router.replace('/subscribe');
     }
-  }, [user, hasSubscription, subscriptionLoading, router, savePendingWorkout]);
+  }, [user, hasSubscription, subscriptionLoading, router]);
 
-  const handleSubscribe = async () => {
+  const handleRenew = async () => {
     if (!user) {
-      router.push('/auth?redirect=/subscribe');
+      router.push('/auth?redirect=/renew-subscription');
       return;
     }
 
@@ -144,10 +106,59 @@ export default function SubscribePage() {
         throw new Error('No redirect URL received');
       }
     } catch (err) {
-      console.error('Subscription error:', err);
-      setError(err.message || 'Ошибка при создании подписки');
+      console.error('Subscription renewal error:', err);
+      setError(err.message || 'Ошибка при продлении подписки');
       setIsProcessing(false);
     }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    let dateObj;
+    if (date.toDate) {
+      dateObj = date.toDate();
+    } else if (date.seconds) {
+      dateObj = new Date(date.seconds * 1000);
+    } else if (typeof date === 'string') {
+      dateObj = new Date(date);
+    } else {
+      dateObj = date;
+    }
+    return dateObj.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const calculateNewEndDate = () => {
+    if (!subscription?.expiresAt) return null;
+    
+    let currentEndDate;
+    if (subscription.expiresAt.toDate) {
+      currentEndDate = subscription.expiresAt.toDate();
+    } else if (subscription.expiresAt.seconds) {
+      currentEndDate = new Date(subscription.expiresAt.seconds * 1000);
+    } else if (typeof subscription.expiresAt === 'string') {
+      currentEndDate = new Date(subscription.expiresAt);
+    } else {
+      currentEndDate = subscription.expiresAt;
+    }
+
+    const newEndDate = new Date(currentEndDate);
+    switch (selectedPlan) {
+      case 'monthly':
+        newEndDate.setMonth(newEndDate.getMonth() + 1);
+        break;
+      case '3months':
+        newEndDate.setMonth(newEndDate.getMonth() + 3);
+        break;
+      case 'yearly':
+        newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+        break;
+    }
+    
+    return newEndDate;
   };
 
   if (isLoading || subscriptionLoading) {
@@ -158,10 +169,7 @@ export default function SubscribePage() {
     );
   }
 
-  // Убрали автоматический редирект, чтобы пользователи могли продлить подписку
-
   if (!user) {
-    // Пока идет редирект, показываем загрузку
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Перенаправление...</div>
@@ -169,38 +177,68 @@ export default function SubscribePage() {
     );
   }
 
+  if (!hasSubscription && !isAdmin(user)) {
+    return null; // Редирект на /subscribe
+  }
+
   const texts = TEXTS[language].subscription;
+  const newEndDate = calculateNewEndDate();
 
   return (
     <>
-      <Navigation currentPage="subscribe" user={user} />
+      <Navigation currentPage="renew-subscription" user={user} />
       <div className="min-h-screen bg-black pt-20 pb-20">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-2xl mx-auto px-4">
           {/* Заголовок */}
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-3xl font-bold text-white mb-4">
-              {texts.title}
+              {language === 'en' ? 'Renew Subscription' : 'Продлить подписку'}
             </h1>
             <p className="text-white/60 text-base">
-              {texts.subtitle}
+              {language === 'en' 
+                ? 'Your remaining days will be added to the new subscription period'
+                : 'Оставшиеся дни будут добавлены к новому периоду подписки'}
             </p>
-            {/* Сообщение о сохраненной тренировке */}
-            {typeof window !== 'undefined' && localStorage.getItem('pending_workout') && (
-              <motion.div
-                className="mt-6 inline-block bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2 text-green-400 text-sm"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                {texts.workoutWillBeSaved}
-              </motion.div>
-            )}
           </motion.div>
+
+          {/* Текущая подписка */}
+          {subscription && (
+            <motion.div
+              className="bg-white/5 border border-green-500/50 rounded-xl p-6 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 className="text-lg font-bold text-white mb-4">
+                {language === 'en' ? 'Current Subscription' : 'Текущая подписка'}
+              </h2>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-white/60 text-sm">
+                    {language === 'en' ? 'Expires on:' : 'Истекает:'}
+                  </span>
+                  <span className="text-white font-semibold">
+                    {formatDate(subscription.expiresAt)}
+                  </span>
+                </div>
+                {newEndDate && (
+                  <div className="flex justify-between pt-2 border-t border-white/10">
+                    <span className="text-green-400 text-sm font-medium">
+                      {language === 'en' ? 'New expiration date:' : 'Новая дата окончания:'}
+                    </span>
+                    <span className="text-green-400 font-semibold">
+                      {formatDate(newEndDate)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Планы подписки */}
           <div className="grid grid-cols-1 gap-4 mb-12 max-w-sm mx-auto">
@@ -312,7 +350,7 @@ export default function SubscribePage() {
             </motion.div>
           )}
 
-          {/* Кнопка оплаты */}
+          {/* Кнопка продления */}
           <motion.div
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -320,26 +358,33 @@ export default function SubscribePage() {
             transition={{ delay: 0.4 }}
           >
             <button
-              onClick={handleSubscribe}
+              onClick={handleRenew}
               disabled={isProcessing}
               className="w-full px-12 py-4 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isProcessing 
-                ? texts.processing
-                : texts.subscribeNow
+                ? (language === 'en' ? 'Processing...' : 'Обработка...')
+                : (language === 'en' ? 'Renew Subscription' : 'Продлить подписку')
               }
             </button>
           </motion.div>
 
           {/* Дополнительная информация */}
           <motion.div
-            className="text-center text-white/40 text-sm"
+            className="text-center text-white/40 text-sm space-y-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
             <p>
-              {texts.paymentInfo}
+              {language === 'en'
+                ? 'Payment is processed securely through YooKassa. Your subscription will be extended immediately after payment.'
+                : 'Оплата обрабатывается безопасно через Юкассу. Ваша подписка будет продлена сразу после оплаты.'}
+            </p>
+            <p className="text-green-400/60">
+              {language === 'en'
+                ? '✓ Your remaining subscription days will be preserved and added to the new period'
+                : '✓ Ваши оставшиеся дни подписки будут сохранены и добавлены к новому периоду'}
             </p>
           </motion.div>
         </div>
@@ -347,3 +392,4 @@ export default function SubscribePage() {
     </>
   );
 }
+

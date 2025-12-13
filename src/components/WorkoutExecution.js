@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 
 export default function WorkoutExecution({ workout, onComplete, onCancel, isSaving }) {
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const router = useRouter();
   const [workoutResults, setWorkoutResults] = useState({
     exercises: []
   });
   const [startTime, setStartTime] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list', 'grid-4', 'large'
 
   // Инициализация результатов
   useEffect(() => {
@@ -28,42 +32,6 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     }
   }, [workout]);
 
-  const currentExercise = workoutResults.exercises[currentExerciseIndex];
-  const nextExercise = workoutResults.exercises[currentExerciseIndex + 1];
-  const progress = ((currentExerciseIndex + 1) / workoutResults.exercises.length) * 100;
-
-  // Принудительное обновление видео при смене упражнения
-  useEffect(() => {
-    if (!currentExercise) return;
-    
-    // Немедленное обновление видео без задержки
-    const video = document.querySelector('video');
-    if (video) {
-      video.load();
-      video.play().catch(console.error);
-    }
-  }, [currentExerciseIndex, currentExercise]);
-
-  const handleCompleteExercise = () => {
-    if (!currentExercise) return;
-
-    const updatedResults = { ...workoutResults };
-    const exercise = updatedResults.exercises[currentExerciseIndex];
-    
-    // Отмечаем упражнение как выполненное с исходными значениями
-    exercise.actualSets = exercise.sets || 3;
-    exercise.actualReps = exercise.reps || 12;
-    exercise.completedSets = exercise.sets || 3;
-    
-    setWorkoutResults(updatedResults);
-
-    // Переходим к следующему упражнению или завершаем тренировку
-    if (currentExerciseIndex < workoutResults.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-    } else {
-      handleCompleteWorkout();
-    }
-  };
 
   const handleCompleteWorkout = () => {
     const finalResults = {
@@ -74,86 +42,113 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     onComplete(finalResults);
   };
 
-  // Функции навигации
-      const goToNextExercise = () => {
-        if (currentExerciseIndex < workoutResults.exercises.length - 1) {
-          setCurrentExerciseIndex(currentExerciseIndex + 1);
-        } else {
-          // Завершаем тренировку
-          handleCompleteWorkout();
-        }
-      };
 
-  const goToPreviousExercise = () => {
-    if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(currentExerciseIndex - 1);
-    }
+  const handleGoToWorkouts = () => {
+    // Сохраняем результаты и переходим на страницу тренировок
+    handleCompleteWorkout();
+    router.push('/my-workouts');
   };
 
-  // Обработчики свайпов
-  const handleTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+  const handleToggleExercise = (index) => {
+    const updatedResults = { ...workoutResults };
+    const exercise = updatedResults.exercises[index];
     
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe) {
-      goToNextExercise();
-    } else if (isRightSwipe) {
-      goToPreviousExercise();
+    if (exercise.completedSets === undefined || exercise.completedSets === 0) {
+      exercise.completedSets = exercise.sets || 3;
+      exercise.actualSets = exercise.sets || 3;
+      exercise.actualReps = exercise.reps || 12;
+    } else {
+      exercise.completedSets = 0;
     }
+    
+    setWorkoutResults(updatedResults);
   };
 
-  // Обработчики клавиатуры
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') {
-        goToPreviousExercise();
-      } else if (e.key === 'ArrowRight') {
-        goToNextExercise();
-      }
-    };
+  const getPosterFromExercise = (exercise) => {
+    if (!exercise) return "";
+    if (exercise.poster) return exercise.poster;
+    if (exercise.video) return exercise.video.replace('/videos/', '/posters/').replace('.mp4', '.jpg');
+    return "";
+  };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentExerciseIndex, workoutResults.exercises.length, goToNextExercise, goToPreviousExercise]);
+  // Настройки для каждого режима
+  const viewModeConfig = useMemo(() => {
+    switch (viewMode) {
+      case 'list':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 100, // Много упражнений в ряд
+          gridCols: 'auto'
+        };
+      case 'large':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 1,
+          gridCols: 1
+        };
+      case 'grid-4':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 8, // 2 ряда × 4 колонки
+          gridCols: 4
+        };
+      default:
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 8,
+          gridCols: 4
+        };
+    }
+  }, [viewMode]);
+  
+  // Разбиваем упражнения на слайды
+  const exerciseSlides = useMemo(() => {
+    const slides = [];
+    const { exercisesPerSlide } = viewModeConfig;
+    
+    for (let i = 0; i < workoutResults.exercises.length; i += exercisesPerSlide) {
+      slides.push(workoutResults.exercises.slice(i, i + exercisesPerSlide));
+    }
+    
+    return slides;
+  }, [workoutResults.exercises, viewModeConfig]);
 
+  // Проверяем, все ли упражнения выполнены
+  const allExercisesCompleted = workoutResults.exercises.length > 0 && workoutResults.exercises.every(ex => ex.completedSets > 0);
+
+  // Если тренировка завершена, показываем страницу завершения
   if (isCompleted) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-light text-white mb-2 tracking-wide">
-            Workout Complete
-          </h1>
-          <div className="text-gray-400 text-sm">
-            Saving results...
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md w-full">
+          <div className="mb-8">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white flex items-center justify-center">
+              <svg className="w-12 h-12 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-light text-white mb-3 tracking-wide">
+              Тренировка выполнена
+            </h1>
+            <p className="text-white/60 text-sm">
+              Отличная работа!
+            </p>
           </div>
+          
+          <button
+            onClick={handleGoToWorkouts}
+            className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-white/90 transition-all duration-300"
+          >
+            Вернуться к тренировкам
+          </button>
         </div>
       </div>
     );
   }
 
-  if (!currentExercise) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Ошибка загрузки упражнения</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen bg-black text-white overflow-hidden">
-      {/* Крестик для выхода - на уровне меню */}
+    <div className="min-h-screen bg-black text-white p-4 pt-20">
+      {/* Крестик для выхода */}
       <button
         onClick={onCancel}
         className="fixed top-4 right-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
@@ -164,159 +159,257 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         </svg>
       </button>
 
-      {/* Основной контейнер */}
-      <div className="flex flex-col md:flex-row h-full">
-        {/* Видео контейнер */}
-        <div 
-          className="relative flex-1 md:flex-none md:w-1/2"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Навигационные стрелки для десктопа */}
-          {currentExerciseIndex > 0 && (
-            <button
-              onClick={goToPreviousExercise}
-              className="hidden md:flex absolute left-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full items-center justify-center transition-all duration-300"
-              aria-label="Предыдущее упражнение"
-            >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-
-          {currentExerciseIndex < workoutResults.exercises.length - 1 && (
-            <button
-              onClick={goToNextExercise}
-              className="hidden md:flex absolute right-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full items-center justify-center transition-all duration-300"
-              aria-label="Следующее упражнение"
-            >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-
-          <video
-            key={`${currentExerciseIndex}-${currentExercise.id}`}
-            src={currentExercise.video}
-            className="w-full h-full object-cover md:object-contain"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            onLoadStart={() => console.log('Video loading started')}
-            onCanPlay={() => console.log('Video can play')}
-            onError={(e) => console.error('Video error:', e)}
-          />
-
-          {/* Скрытая предзагрузка следующего видео */}
-          {nextExercise && (
-            <video
-              src={nextExercise.video}
-              preload="auto"
-              style={{ display: 'none' }}
-              onLoadStart={() => console.log('Next video preloading started')}
-              onCanPlay={() => console.log('Next video preloaded')}
-            />
-          )}
-
-          {/* Мобильная информация поверх видео */}
-          <div className="md:hidden absolute bottom-0 left-0 right-0 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-white">
-                <h2 className="text-lg font-medium mb-1 drop-shadow-lg">
-                  {currentExercise.title}
-                </h2>
-                <div className="flex items-center space-x-3 text-sm font-medium drop-shadow-lg opacity-90">
-                  <span>{currentExercise.sets || 3}</span>
-                  <span>•</span>
-                  <span>{currentExercise.reps || 12}</span>
-                </div>
-              </div>
-              <button
-                onClick={handleCompleteExercise}
-                className="group flex items-center justify-center w-12 h-12 hover:bg-white/10 rounded-full transition-all duration-300 ease-out hover:scale-110 active:scale-95 relative z-10 cursor-pointer"
-                aria-label="Завершить упражнение"
-                style={{ pointerEvents: 'auto' }}
-              >
-                <svg className="w-5 h-5 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-white/70 text-sm font-medium">
-                {currentExerciseIndex + 1} / {workoutResults.exercises.length}
-              </span>
-              <span className="text-white/70 text-sm font-medium">
-                {Math.round(progress)}%
-              </span>
-            </div>
-            <div className="w-full bg-white/20 rounded-full h-1">
-              <div 
-                className="bg-white h-1 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
+      {/* Заголовок тренировки, прогресс и переключатель режимов */}
+      <div className="max-w-7xl mx-auto mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{workout.name}</h1>
+            {workout.description && (
+              <p className="text-white/60 text-sm md:text-base">
+                {workout.description}
+              </p>
+            )}
           </div>
-
-          {/* Градиент для мобильной версии */}
-          <div className="md:hidden absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+          
+          {/* Переключатель режимов просмотра */}
+          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white text-black'
+                  : 'text-white/60 hover:text-white'
+              }`}
+              title="Список"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('large')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'large'
+                  ? 'bg-white text-black'
+                  : 'text-white/60 hover:text-white'
+              }`}
+              title="Крупный вид"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('grid-4')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'grid-4'
+                  ? 'bg-white text-black'
+                  : 'text-white/60 hover:text-white'
+              }`}
+              title="4 в ряд"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              </svg>
+            </button>
+          </div>
         </div>
-
-        {/* Десктопная панель информации */}
-        <div className="hidden md:flex md:w-1/2 md:flex-col md:justify-center md:items-center md:p-8 md:bg-black/20">
-          <div className="w-full max-w-md space-y-8">
-            {/* Название упражнения */}
-            <div>
-              <h2 className="text-4xl font-bold text-white mb-4">
-                {currentExercise.title}
-              </h2>
-              <div className="flex items-center space-x-4 text-2xl font-medium text-white/90">
-                <span>{currentExercise.sets || 3} подходов</span>
-                <span>•</span>
-                <span>{currentExercise.reps || 12} повторений</span>
-              </div>
-            </div>
-
-            {/* Прогресс */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-white/70">
-                <span className="text-lg font-medium">
-                  Упражнение {currentExerciseIndex + 1} из {workoutResults.exercises.length}
-                </span>
-                <span className="text-lg font-medium">
-                  {Math.round(progress)}%
-                </span>
-              </div>
-              <div className="w-full bg-white/20 rounded-full h-2">
-                <div 
-                  className="bg-white h-2 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-
-          </div>
+        
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white/70 text-sm">
+            {workoutResults.exercises.filter(ex => ex.completedSets > 0).length} / {workoutResults.exercises.length} выполнено
+          </span>
+          <span className="text-white/70 text-sm">
+            {Math.round((workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100)}%
+          </span>
+        </div>
+        <div className="w-full bg-white/20 rounded-full h-2">
+          <div 
+            className="bg-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${(workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100}%` }}
+          ></div>
         </div>
       </div>
-        {/* Подсказка для навигации */}
-        <div className="hidden md:block absolute top-4 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
-            <p className="text-white/80 text-sm">
-              {currentExerciseIndex < workoutResults.exercises.length - 1 
-                ? "Используйте стрелки или клавиши ← → для навигации" 
-                : "→ для завершения тренировки"
-              }
-            </p>
+
+      {/* Отображение упражнений */}
+      <div className="max-w-7xl mx-auto">
+        {viewMode === 'list' ? (
+          // Режим списка - вертикальный список: слева описание, справа карточка с видео
+          <div className="space-y-4">
+            {workoutResults.exercises.map((exercise, index) => {
+              const isCompleted = exercise.completedSets > 0;
+              
+              return (
+                <div
+                  key={exercise.id || index}
+                  onClick={() => handleToggleExercise(index)}
+                  className={`bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
+                    isCompleted ? 'ring-1 ring-green-500/50 bg-green-500/10' : 'hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex flex-row items-center gap-3 p-2 md:p-2.5">
+                    {/* Левая часть - название, подходы, повторения */}
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white/40 text-xs font-medium">#{index + 1}</span>
+                        <h3 className={`text-white font-semibold text-sm md:text-base ${isCompleted ? 'text-green-400' : ''}`}>
+                          {exercise.title}
+                        </h3>
+                      </div>
+                      {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
+                            <span
+                              key={idx}
+                              className="text-white/50 text-xs px-1 py-0.5 rounded bg-white/5"
+                            >
+                              {group}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 text-xs text-white/60">
+                        <span>{exercise.sets || 3} подходов</span>
+                        <span>•</span>
+                        <span>{exercise.reps || 12} повторений</span>
+                      </div>
+                    </div>
+
+                    {/* Правая часть - карточка с видео (подогнана под высоту текста) */}
+                    <div className="w-20 md:w-24 h-20 md:h-24 flex-shrink-0 relative rounded-lg overflow-hidden">
+                      <video
+                        src={exercise.video}
+                        poster={getPosterFromExercise(exercise)}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                      />
+                      {isCompleted && (
+                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        ) : exerciseSlides.length > 0 ? (
+          // Режимы grid-4 и large - Swiper как в конструкторе
+          <div className={viewMode === 'large' ? 'w-full' : ''}>
+            <Swiper
+              modules={[Pagination]}
+              spaceBetween={0}
+              slidesPerView={1}
+              centeredSlides={viewMode === 'large'}
+              pagination={{
+                clickable: true,
+              }}
+              className={`!pb-8 w-full workout-builder-swiper ${viewMode === 'large' ? 'workout-builder-swiper-large' : ''}`}
+            >
+            {exerciseSlides.map((slideExercises, slideIndex) => (
+              <SwiperSlide key={slideIndex} className={viewMode === 'large' ? 'workout-builder-large' : ''}>
+                <div className={`gap-2 md:gap-4 transition-all duration-300 ${
+                  viewMode === 'large' 
+                    ? 'grid grid-cols-1 w-full md:max-w-md md:mx-auto p-2'
+                    : 'grid grid-cols-4 p-1 overflow-visible'
+                }`}>
+                  {slideExercises.map((exercise, exerciseIndex) => {
+                    // Находим реальный индекс упражнения в общем массиве
+                    const realIndex = slideIndex * viewModeConfig.exercisesPerSlide + exerciseIndex;
+                    const isCompleted = exercise.completedSets > 0;
+                    
+                    return (
+                      <div
+                        key={exercise.id || realIndex}
+                        onClick={() => handleToggleExercise(realIndex)}
+                        className={`relative rounded-xl cursor-pointer group transition-all duration-300 ${
+                          viewMode === 'large' 
+                            ? 'aspect-[9/16] max-h-[80vh]'
+                            : 'aspect-[9/16] overflow-visible'
+                        } ${
+                          isCompleted ? 'ring-1 ring-green-500 ring-offset-1 ring-offset-black' : 'hover:ring-1 hover:ring-white/30'
+                        }`}
+                        style={{ padding: isCompleted ? '4px' : '0' }}
+                      >
+                        <div className={`w-full h-full rounded-xl overflow-hidden ${viewMode === 'large' ? 'relative' : ''}`}>
+                        {/* Видео - обертка с overflow-hidden */}
+                        <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
+                          <video
+                            src={exercise.video}
+                            poster={getPosterFromExercise(exercise)}
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                        </div>
+                        
+                        {/* Информация об упражнении для режима grid-4 - убрана */}
+                        
+                        {/* Информация об упражнении для режима large */}
+                        {viewMode === 'large' && (
+                          <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10" style={{ marginBottom: isCompleted ? '4px' : '0' }}>
+                            <h3 className={`text-white font-medium text-sm mb-2 line-clamp-2 ${isCompleted ? 'text-green-400' : ''}`}>
+                              {exercise.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-white/70 mb-2">
+                              <span>{exercise.sets || 3} подходов</span>
+                              <span>•</span>
+                              <span>{exercise.reps || 12} повторений</span>
+                            </div>
+                            {/* Кнопка завершения тренировки в режиме large */}
+                            {allExercisesCompleted && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleGoToWorkouts();
+                                }}
+                                className="w-full bg-white text-black py-2 px-4 rounded-lg font-medium hover:bg-white/90 transition-all duration-300 mt-2"
+                              >
+                                Завершить тренировку
+                              </button>
+                            )}
+                          </div>
+                        )}
 
+                        {/* Галочка убрана для всех режимов */}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white/60">Нет упражнений</p>
+          </div>
+        )}
+      </div>
 
+      {/* Кнопка завершения тренировки для режимов list и grid-4 */}
+      {allExercisesCompleted && viewMode !== 'large' && (
+        <div className="max-w-7xl mx-auto mt-6 flex justify-center">
+          <button
+            onClick={handleGoToWorkouts}
+            disabled={isSaving}
+            className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-white/90 transition-all duration-300 disabled:opacity-50"
+          >
+            {isSaving ? 'Сохранение...' : 'Завершить тренировку'}
+          </button>
         </div>
-      );
+      )}
+    </div>
+  );
     }

@@ -52,27 +52,6 @@ export default function Navigation({ currentPage = "home", user = null, disableS
     setIsMenuOpen(false);
   };
 
-  const handleWorkoutBuilderClick = () => {
-    if (!user) {
-      router.push('/auth');
-      setIsMenuOpen(false);
-      return;
-    }
-    // Админы имеют доступ без подписки
-    if (!hasSubscription && !isAdmin(user)) {
-      router.push('/subscribe');
-      setIsMenuOpen(false);
-      return;
-    }
-    router.push('/workout-builder');
-    setIsMenuOpen(false);
-  };
-
-  const handleFavoritesClick = () => {
-    router.push('/favorites');
-    setIsMenuOpen(false);
-  };
-
   const handleMyWorkoutsClick = () => {
     if (!user) {
       router.push('/auth');
@@ -86,6 +65,22 @@ export default function Navigation({ currentPage = "home", user = null, disableS
       return;
     }
     router.push('/my-workouts');
+    setIsMenuOpen(false);
+  };
+
+  const handlePremiumClick = () => {
+    if (!user) {
+      router.push('/auth?redirect=/profile');
+      setIsMenuOpen(false);
+      return;
+    }
+    // Всегда ведем на страницу профиля
+    router.push('/profile');
+    setIsMenuOpen(false);
+  };
+
+  const handleArticlesClick = () => {
+    router.push('/articles');
     setIsMenuOpen(false);
   };
 
@@ -230,37 +225,28 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   </li>
                 )}
 
-                {/* Избранное */}
+                {/* Premium */}
                 <li>
                   <button
-                    onClick={handleFavoritesClick}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    onClick={handlePremiumClick}
+                    className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-green-500/50 hover:border-green-500"
                   >
-                    <span>{TEXTS[language].navigation.favorites}</span>
-                    <span className="text-green-500 text-xs">✓</span>
+                    <span className="flex items-center gap-2">
+                      <span>⭐</span>
+                      <span>{language === 'en' ? 'Premium' : 'Premium'}</span>
+                    </span>
                   </button>
                 </li>
 
-                {/* Workout Builder - для всех пользователей */}
-                {user && (
-                  <li>
-                    <button
-                      onClick={handleWorkoutBuilderClick}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-colors duration-200 text-left ${
-                        hasSubscription || isAdmin(user)
-                          ? 'text-white hover:bg-white/10'
-                          : 'text-white/70 hover:bg-white/10 cursor-pointer'
-                      }`}
-                    >
-                      <span>{TEXTS[language].navigation.workoutBuilder}</span>
-                      {hasSubscription || isAdmin(user) ? (
-                        <span className="text-green-500 text-xs">✓</span>
-                      ) : (
-                        <span className="text-yellow-500 text-xs">🔒</span>
-                      )}
-                    </button>
-                  </li>
-                )}
+                {/* Статьи */}
+                <li>
+                  <button
+                    onClick={handleArticlesClick}
+                    className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                  >
+                    <span>{TEXTS[language].navigation.articles}</span>
+                  </button>
+                </li>
 
                 {/* My Workouts - для всех пользователей */}
                 {user && (
@@ -421,7 +407,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
             {/* Подвал */}
             <div className="pt-6 border-t border-white/10">
               <p className="text-gray-500 text-xs text-center">
-                Beta Version
+                Pure.Progression
               </p>
             </div>
           </nav>

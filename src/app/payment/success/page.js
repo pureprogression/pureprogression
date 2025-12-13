@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { trackWorkoutCreated } from '@/lib/analytics';
 
 export default function PaymentSuccess() {
   const router = useRouter();
@@ -46,6 +48,39 @@ export default function PaymentSuccess() {
       clearTimeout(overallTimeout);
     };
   }, []);
+
+  // Функция для сохранения тренировки из localStorage
+  const savePendingWorkout = async (currentUser) => {
+    try {
+      const pendingWorkoutStr = localStorage.getItem('pending_workout');
+      if (!pendingWorkoutStr) {
+        console.log('[Payment Success] No pending workout found');
+        return;
+      }
+
+      const pendingWorkout = JSON.parse(pendingWorkoutStr);
+      console.log('[Payment Success] Saving pending workout:', pendingWorkout);
+
+      const workoutData = {
+        name: pendingWorkout.name,
+        description: pendingWorkout.description || "",
+        exercises: pendingWorkout.exercises,
+        userId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        estimatedDuration: pendingWorkout.estimatedDuration
+      };
+
+      await addDoc(collection(db, 'workouts'), workoutData);
+      trackWorkoutCreated(pendingWorkout.exercises.length);
+      
+      // Удаляем из localStorage после успешного сохранения
+      localStorage.removeItem('pending_workout');
+      console.log('✅ [Payment Success] Workout saved successfully!');
+    } catch (error) {
+      console.error('[Payment Success] Error saving pending workout:', error);
+      // Не удаляем из localStorage при ошибке, чтобы можно было попробовать еще раз
+    }
+  };
 
   const initializeActivation = async (currentUser) => {
     // Получаем параметры из URL
@@ -206,14 +241,20 @@ export default function PaymentSuccess() {
         setSubscriptionActivated(true);
         setActivationError(null);
         setIsLoading(false);
+        
+        // Сохраняем тренировку из localStorage если есть
+        await savePendingWorkout(currentUser);
+        
         // Очищаем localStorage
         localStorage.removeItem('last_subscription_payment_id');
         localStorage.removeItem('last_subscription_type');
         localStorage.removeItem('last_subscription_user_id');
-        // Не обновляем страницу сразу, показываем успех
-        // setTimeout(() => {
-        //   window.location.reload();
-        // }, 1000);
+        
+        // Автоматический редирект на "Мои тренировки" через 2 секунды
+        setTimeout(() => {
+          router.push('/my-workouts');
+        }, 2000);
+        
         return; // Останавливаем дальнейшие попытки
       } else {
         console.log(`[Payment Success] Activation failed (attempt ${attemptNumber + 1}):`, data.error || data.message);
@@ -283,6 +324,14 @@ export default function PaymentSuccess() {
       
       if (response.ok && data.success) {
         setSubscriptionActivated(true);
+        // Сохраняем тренировку из localStorage если есть
+        await savePendingWorkout(currentUser);
+        
+        // Автоматический редирект на "Мои тренировки" через 2 секунды
+        setTimeout(() => {
+          router.push('/my-workouts');
+        }, 2000);
+        
         return true;
       } else {
         console.error('[Payment Success] Failed to activate subscription:', data.error);
@@ -486,7 +535,9 @@ export default function PaymentSuccess() {
         >
           {new URLSearchParams(window.location.search).get('type') === 'subscription'
             ? (subscriptionActivated 
-                ? 'Подписка успешно активирована!'
+                ? (typeof window !== 'undefined' && localStorage.getItem('pending_workout')
+                    ? 'Подписка активирована! Тренировка сохранена. Перенаправляем...'
+                    : 'Подписка успешно активирована! Перенаправляем...')
                 : isLoading
                 ? 'Обрабатываем вашу подписку...'
                 : 'Подписка будет активирована автоматически.')
@@ -504,29 +555,39 @@ export default function PaymentSuccess() {
           </motion.p>
         )}
 
-        {/* Кнопки */}
-        <motion.div
-          className="space-y-3"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <button
-            onClick={() => router.push('/')}
-            className="w-full p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300"
+        {/* Кнопка для немедленного перехода (если не произошел автоматический редирект) */}
+        {subscriptionActivated && (
+          <motion.div
+            className="space-y-3"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
           >
-            Вернуться на главную
-          </button>
-          
-          {new URLSearchParams(window.location.search).get('type') === 'subscription' && (
             <button
               onClick={() => router.push('/my-workouts')}
-              className="w-full p-4 border-2 border-white/30 rounded-xl text-white hover:bg-white/10 transition-all duration-300"
+              className="w-full p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300"
             >
               Перейти к моим тренировкам
             </button>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
+        
+        {/* Кнопка для донаций */}
+        {new URLSearchParams(window.location.search).get('type') !== 'subscription' && (
+          <motion.div
+            className="space-y-3"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <button
+              onClick={() => router.push('/')}
+              className="w-full p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300"
+            >
+              Вернуться на главную
+            </button>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

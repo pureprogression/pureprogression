@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
-import LazyVideo from "./LazyVideo";
 import ExercisesFilter from "./ExercisesFilter";
+import "swiper/css";
+import "swiper/css/pagination";
 
-export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
-  const [workoutName, setWorkoutName] = useState("");
-  const [workoutDescription, setWorkoutDescription] = useState("");
-  const [selectedExercises, setSelectedExercises] = useState([]);
+export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, initialWorkout = null }) {
+  const [workoutName, setWorkoutName] = useState(initialWorkout?.name || "");
+  const [workoutDescription, setWorkoutDescription] = useState(initialWorkout?.description || "");
+  const [selectedExercises, setSelectedExercises] = useState(initialWorkout?.exercises || []);
   const { language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [filterExpanded, setFilterExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState("browse"); // browse, selected
   const [clickedExercise, setClickedExercise] = useState(null); // для анимации клика
   const [draggedExercise, setDraggedExercise] = useState(null); // для drag & drop
@@ -25,7 +30,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   const [tabSwipeOffset, setTabSwipeOffset] = useState(0); // смещение для анимации переключения вкладок
   const [filterTransitioning, setFilterTransitioning] = useState(false);
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
-
+  const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2', 'grid-4'
+  
   // Получаем уникальные категории из упражнений
   const categories = ["All", ...new Set(exercises.flatMap(ex => ex.muscleGroups))];
 
@@ -34,6 +40,48 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
     if (selectedCategory === "All") return true;
     return exercise.muscleGroups.includes(selectedCategory);
   });
+  
+  // Настройки для каждого режима
+  const viewModeConfig = useMemo(() => {
+    switch (viewMode) {
+      case 'large':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 1,
+          gridCols: 1
+        };
+      case 'grid-2':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 4, // 2 ряда × 2 колонки
+          gridCols: 2
+        };
+      case 'grid-4':
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 8, // 2 ряда × 4 колонки
+          gridCols: 4
+        };
+      default:
+        return {
+          slidesPerView: 1,
+          exercisesPerSlide: 4,
+          gridCols: 2
+        };
+    }
+  }, [viewMode]);
+  
+  // Разбиваем упражнения на слайды
+  const exerciseSlides = useMemo(() => {
+    const slides = [];
+    const { exercisesPerSlide } = viewModeConfig;
+    
+    for (let i = 0; i < filteredExercises.length; i += exercisesPerSlide) {
+      slides.push(filteredExercises.slice(i, i + exercisesPerSlide));
+    }
+    
+    return slides;
+  }, [filteredExercises, viewModeConfig]);
 
   // Анимация при изменении фильтра
   useEffect(() => {
@@ -45,35 +93,38 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   }, [selectedCategory]);
 
   // Добавляем упражнение в тренировку
-  const addExercise = (exercise) => {
+  const addExercise = useCallback((exercise) => {
     // Проверяем, не добавлено ли уже это упражнение
-    if (selectedExercises.some(ex => ex.id === exercise.id)) {
-      return; // Уже добавлено, ничего не делаем
-    }
-    
-    const exerciseWithSettings = {
-      ...exercise,
-      sets: 3,
-      reps: 12
-    };
-    setSelectedExercises([...selectedExercises, exerciseWithSettings]);
-    
-    // Анимация клика
-    setClickedExercise(exercise.id);
-    setTimeout(() => setClickedExercise(null), 600);
-  };
+    setSelectedExercises(prev => {
+      if (prev.some(ex => ex.id === exercise.id)) {
+        return prev; // Уже добавлено, ничего не делаем
+      }
+      
+      const exerciseWithSettings = {
+        ...exercise,
+        sets: 3,
+        reps: 12
+      };
+      
+      // Анимация клика
+      setClickedExercise(exercise.id);
+      setTimeout(() => setClickedExercise(null), 600);
+      
+      return [...prev, exerciseWithSettings];
+    });
+  }, []);
 
   // Удаляем упражнение из тренировки
-  const removeExercise = (exerciseId) => {
-    setSelectedExercises(selectedExercises.filter(ex => ex.id !== exerciseId));
-  };
+  const removeExercise = useCallback((exerciseId) => {
+    setSelectedExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+  }, []);
 
   // Обновляем настройки упражнения
-  const updateExercise = (exerciseId, field, value) => {
-    setSelectedExercises(selectedExercises.map(ex => 
+  const updateExercise = useCallback((exerciseId, field, value) => {
+    setSelectedExercises(prev => prev.map(ex => 
       ex.id === exerciseId ? { ...ex, [field]: value } : ex
     ));
-  };
+  }, []);
 
   // Перемещаем упражнение в списке
   const moveExercise = (fromIndex, toIndex) => {
@@ -306,11 +357,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
   return (
     <div 
       className="min-h-screen bg-black p-4 pt-4"
-      onTouchStart={handleTabSwipeStart}
-      onTouchMove={handleTabSwipeMove}
-      onTouchEnd={handleTabSwipeEnd}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden px-2' : ''}`}>
         {/* Навигация по секциям */}
         <div className="flex justify-center items-center mb-4 h-12">
           <div className="flex gap-3">
@@ -353,13 +401,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
           {activeSection === "selected" && (
             <div 
               className="animate-fadeIn"
-              style={{
-                transform: `translateX(${tabSwipeOffset}px)`,
-                transition: tabSwipeStart ? 'none' : 'transform 0.3s ease-out'
-              }}
-              onTouchStart={handleTabSwipeStart}
-              onTouchMove={handleTabSwipeMove}
-              onTouchEnd={handleTabSwipeEnd}
             >
               <div className="p-6">
                 {/* Информация о тренировке */}
@@ -420,7 +461,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                             className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group relative ${
                               draggedExercise?.id === exercise.id ? 'opacity-50 scale-105' : ''
                             } ${
-                              dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-2 ring-white/50' : ''
+                              dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-1 ring-white/50' : ''
                             }`}
                             style={{
                               transform: swipedExercise?.id === exercise.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
@@ -430,15 +471,16 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
                           >
                             {/* Видео превью */}
                             <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
-                              <video 
+                              <video
+                                src={exercise.video}
+                                poster={exercise.poster}
                                 className="w-full h-full object-cover"
                                 autoPlay
                                 muted
                                 loop
                                 playsInline
-                              >
-                                <source src={exercise.video} type="video/mp4" />
-                              </video>
+                                preload="metadata"
+                              />
                             </div>
 
                             {/* Информация об упражнении */}
@@ -519,114 +561,188 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false }) {
           {/* Секция выбора упражнений */}
           {activeSection === "browse" && (
             <div className="animate-fadeIn">
-              {/* Новый фильтр */}
-              <ExercisesFilter 
-                exercises={exercises}
-                selectedGroup={selectedCategory}
-                onGroupChange={setSelectedCategory}
-              />
-
-              {/* Сетка упражнений - с swipe для переключения вкладок */}
-              <div 
-                style={{
-                  transform: `translateX(${tabSwipeOffset}px)`,
-                  transition: tabSwipeStart ? 'none' : 'transform 0.3s ease-out'
-                }}
-                onTouchStart={handleTabSwipeStart}
-                onTouchMove={handleTabSwipeMove}
-                onTouchEnd={handleTabSwipeEnd}
-              >
-              <div className="px-4 py-6 bg-white/5 backdrop-blur-sm rounded-xl">
-
-                {/* Сетка упражнений */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredExercises.map((exercise) => (
-                    <div 
-                      key={exercise.id}
-                      data-exercise-card
-                      className={`exercise-item relative rounded-lg overflow-hidden group cursor-pointer transition-all duration-300 ease-out ${
-                        expandedBrowseId === exercise.id ? 'shadow-[0_8px_24px_rgba(0,0,0,0.35)] scale-[1.01]' : 'shadow-none'
-                      } ${filterTransitioning ? "filter-transitioning" : ""}`}
-                      onClick={(e) => {
-                        // не раскрывать при клике на +/галочку
-                        const t = e.target;
-                        if (t && t instanceof Element && t.closest('button')) return;
-                        setExpandedBrowseId(prev => prev === exercise.id ? null : exercise.id);
-                      }}
-                      style={{ 
-                        height: expandedBrowseId === exercise.id ? '18rem' : '7rem',
-                        transition: 'height 320ms ease, transform 320ms ease, box-shadow 320ms ease'
-                      }}
-                    >
-                      {/* Видео */}
-                      <video 
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload={expandedBrowseId === exercise.id ? 'auto' : 'metadata'}
-                      >
-                        <source src={exercise.video} type="video/mp4" />
-                      </video>
-
-                      {/* Кнопка добавления/удаления */}
-                      <button
-                        className={`absolute bottom-3 right-3 w-8 h-8 text-white transition-all duration-300 z-50 flex items-center justify-center cursor-pointer ${
-                          clickedExercise === exercise.id ? 'opacity-50' : 'opacity-100'
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
-                          if (isSelected) {
-                            removeExercise(exercise.id);
-                          } else {
-                            addExercise(exercise);
-                          }
-                        }}
-                      >
-                        {selectedExercises.some(ex => ex.id === exercise.id) ? (
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 5v14M5 12h14" />
-                          </svg>
-                        )}
-                      </button>
-
-                      {/* Заголовок */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                        <h3 className="text-white font-medium text-sm line-clamp-2 mb-2">{exercise.title}</h3>
-                        
-                        {/* Теги групп мышц под названием */}
-                        <div className="flex flex-wrap gap-1">
-                          {exercise.muscleGroups.slice(0, 2).map((group, index) => (
-                            <span 
-                              key={index}
-                              className="bg-white/10 backdrop-blur-sm text-white text-xs rounded px-2 py-1"
-                            >
-                              {group}
-                            </span>
-                          ))}
-                          {exercise.muscleGroups.length > 2 && (
-                            <span className="bg-white/10 backdrop-blur-sm text-white text-xs rounded px-2 py-1">
-                              +{exercise.muscleGroups.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {/* Фильтр и переключатель режимов */}
+              <div className="mb-8 flex flex-col md:flex-row gap-6 md:gap-4 items-start md:items-center">
+                <div className="flex-1">
+                  <ExercisesFilter 
+                    exercises={exercises}
+                    selectedGroup={selectedCategory}
+                    setSelectedGroup={setSelectedCategory}
+                    isExpanded={filterExpanded}
+                    setIsExpanded={setFilterExpanded}
+                  />
                 </div>
+                
+                {/* Переключатель режимов просмотра - справа */}
+                <div 
+                  className="flex items-center gap-2 bg-white/5 rounded-lg p-1 self-center md:self-auto"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  <button
+                    onClick={() => setViewMode('grid-4')}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      viewMode === 'grid-4'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    title={language === 'ru' ? '4 в ряд' : '4 per row'}
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid-2')}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      viewMode === 'grid-2'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    title={language === 'ru' ? '2 в ряд' : '2 per row'}
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('large')}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      viewMode === 'large'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    title={language === 'ru' ? 'Крупный вид (1 упражнение)' : 'Large view (1 exercise)'}
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-                {filteredExercises.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400">No exercises found</p>
+              {/* Слайдер упражнений с виртуализацией */}
+              <div>
+                {exerciseSlides.length > 0 ? (
+                  <div className={viewMode === 'large' ? 'overflow-x-hidden w-full px-2 py-1' : ''}>
+                    <Swiper
+                      modules={[Pagination]}
+                      spaceBetween={0}
+                      slidesPerView={1}
+                      centeredSlides={viewMode === 'large'}
+                      pagination={{
+                        clickable: true,
+                      }}
+                      className={`!pb-8 w-full workout-builder-swiper ${viewMode === 'large' ? 'workout-builder-swiper-large' : ''}`}
+                    >
+                    {exerciseSlides.map((slideExercises, slideIndex) => (
+                      <SwiperSlide key={slideIndex} className={viewMode === 'large' ? 'workout-builder-large' : ''}>
+                        <div className={`gap-2 md:gap-4 transition-all duration-300 overflow-visible ${
+                          viewMode === 'large' 
+                            ? 'grid grid-cols-1 w-full md:max-w-md md:mx-auto p-1'
+                            : viewMode === 'grid-2'
+                            ? 'grid grid-cols-2 p-1'
+                            : 'grid grid-cols-4 p-1'
+                        }`}>
+                          {slideExercises.map((exercise) => {
+                      const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
+                      return (
+                        <motion.div
+                          key={exercise.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        className={`relative rounded-xl overflow-visible cursor-pointer group ${
+                          viewMode === 'large' 
+                            ? 'aspect-[9/16] max-h-[80vh]'
+                            : viewMode === 'grid-4'
+                            ? 'aspect-[9/16]'
+                            : 'aspect-[9/16]'
+                        } ${
+                          isSelected ? 'ring-1 ring-green-500 ring-offset-1 ring-offset-black' : 'hover:ring-1 hover:ring-white/30'
+                        } ${filterTransitioning ? "filter-transitioning" : ""}`}
+                        style={{ 
+                          padding: isSelected ? '4px' : '0',
+                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out',
+                          willChange: isSelected ? 'padding' : 'auto'
+                        }}
+                          onClick={() => {
+                            if (isSelected) {
+                              removeExercise(exercise.id);
+                            } else {
+                              addExercise(exercise);
+                            }
+                          }}
+                        >
+                        <div className="w-full h-full rounded-xl overflow-hidden relative">
+                        {/* Видео - обертка с overflow-hidden */}
+                        <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
+                          <video
+                            src={exercise.video}
+                            poster={exercise.poster}
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                        </div>
+                        
+                        {/* Информация об упражнении - показываем только для режима 2 (grid-2) */}
+                        {viewMode === 'grid-2' && (
+                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-10 pointer-events-none" style={{ marginBottom: isSelected ? '4px' : '0' }}>
+                            <h3 className="text-white font-medium text-xs mb-0 line-clamp-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                              {exercise.title}
+                            </h3>
+                          </div>
+                        )}
+                        
+                        {/* Информация об упражнении для режима large */}
+                        {viewMode === 'large' && (
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10 pointer-events-none">
+                            <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">
+                              {exercise.title}
+                            </h3>
+                            {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-white/60 font-light text-xs px-2 py-0.5 rounded-full bg-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                                  >
+                                    {group}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                        </div>
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-white/60">
+                      {language === 'ru' ? 'Упражнения не найдены' : 'No exercises found'}
+                    </p>
                   </div>
                 )}
-              </div>
               </div>
             </div>
           )}

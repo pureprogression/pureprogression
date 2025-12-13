@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db, isAdmin } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutsList from "@/components/WorkoutsList";
 import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { trackWorkoutCreated } from "@/lib/analytics";
 
 export default function MyWorkoutsPage() {
   const { user, hasSubscription, isLoading: subscriptionLoading } = useSubscription();
@@ -18,6 +19,44 @@ export default function MyWorkoutsPage() {
   const { language } = useLanguage();
   const router = useRouter();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  // Сохраняем тренировку из localStorage если она есть
+  useEffect(() => {
+    if (!user || subscriptionLoading) return;
+
+    const pendingWorkoutStr = typeof window !== 'undefined' && localStorage.getItem('pending_workout');
+    if (pendingWorkoutStr && (hasSubscription || isAdmin(user))) {
+      const savePendingWorkout = async () => {
+        try {
+          const pendingWorkout = JSON.parse(pendingWorkoutStr);
+          console.log('[My Workouts] Saving pending workout:', pendingWorkout);
+
+          const workoutData = {
+            name: pendingWorkout.name,
+            description: pendingWorkout.description || "",
+            exercises: pendingWorkout.exercises,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+            estimatedDuration: pendingWorkout.estimatedDuration
+          };
+
+          await addDoc(collection(db, 'workouts'), workoutData);
+          trackWorkoutCreated(pendingWorkout.exercises.length);
+          
+          // Удаляем из localStorage после успешного сохранения
+          localStorage.removeItem('pending_workout');
+          console.log('✅ [My Workouts] Workout saved successfully!');
+          
+          // Перезагружаем список тренировок
+          window.location.reload();
+        } catch (error) {
+          console.error('[My Workouts] Error saving pending workout:', error);
+        }
+      };
+
+      savePendingWorkout();
+    }
+  }, [user, hasSubscription, subscriptionLoading]);
 
   useEffect(() => {
     if (user) {
@@ -132,6 +171,10 @@ export default function MyWorkoutsPage() {
     <>
       <Navigation currentPage="my-workouts" user={user} />
       <div className="max-w-[1200px] mx-auto p-4 pt-20">
+        {/* Заголовок страницы */}
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">
+          {TEXTS[language].workouts.myWorkouts}
+        </h1>
         
         {workouts.length === 0 ? (
           <div className="text-center py-12">

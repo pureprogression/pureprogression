@@ -208,7 +208,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {subscription.expiresAt && (
-                  <div className="text-gray-400 text-xs">
+                  <div className="text-gray-400 text-xs mb-3">
                     {language === 'en' ? 'Expires:' : 'Истекает:'} {new Date(subscription.expiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', { 
                       year: 'numeric', 
                       month: 'long', 
@@ -216,6 +216,12 @@ export default function ProfilePage() {
                     })}
                   </div>
                 )}
+                <button
+                  onClick={() => router.push('/renew-subscription')}
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-green-400 transition-all"
+                >
+                  {language === 'en' ? 'Renew Subscription' : 'Продлить подписку'}
+                </button>
               </div>
             ) : (
               <div className="flex justify-between items-center">

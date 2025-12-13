@@ -15,6 +15,7 @@ export const TEXTS = {
       trainingProgram: "Training Program",
       adminPanel: "Admin Panel",
       subscriptions: "Subscriptions",
+      articles: "Useful Materials",
       logout: "Logout"
     },
 
@@ -249,6 +250,35 @@ export const TEXTS = {
       statusPlanCreated: "Plan Created"
     },
 
+    // Subscription
+    subscription: {
+      title: "Choose Your Plan",
+      subtitle: "Get full access to Workout Builder and My Workouts",
+      workoutWillBeSaved: "✓ Your workout will be saved automatically after payment",
+      subscribeNow: "Subscribe Now",
+      processing: "Processing...",
+      paymentInfo: "Payment is processed securely through YooKassa. Your subscription will be activated immediately after payment.",
+      features: {
+        title: "What You Get",
+        createWorkouts: {
+          title: "Create Personal Workouts",
+          description: "Build custom workouts from our extensive exercise library"
+        },
+        videoGuides: {
+          title: "Video Exercise Guides",
+          description: "Learn proper form with professional exercise videos"
+        },
+        trackProgress: {
+          title: "Track Your Progress",
+          description: "Monitor your fitness journey and completed workouts"
+        },
+        unlimitedAccess: {
+          title: "Unlimited Access",
+          description: "Create and save unlimited workouts"
+        }
+      }
+    },
+
     // Common
     common: {
       loading: "Loading...",
@@ -278,6 +308,7 @@ export const TEXTS = {
       trainingProgram: "Программа тренировок",
       adminPanel: "Админ-панель",
       subscriptions: "Подписки",
+      articles: "Полезные материалы",
       logout: "Выйти"
     },
 
@@ -500,6 +531,34 @@ export const TEXTS = {
       statusNew: "Новый",
       statusInProgress: "В работе",
       statusPlanCreated: "План создан"
+    },
+
+    subscription: {
+      title: "Выберите план подписки",
+      subtitle: "Получите полный доступ к Конструктору тренировок и Моим тренировкам",
+      workoutWillBeSaved: "✓ Ваша тренировка будет автоматически сохранена после оплаты",
+      subscribeNow: "Оформить подписку",
+      processing: "Обработка...",
+      paymentInfo: "Оплата обрабатывается безопасно через Юкассу. Ваша подписка будет активирована сразу после оплаты.",
+      features: {
+        title: "Что вы получаете",
+        createWorkouts: {
+          title: "Создание персональных тренировок",
+          description: "Создавайте кастомные тренировки из нашей обширной библиотеки упражнений"
+        },
+        videoGuides: {
+          title: "Видео-руководства по упражнениям",
+          description: "Изучайте правильную технику с профессиональными видео упражнений"
+        },
+        trackProgress: {
+          title: "Отслеживание прогресса",
+          description: "Следите за своим фитнес-путешествием и выполненными тренировками"
+        },
+        unlimitedAccess: {
+          title: "Неограниченный доступ",
+          description: "Создавайте и сохраняйте неограниченное количество тренировок"
+        }
+      }
     },
 
     common: {

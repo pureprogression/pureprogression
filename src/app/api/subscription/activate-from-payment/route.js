@@ -114,7 +114,36 @@ export async function POST(request) {
 
     // Вычисляем дату окончания подписки
     const now = new Date();
-    const endDate = new Date(now);
+    let endDate = new Date(now);
+    
+    // Проверяем, есть ли активная подписка
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    let existingEndDate = null;
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const existingSubscription = userData.subscription;
+      
+      if (existingSubscription && existingSubscription.active) {
+        // Получаем дату окончания существующей подписки
+        if (existingSubscription.endDate?.toDate) {
+          existingEndDate = existingSubscription.endDate.toDate();
+        } else if (existingSubscription.endDate?.seconds) {
+          existingEndDate = new Date(existingSubscription.endDate.seconds * 1000);
+        } else if (typeof existingSubscription.endDate === 'string') {
+          existingEndDate = new Date(existingSubscription.endDate);
+        }
+        
+        // Если существующая подписка еще активна (не истекла), продлеваем её
+        if (existingEndDate && existingEndDate > now) {
+          endDate = new Date(existingEndDate); // Начинаем с даты окончания текущей подписки
+          console.log(`[Activate From Payment] Extending existing subscription from ${existingEndDate.toISOString()}`);
+        }
+      }
+    }
+    
+    // Добавляем период новой подписки
     switch (finalSubscriptionType) {
       case 'monthly':
         endDate.setMonth(endDate.getMonth() + 1);
@@ -129,11 +158,24 @@ export async function POST(request) {
         endDate.setMonth(endDate.getMonth() + 1);
     }
 
+    // Определяем startDate: если продлеваем - оставляем старую, если новая - текущая дата
+    let startDate = now;
+    if (existingEndDate && existingEndDate > now && userDoc.exists()) {
+      const userData = userDoc.data();
+      const existingSubscription = userData.subscription;
+      if (existingSubscription.startDate?.toDate) {
+        startDate = existingSubscription.startDate.toDate();
+      } else if (existingSubscription.startDate?.seconds) {
+        startDate = new Date(existingSubscription.startDate.seconds * 1000);
+      }
+      console.log(`[Activate From Payment] Keeping original start date: ${startDate.toISOString()}`);
+    }
+
     // Конвертируем в Firestore Timestamp
     const subscriptionData = {
       active: true,
       type: finalSubscriptionType,
-      startDate: Timestamp.fromDate(now),
+      startDate: Timestamp.fromDate(startDate),
       endDate: Timestamp.fromDate(endDate),
       paymentId: paymentId,
       amount: payment.amount.value,
@@ -141,10 +183,6 @@ export async function POST(request) {
     };
     
     console.log('Creating subscription:', subscriptionData);
-
-    // Обновляем подписку в Firebase
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
       // Создаем документ пользователя, если его нет

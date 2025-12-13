@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "PureP - Фитнес приложение",
+  title: "Pure.Progression - Фитнес приложение",
   description: "Создавайте персональные тренировки с видео упражнениями",
   // Предзагрузка критичных ресурсов
   other: {
