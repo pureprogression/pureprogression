@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination } from "swiper/modules";
+import { Pagination, EffectFade } from "swiper/modules";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -34,6 +34,7 @@ const muscleGroupTranslations = {
 };
 import "swiper/css";
 import "swiper/css/pagination";
+import "swiper/css/effect-fade";
 
 export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, initialWorkout = null }) {
   const [workoutName, setWorkoutName] = useState(initialWorkout?.name || "");
@@ -55,7 +56,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [filterTransitioning, setFilterTransitioning] = useState(false);
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
   const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2', 'grid-4'
-  const [activeVideoId, setActiveVideoId] = useState(null); // ID видео на активном слайде
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
   const [activeSlideIndex, setActiveSlideIndex] = useState(0); // Отслеживаем активный слайд для пагинации
@@ -121,7 +121,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     // Проверяем, изменился ли список упражнений (по ID всех упражнений)
     const currentIds = filteredExercises.map(ex => ex.id).join(',');
     const exercisesChanged = currentIds !== lastFilteredIdsRef.current;
-    const viewModeChanged = previousViewModeRef.current !== viewMode;
     
     // Если список упражнений изменился (фильтр), создаем новый перемешанный порядок
     // НО НЕ при изменении режима отображения - чтобы сохранить позицию
@@ -147,7 +146,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     previousViewModeRef.current = viewMode;
     
     return slides;
-  }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray]); // Добавили viewMode обратно для пересоздания слайдов
+  }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray]);
   
   // Вычисляем начальный слайд для Swiper - упрощенная версия
   const initialSlideIndex = useMemo(() => {
@@ -166,27 +165,30 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   useEffect(() => {
     if (!swiperRef.current || exerciseSlides.length === 0) return;
     
-    const swiper = swiperRef.current;
-    const allExercises = shuffledExercisesRef.current || filteredExercises;
-    
-    if (allExercises.length === 0) return;
-    
-    // Находим слайд, который содержит упражнение с индексом firstExerciseIndexRef.current
-    const targetExercise = allExercises[firstExerciseIndexRef.current];
-    if (!targetExercise) return;
-    
-    // Находим индекс слайда, который содержит это упражнение
-    const targetSlideIndex = exerciseSlides.findIndex(slide => 
-      slide.some(ex => ex.id === targetExercise.id)
-    );
-    
-    if (targetSlideIndex !== -1 && targetSlideIndex !== swiper.activeIndex) {
-      // Используем requestAnimationFrame для синхронизации с рендерингом
-      requestAnimationFrame(() => {
+    // Используем setTimeout для отложенной синхронизации, чтобы не блокировать UI
+    const timeoutId = setTimeout(() => {
+      const swiper = swiperRef.current;
+      if (!swiper) return;
+      
+      const allExercises = shuffledExercisesRef.current || filteredExercises;
+      if (allExercises.length === 0) return;
+      
+      // Находим слайд, который содержит упражнение с индексом firstExerciseIndexRef.current
+      const targetExercise = allExercises[firstExerciseIndexRef.current];
+      if (!targetExercise) return;
+      
+      // Находим индекс слайда, который содержит это упражнение
+      const targetSlideIndex = exerciseSlides.findIndex(slide => 
+        slide.some(ex => ex.id === targetExercise.id)
+      );
+      
+      if (targetSlideIndex !== -1 && targetSlideIndex !== swiper.activeIndex) {
         swiper.slideTo(targetSlideIndex, 0); // 0 = без анимации для мгновенного переключения
-      });
-    }
-  }, [viewMode]); // Только viewMode - exerciseSlides уже мемоизирован
+      }
+    }, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [viewMode, exerciseSlides.length]); // Добавили exerciseSlides.length для отслеживания изменений
 
   // Анимация при изменении фильтра
   useEffect(() => {
@@ -197,44 +199,170 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     return () => clearTimeout(timer);
   }, [selectedCategory]);
 
-  // Инициализируем активное видео для первого слайда
+
+  // Инициализируем индекс первого упражнения для первого слайда
   useEffect(() => {
     if (exerciseSlides.length > 0 && exerciseSlides[0] && activeSection === 'browse') {
       const firstSlideExercises = exerciseSlides[0];
-      if (firstSlideExercises.length > 0) {
-        setActiveVideoId(firstSlideExercises[0].id);
-        
-        // Инициализируем индекс первого упражнения
-        if (firstExerciseIndexRef.current === 0) {
-          const allExercises = shuffledExercisesRef.current || filteredExercises;
-          const firstExercise = firstSlideExercises[0];
-          const firstIndex = allExercises.findIndex(ex => ex.id === firstExercise.id);
-          if (firstIndex !== -1) {
-            firstExerciseIndexRef.current = firstIndex;
-          }
+      if (firstSlideExercises.length > 0 && firstExerciseIndexRef.current === 0) {
+        const allExercises = shuffledExercisesRef.current || filteredExercises;
+        const firstExercise = firstSlideExercises[0];
+        const firstIndex = allExercises.findIndex(ex => ex.id === firstExercise.id);
+        if (firstIndex !== -1) {
+          firstExerciseIndexRef.current = firstIndex;
         }
       }
     }
   }, [filteredExercises.length, activeSection]); // Минимальные зависимости
 
-  // Обработчик изменения слайда в Swiper - упрощенная версия
+  // Обработчик изменения слайда в Swiper - оптимизированная версия
   const handleSlideChange = useCallback((swiper) => {
     const currentIndex = swiper.activeIndex;
     setActiveSlideIndex(currentIndex);
     
-    // Устанавливаем активное видео для текущего слайда
-    const currentSlide = exerciseSlides[currentIndex];
-    if (currentSlide && currentSlide.length > 0) {
-      setActiveVideoId(currentSlide[0].id);
-      
-      // Сохраняем индекс первого упражнения
-      const allExercises = shuffledExercisesRef.current || filteredExercises;
-      const firstIndex = allExercises.findIndex(ex => ex.id === currentSlide[0].id);
-      if (firstIndex !== -1) {
-        firstExerciseIndexRef.current = firstIndex;
+    if (!swiper.slides) return;
+    
+    // Используем requestAnimationFrame для асинхронной обработки, чтобы не блокировать UI
+    requestAnimationFrame(() => {
+      // Сразу скрываем все видео на текущем слайде (чтобы не было видно постеров)
+      if (swiper.slides[currentIndex]) {
+        const currentVideos = swiper.slides[currentIndex].querySelectorAll('video');
+        currentVideos.forEach(video => {
+          video.style.opacity = '0';
+        });
       }
-    }
-  }, [exerciseSlides.length, filteredExercises.length]); // Минимальные зависимости
+      
+      // АГРЕССИВНО выгружаем видео на всех неактивных слайдах (кроме текущего и следующего)
+      swiper.slides.forEach((slide, index) => {
+        if (index !== currentIndex && index !== currentIndex + 1) {
+          const videos = slide.querySelectorAll('video');
+          videos.forEach(video => {
+            video.pause();
+            video.currentTime = 0;
+            const videoSrc = video.getAttribute('data-src') || video.src;
+            video.setAttribute('data-src', videoSrc);
+            video.src = '';
+            video.load();
+            video.style.opacity = '0';
+          });
+        }
+      });
+      
+      // Предзагружаем следующий слайд и скрываем постеры
+      const nextIndex = currentIndex + 1;
+      if (swiper.slides[nextIndex]) {
+        const nextVideos = swiper.slides[nextIndex].querySelectorAll('video');
+        nextVideos.forEach(video => {
+          const dataSrc = video.getAttribute('data-src');
+          if (dataSrc && !video.src) {
+            video.src = dataSrc;
+            video.preload = 'auto';
+            video.load();
+          }
+          video.style.opacity = '0';
+        });
+      }
+      
+      // Загружаем и запускаем видео ТОЛЬКО на текущем слайде ПОСЛЕДОВАТЕЛЬНО
+      if (swiper.slides[currentIndex]) {
+        const videos = Array.from(swiper.slides[currentIndex].querySelectorAll('video'));
+        
+        // Функция для показа видео последовательно
+        const showVideoSequentially = (videoIndex) => {
+          if (videoIndex >= videos.length) return;
+          
+          const video = videos[videoIndex];
+          const dataSrc = video.getAttribute('data-src');
+          if (!dataSrc) {
+            // Если нет src, переходим к следующему
+            showVideoSequentially(videoIndex + 1);
+            return;
+          }
+          
+          video.style.transition = 'opacity 0.4s ease-in-out';
+          
+          // Восстанавливаем src если нужно
+          const currentSrc = video.src || '';
+          if (!currentSrc || currentSrc !== dataSrc) {
+            video.src = dataSrc;
+          }
+          video.preload = 'auto';
+          video.load();
+          
+          // Функция для показа текущего видео и перехода к следующему
+          const showAndContinue = () => {
+            if (video.paused) {
+              video.play().catch(() => {});
+            }
+            requestAnimationFrame(() => {
+              video.style.opacity = '1';
+            });
+            
+            // Показываем следующее видео сразу после появления текущего (без задержки)
+            showVideoSequentially(videoIndex + 1);
+          };
+          
+          // Проверяем готовность видео
+          if (video.readyState >= 2) {
+            showAndContinue();
+          } else {
+            // Ждем загрузки
+            const onReady = () => {
+              showAndContinue();
+            };
+            video.addEventListener('canplay', onReady, { once: true });
+            video.addEventListener('loadeddata', onReady, { once: true });
+            video.addEventListener('loadedmetadata', () => {
+              if (video.readyState >= 2) {
+                showAndContinue();
+              }
+            }, { once: true });
+          }
+        };
+        
+        // Начинаем последовательный показ с первого видео
+        showVideoSequentially(0);
+      }
+      
+      // Сохраняем индекс первого упражнения (асинхронно)
+      setTimeout(() => {
+        const currentSlide = exerciseSlides[currentIndex];
+        if (currentSlide && currentSlide.length > 0) {
+          const allExercises = shuffledExercisesRef.current || filteredExercises;
+          const firstIndex = allExercises.findIndex(ex => ex.id === currentSlide[0].id);
+          if (firstIndex !== -1) {
+            firstExerciseIndexRef.current = firstIndex;
+          }
+        }
+      }, 0);
+    });
+  }, [exerciseSlides.length, filteredExercises.length]);
+
+  // Инициализация активного слайда при монтировании Swiper
+  const handleSwiperInit = useCallback((swiper) => {
+    swiperRef.current = swiper;
+    setActiveSlideIndex(swiper.activeIndex);
+    
+    // Загружаем и запускаем видео на первом слайде
+    setTimeout(() => {
+      if (swiper && swiper.slides && swiper.slides.length > 0) {
+        const firstSlide = swiper.slides[0];
+        if (firstSlide) {
+          const videos = firstSlide.querySelectorAll('video');
+          videos.forEach(video => {
+            const dataSrc = video.getAttribute('data-src');
+            if (dataSrc) {
+              video.src = dataSrc;
+            }
+            video.preload = 'auto';
+            video.load();
+            video.play().catch(() => {});
+          });
+        }
+      }
+    }, 100);
+  }, []);
+
 
   // Управляем видимостью и позицией точек пагинации - упрощенная версия
   useEffect(() => {
@@ -760,8 +888,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           {activeSection === "browse" && (
             <div className="animate-fadeIn">
               {/* Фильтр и переключатель режимов */}
-              <div className="mb-8 flex flex-col md:flex-row gap-6 md:gap-4 items-start md:items-center">
-                <div className="flex-1">
+              <div className="mb-8 flex flex-col md:flex-row gap-6 md:gap-4 items-start md:items-center overflow-x-hidden">
+                <div className="flex-1 min-w-0">
                   <ExercisesFilter 
                     exercises={exercises}
                     selectedGroup={selectedCategory}
@@ -780,7 +908,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                   style={{ touchAction: 'manipulation' }}
                 >
                   <button
-                    onClick={() => setViewMode('grid-4')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setViewMode('grid-4');
+                    }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                       viewMode === 'grid-4'
@@ -795,7 +927,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     </svg>
                   </button>
                   <button
-                    onClick={() => setViewMode('grid-2')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setViewMode('grid-2');
+                    }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
                       viewMode === 'grid-2'
@@ -815,7 +951,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     </svg>
                   </button>
                   <button
-                    onClick={() => setViewMode('large')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setViewMode('large');
+                    }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
                       viewMode === 'large'
@@ -840,9 +980,13 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               {/* Слайдер упражнений с виртуализацией */}
               <div>
                 {exerciseSlides.length > 0 ? (
-                  <div className={viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center' : ''}>
+                  <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center' : ''}`}>
                     <Swiper
-                      modules={[Pagination]}
+                      modules={[Pagination, EffectFade]}
+                      effect="fade"
+                      fadeEffect={{
+                        crossFade: true
+                      }}
                       spaceBetween={0}
                       slidesPerView={1}
                       centeredSlides={viewMode === 'large'}
@@ -851,12 +995,14 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         clickable: true,
                       }}
                       onSlideChange={handleSlideChange}
-                      onSwiper={(swiper) => {
-                        swiperRef.current = swiper;
-                      }}
+                      onSwiper={handleSwiperInit}
                       className={`!pb-8 w-full workout-builder-swiper ${viewMode === 'large' ? 'workout-builder-swiper-large' : ''}`}
                     >
-                    {exerciseSlides.map((slideExercises, slideIndex) => (
+                    {exerciseSlides.map((slideExercises, slideIndex) => {
+                      const isCurrentSlide = slideIndex === activeSlideIndex;
+                      const isNextSlide = slideIndex === activeSlideIndex + 1;
+                      
+                      return (
                       <SwiperSlide key={slideIndex} className={viewMode === 'large' ? 'workout-builder-large flex items-center justify-center' : ''}>
                         <div className={`gap-2 md:gap-4 transition-all duration-300 overflow-visible ${
                           viewMode === 'large' 
@@ -901,14 +1047,18 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         {/* Видео - обертка с overflow-hidden */}
                         <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
                           <video
-                            src={exercise.video}
+                            data-src={exercise.video}
                             poster={exercise.poster}
                             className="w-full h-full object-cover"
-                            autoPlay={activeVideoId === exercise.id}
+                            style={{ 
+                              opacity: isCurrentSlide ? undefined : 0, // Управляется через JS
+                              transition: 'opacity 0.6s ease-in-out'
+                            }}
+                            autoPlay={false}
                             muted
                             loop
                             playsInline
-                            preload="metadata"
+                            preload="none"
                           />
                         </div>
                         
@@ -944,7 +1094,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                   })}
                         </div>
                       </SwiperSlide>
-                    ))}
+                      );
+                    })}
                   </Swiper>
                   </div>
                 ) : (

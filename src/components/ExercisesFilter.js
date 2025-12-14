@@ -47,9 +47,10 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
-    <div className="p-2 h-10 overflow-visible">
+    <div className="p-2 h-10 overflow-hidden">
       <div 
-        className="flex gap-2 overflow-x-auto scrollbar-hide max-w-[calc(100vw-16px)] h-full items-center min-h-[32px]"
+        className="flex gap-2 overflow-x-auto scrollbar-hide h-full items-center min-h-[32px]"
+        style={{ maxWidth: 'calc(100vw - 32px)' }}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}

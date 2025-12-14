@@ -81,6 +81,20 @@
   position: relative !important;
 }
 
+/* Плавный fade эффект для слайдов */
+.workout-builder-swiper .swiper-slide {
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.workout-builder-swiper .swiper-slide-active {
+  opacity: 1 !important;
+}
+
+.workout-builder-swiper .swiper-slide:not(.swiper-slide-active) {
+  opacity: 0 !important;
+}
+
+
 /* Показываем только те точки, которые явно помечены как видимые */
 .workout-builder-swiper .swiper-pagination-bullet[style*="display: inline-block"] {
   display: inline-block !important;
