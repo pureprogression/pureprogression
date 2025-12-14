@@ -585,7 +585,7 @@ export const exercises = [
     },
     {
         id: "89",
-        title: "Отжимания от брусьев + закрытая стойка",
+        title: "Выход в стойку на руках на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x4.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.4.jpg`,
         muscleGroups: ["back","arms","chest","shoulders","core"]
