@@ -16,7 +16,7 @@ const SUBSCRIPTION_PLANS = {
   monthly: {
     name: 'Месячная подписка',
     nameEn: 'Monthly Subscription',
-    price: 1, // ВРЕМЕННО ДЛЯ ТЕСТА (обычно 990)
+    price: 990,
     period: '1 месяц',
     periodEn: '1 month',
     description: 'Полный доступ ко всем функциям на 1 месяц',

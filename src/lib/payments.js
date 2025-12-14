@@ -101,7 +101,7 @@ export async function checkPaymentStatus(paymentId) {
 // Функция для создания подписки через Юкассу
 export async function createSubscription(userId, subscriptionType = 'monthly') {
   const subscriptionPlans = {
-    monthly: { amount: 1, description: 'Подписка на 1 месяц' }, // ВРЕМЕННО ДЛЯ ТЕСТА (обычно 990)
+    monthly: { amount: 990, description: 'Подписка на 1 месяц' },
     '3months': { amount: 2490, description: 'Подписка на 3 месяца' },
     yearly: { amount: 8290, description: 'Подписка на 1 год' }
   };

@@ -10,7 +10,7 @@ const PLANS = {
   monthly: {
     name: 'Месяц',
     nameEn: 'Month',
-    price: 1, // ВРЕМЕННО ДЛЯ ТЕСТА (обычно 990)
+    price: 990,
     period: 'мес',
     periodEn: 'mo',
     popular: false

@@ -190,7 +190,7 @@ export default function WorkoutsList({ workouts, user }) {
           return (
           <motion.div
             key={workout.id}
-            className="rounded-xl overflow-hidden cursor-pointer relative touch-pan-y h-36 md:h-48"
+            className="rounded-xl overflow-hidden cursor-pointer relative touch-pan-y bg-gradient-to-b from-black to-white/5"
             onClick={() => handleStartWorkout(workout)}
             onTouchStart={() => handleLongPressStart(workout.id)}
             onTouchEnd={handleLongPressEnd}
@@ -206,10 +206,10 @@ export default function WorkoutsList({ workouts, user }) {
               touchAction: 'pan-y'
             }}
           >
-            {/* Фоновые картинки с упражнениями */}
+            {/* Фото упражнений сверху */}
             {workout.exercises && workout.exercises.length > 0 && (
               <div
-                className="absolute inset-0 grid gap-1"
+                className="w-full h-32 md:h-40 grid gap-1"
                 style={{ gridTemplateColumns: `repeat(${columns || 1}, minmax(0, 1fr))` }}
               >
                 {workout.exercises.map((ex, i) => (
@@ -225,14 +225,11 @@ export default function WorkoutsList({ workouts, user }) {
               </div>
             )}
 
-            {/* Затемнение для читаемости текста */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40" />
-
-            {/* Контент поверх фона */}
-            <div className="relative h-full flex flex-col justify-between p-4 md:p-6 z-10">
+            {/* Текстовая часть снизу на темном фоне */}
+            <div className="bg-gradient-to-b from-black to-white/5 p-3 md:p-4">
               {/* Заголовок и кнопка удаления */}
-              <div className="flex items-center gap-3">
-                <h3 className="text-white text-lg md:text-xl font-semibold truncate flex-1 min-w-0 drop-shadow-lg">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-white text-base md:text-lg font-semibold truncate flex-1 min-w-0">
                   {workout.name}
                 </h3>
                 <button
@@ -240,11 +237,11 @@ export default function WorkoutsList({ workouts, user }) {
                     e.stopPropagation();
                     confirmAndDelete(workout.id);
                   }}
-                  className="shrink-0 w-5 h-5 flex items-center justify-center hover:opacity-60 transition-opacity duration-200 drop-shadow-lg"
+                  className="shrink-0 w-5 h-5 flex items-center justify-center hover:opacity-60 transition-opacity duration-200"
                   title={language === 'ru' ? 'Удалить тренировку' : 'Delete workout'}
                 >
                   <svg 
-                    className="w-4 h-4 text-white" 
+                    className="w-4 h-4 text-white/70" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -255,11 +252,11 @@ export default function WorkoutsList({ workouts, user }) {
                 </button>
               </div>
 
-              {/* Дата и количество упражнений внизу справа */}
+              {/* Дата и количество упражнений */}
               <div className="flex justify-end">
-                <div className="inline-flex items-center gap-1.5 text-white/90 text-xs drop-shadow-lg">
+                <div className="inline-flex items-center gap-1.5 text-white/60 text-xs">
                   <span>{workout.exercises?.length || 0} {language === 'ru' ? 'упр' : 'ex'}</span>
-                  <span className="text-white/40">•</span>
+                  <span className="text-white/30">•</span>
                   <span>{workout.createdAt?.toDate ? 
                     workout.createdAt.toDate().toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US') : 
                     (language === 'ru' ? 'Недавно' : 'Recently')}</span>

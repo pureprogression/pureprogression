@@ -31,6 +31,7 @@ export default function AuthForm() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [resetError, setResetError] = useState(null);
+  const [authError, setAuthError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [verifyMode, setVerifyMode] = useState(false);
@@ -123,9 +124,52 @@ export default function AuthForm() {
       }
       setEmail("");
       setPassword("");
+      setAuthError(null);
     } catch (error) {
       console.error(error);
-      // Ошибки обрабатываются автоматически через Firebase
+      // Обрабатываем ошибки Firebase и показываем понятные сообщения
+      let errorMessage = '';
+      
+      switch (error.code) {
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+          errorMessage = language === 'en' 
+            ? 'Invalid email or password. If you registered with Google, please use "Continue with Google" button'
+            : 'Неверный email или пароль. Если вы регистрировались через Google, используйте кнопку "Войти через Google"';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = language === 'en'
+            ? 'This account was created with Google. Please use "Continue with Google" button'
+            : 'Этот аккаунт был создан через Google. Используйте кнопку "Войти через Google"';
+          break;
+        case 'auth/email-already-in-use':
+          errorMessage = language === 'en'
+            ? 'This email is already registered'
+            : 'Этот email уже зарегистрирован';
+          break;
+        case 'auth/weak-password':
+          errorMessage = language === 'en'
+            ? 'Password should be at least 6 characters'
+            : 'Пароль должен содержать минимум 6 символов';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = language === 'en'
+            ? 'Invalid email address'
+            : 'Неверный адрес email';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = language === 'en'
+            ? 'Too many attempts. Please try again later'
+            : 'Слишком много попыток. Попробуйте позже';
+          break;
+        default:
+          errorMessage = language === 'en'
+            ? 'An error occurred. Please try again'
+            : 'Произошла ошибка. Попробуйте еще раз';
+      }
+      
+      setAuthError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -517,7 +561,10 @@ export default function AuthForm() {
           type="email"
           placeholder={TEXTS[language].auth.email}
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setAuthError(null);
+          }}
           required
           autoComplete={isSignUp ? "username" : "off"}
           data-form-type="other"
@@ -527,12 +574,21 @@ export default function AuthForm() {
           type="password"
           placeholder={TEXTS[language].auth.password}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setAuthError(null);
+          }}
           required
           autoComplete={isSignUp ? "new-password" : "current-password"}
           data-form-type="other"
-          className="w-full p-2 mb-4 rounded-md bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all duration-300"
+          className="w-full p-2 mb-3 rounded-md bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all duration-300"
         />
+        
+        {authError && (
+          <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-md">
+            <p className="text-red-400 text-sm">{authError}</p>
+          </div>
+        )}
 
         <button
           type="submit"
@@ -569,15 +625,15 @@ export default function AuthForm() {
 
         <div className="text-center space-y-2">
           <p className="text-white/60 text-sm">
-            {isSignUp ? TEXTS[language].auth.alreadyHaveAccount : TEXTS[language].auth.dontHaveAccount}{" "}
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-white hover:text-white/80 underline transition-colors duration-300"
-            >
-              {isSignUp ? TEXTS[language].auth.signInHere : TEXTS[language].auth.signUpHere}
-            </button>
-          </p>
+          {isSignUp ? TEXTS[language].auth.alreadyHaveAccount : TEXTS[language].auth.dontHaveAccount}{" "}
+          <button
+            type="button"
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-white hover:text-white/80 underline transition-colors duration-300"
+          >
+            {isSignUp ? TEXTS[language].auth.signInHere : TEXTS[language].auth.signUpHere}
+          </button>
+        </p>
           {!isSignUp && (
             <button
               type="button"

@@ -4,11 +4,37 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "swiper/css";
 import "swiper/css/pagination";
 
+// Переводы групп мышц
+const muscleGroupTranslations = {
+  ru: {
+    "back": "Спина",
+    "arms": "Руки",
+    "abs": "Пресс",
+    "core": "Кор",
+    "legs": "Ноги",
+    "glutes": "Ягодицы",
+    "shoulders": "Плечи",
+    "chest": "Грудь"
+  },
+  en: {
+    "back": "Back",
+    "arms": "Arms",
+    "abs": "Abs",
+    "core": "Core",
+    "legs": "Legs",
+    "glutes": "Glutes",
+    "shoulders": "Shoulders",
+    "chest": "Chest"
+  }
+};
+
 export default function WorkoutExecution({ workout, onComplete, onCancel, isSaving }) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [workoutResults, setWorkoutResults] = useState({
     exercises: []
   });
@@ -148,17 +174,6 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
 
   return (
     <div className="min-h-screen bg-black text-white p-4 pt-20">
-      {/* Крестик для выхода */}
-      <button
-        onClick={onCancel}
-        className="fixed top-4 right-4 z-50 p-3 text-white hover:bg-white/10 transition-all duration-300 ease-out focus:outline-none rounded-lg"
-        aria-label="Выход из тренировки"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
       {/* Заголовок тренировки, прогресс и переключатель режимов */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -263,7 +278,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                               key={idx}
                               className="text-white/50 text-xs px-1 py-0.5 rounded bg-white/5"
                             >
-                              {group}
+                              {muscleGroupTranslations[language]?.[group] || group}
                             </span>
                           ))}
                         </div>

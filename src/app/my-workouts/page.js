@@ -170,12 +170,8 @@ export default function MyWorkoutsPage() {
   return (
     <>
       <Navigation currentPage="my-workouts" user={user} />
-      <div className="max-w-[1200px] mx-auto p-4 pt-20">
-        {/* Заголовок страницы */}
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">
-          {TEXTS[language].workouts.myWorkouts}
-        </h1>
-        
+      <div className="min-h-screen bg-black">
+        <div className="max-w-[1200px] mx-auto p-4 pt-20">
         {workouts.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-lg mb-4">{TEXTS[language].workouts.noWorkouts}</div>
@@ -200,6 +196,7 @@ export default function MyWorkoutsPage() {
         ) : (
           <WorkoutsList workouts={workouts} user={user} />
         )}
+        </div>
       </div>
     </>
   );

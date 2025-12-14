@@ -236,7 +236,7 @@ export default function AdminSubscriptionsPage() {
         startDate: Timestamp.fromDate(now),
         endDate: Timestamp.fromDate(endDate),
         paymentId: `manual_${Date.now()}`,
-        amount: type === 'monthly' ? 1 : type === '3months' ? 2490 : 8290, // ВРЕМЕННО ДЛЯ ТЕСТА (обычно monthly: 990)
+        amount: type === 'monthly' ? 990 : type === '3months' ? 2490 : 8290,
         updatedAt: serverTimestamp()
       };
 

@@ -493,24 +493,31 @@ export const deleteWeeklyPlan = async (planId) => {
   }
 };
 
-// Функция проверки админа (пока по email)
+// Функция проверки админа (по email)
 export const isAdmin = (user) => {
   if (!user || !user.email) return false;
   
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  // Список админских email
+  const adminEmails = [
+    process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+    'makspolun@gmail.com'
+  ].filter(Boolean); // Убираем undefined/null значения
   
   // Для отладки (только в development)
   if (process.env.NODE_ENV === 'development') {
     console.log('[Admin Check] User email:', user.email);
-    console.log('[Admin Check] Admin email from env:', adminEmail);
+    console.log('[Admin Check] Admin emails:', adminEmails);
   }
   
-  if (!adminEmail) {
+  if (adminEmails.length === 0) {
     console.warn('[Admin Check] NEXT_PUBLIC_ADMIN_EMAIL не установлен в переменных окружения');
     return false;
   }
   
-  return user.email === adminEmail;
+  // Проверяем, есть ли email пользователя в списке админов
+  return adminEmails.some(adminEmail => 
+    user.email.toLowerCase() === adminEmail.toLowerCase()
+  );
 };
 
 // Функции для работы с запросами планов

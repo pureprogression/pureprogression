@@ -148,41 +148,24 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
   const menuContent = (
     <>
-      {/* Минималистичная кнопка меню - всегда видна */}
+      {/* Кнопка меню - стрелка вниз/вверх в правом верхнем углу */}
       <motion.button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-300 ease-out focus:outline-none"
-        aria-label="Open menu"
+        className="fixed top-4 right-4 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-300 ease-out focus:outline-none z-[10000]"
+        aria-label={isMenuOpen ? "Close menu" : "Open menu"}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        style={{ zIndex: 9999 }}
       >
-        <div className="w-5 h-5 flex flex-col justify-center items-center gap-1">
-          <motion.span 
-            className="block h-px w-4 bg-current"
-            animate={{ 
-              rotate: isMenuOpen ? 45 : 0,
-              y: isMenuOpen ? 4 : 0
-            }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          />
-          <motion.span 
-            className="block h-px w-4 bg-current"
-            animate={{ 
-              opacity: isMenuOpen ? 0 : 1,
-              scale: isMenuOpen ? 0 : 1
-            }}
-            transition={{ duration: 0.2 }}
-          />
-          <motion.span 
-            className="block h-px w-4 bg-current"
-            animate={{ 
-              rotate: isMenuOpen ? -45 : 0,
-              y: isMenuOpen ? -4 : 0
-            }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          />
-        </div>
+        <motion.svg
+          width="12"
+          height="8"
+          viewBox="0 0 12 8"
+          fill="currentColor"
+          animate={{ rotate: isMenuOpen ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <path d="M6 8L0 0h12L6 8z" />
+        </motion.svg>
       </motion.button>
 
       {/* Overlay для закрытия меню */}
@@ -193,32 +176,25 @@ export default function Navigation({ currentPage = "home", user = null, disableS
         />
       )}
 
-      {/* Боковое меню */}
+      {/* Меню выдвигающееся сверху вниз */}
       <motion.div
-        className="fixed top-3 left-3 h-[85vh] w-[300px] bg-white/3 backdrop-blur-3xl border border-white/5 rounded-2xl z-[9999] shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
-        initial={{ x: "-120%", opacity: 0 }}
-        animate={{ x: isMenuOpen ? 0 : "-120%", opacity: isMenuOpen ? 1 : 0 }}
+        className="fixed top-0 left-0 right-0 max-h-[85vh] w-full bg-black/80 backdrop-blur-3xl border-b border-white/10 z-[9999] shadow-[0_10px_30px_rgba(0,0,0,0.3)] overflow-y-auto"
+        initial={{ y: "-100%", opacity: 0 }}
+        animate={{ y: isMenuOpen ? 0 : "-100%", opacity: isMenuOpen ? 1 : 0 }}
         transition={{ type: "tween", duration: 0.35, ease: "easeOut" }}
       >
-        <div className="flex flex-col h-full p-4">
-          {/* Заголовок */}
-          <div className="mb-6">
-            {user && (
-              <p className="text-gray-400 text-sm">Welcome!</p>
-            )}
-          </div>
-
-          {/* Навигационные ссылки */}
-          <nav className="flex-1 space-y-3">
-            {/* Основная навигация */}
+        <div className="flex flex-col min-h-full p-8 max-w-2xl mx-auto">
+          {/* Навигационные ссылки - центрированные */}
+          <nav className="flex-1 space-y-1 py-8">
+            {/* Основная навигация - центрированная */}
             <div>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {/* Главная */}
                 {currentPage !== "home" && (
                   <li>
                     <button
                       onClick={handleHomeClick}
-                      className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                      className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                     >
                       <span>{TEXTS[language].navigation.home}</span>
                     </button>
@@ -229,20 +205,17 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 <li>
                   <button
                     onClick={handlePremiumClick}
-                    className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-green-500/50 hover:border-green-500"
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-green-500/20 transition-all duration-200 text-center font-medium border border-green-500/30 hover:border-green-500/60"
                   >
-                    <span className="flex items-center gap-2">
-                      <span>⭐</span>
-                      <span>{language === 'en' ? 'Premium' : 'Premium'}</span>
-                    </span>
+                    <span>{language === 'en' ? 'Premium' : 'Premium'}</span>
                   </button>
                 </li>
 
-                {/* Статьи */}
+                {/* Статьи - временно отключено */}
                 <li>
                   <button
-                    onClick={handleArticlesClick}
-                    className="w-full flex items-center p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    disabled
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white/40 cursor-not-allowed transition-all duration-200 text-center font-medium"
                   >
                     <span>{TEXTS[language].navigation.articles}</span>
                   </button>
@@ -253,18 +226,13 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   <li>
                     <button
                       onClick={handleMyWorkoutsClick}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-colors duration-200 text-left ${
+                      className={`w-full flex items-center justify-center p-4 rounded-xl transition-all duration-200 text-center font-medium ${
                         hasSubscription || isAdmin(user)
-                          ? 'text-white hover:bg-white/10'
-                          : 'text-white/70 hover:bg-white/10 cursor-pointer'
+                          ? 'text-white hover:bg-white/5'
+                          : 'text-white/70 hover:bg-white/5 cursor-pointer'
                       }`}
                     >
                       <span>{TEXTS[language].navigation.myWorkouts}</span>
-                      {hasSubscription || isAdmin(user) ? (
-                        <span className="text-green-500 text-xs">✓</span>
-                      ) : (
-                        <span className="text-yellow-500 text-xs">🔒</span>
-                      )}
                     </button>
                   </li>
                 )}
@@ -305,40 +273,38 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                 {/* Админ-панель */}
                 {user && isAdmin(user) && (
                   <>
-                    <li className="my-2">
-                      <div className="h-px bg-white/20 mx-3"></div>
+                    <li className="my-3">
+                      <div className="h-px bg-white/10"></div>
                     </li>
                     <li>
                       <button
                         onClick={handleAdminPanelClick}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
+                        className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-yellow-500/20 transition-all duration-200 text-center font-medium border border-yellow-500/30 hover:border-yellow-500/60"
                       >
                         <span>{TEXTS[language].navigation.adminPanel}</span>
-                        <span className="text-yellow-500 text-xs">⚙️</span>
                       </button>
                     </li>
                     <li>
                       <button
                         onClick={handleAdminSubscriptionsClick}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left border border-yellow-500/30"
+                        className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-yellow-500/20 transition-all duration-200 text-center font-medium border border-yellow-500/30 hover:border-yellow-500/60"
                       >
                         <span>{TEXTS[language].navigation.subscriptions}</span>
-                        <span className="text-yellow-500 text-xs">💳</span>
                       </button>
                     </li>
                   </>
                 )}
 
                 {/* Разделитель */}
-                <li className="my-2">
-                  <div className="h-px bg-white/20 mx-3"></div>
+                <li className="my-3">
+                  <div className="h-px bg-white/10"></div>
                 </li>
 
                 {/* Профиль */}
                 <li>
                   <button
                     onClick={handleProfileClick}
-                    className="w-full flex items-center p-3 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                   >
                     <span>{user ? TEXTS[language].navigation.profile : TEXTS[language].auth.signIn}</span>
                   </button>
@@ -351,10 +317,9 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                       setIsDonationModalOpen(true);
                       setIsMenuOpen(false);
                     }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                   >
                     <span>{language === 'en' ? 'Support Project' : 'Поддержать проект'}</span>
-                    <span className="text-yellow-500 text-xs">💝</span>
                   </button>
                 </li>
 
@@ -365,10 +330,9 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                       setIsReviewsModalOpen(true);
                       setIsMenuOpen(false);
                     }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors duration-200 text-left"
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                   >
                     <span>{language === 'en' ? 'Leave Review' : 'Оставить отзыв'}</span>
-                    <span className="text-blue-500 text-xs">⭐</span>
                   </button>
                 </li>
               </ul>
@@ -376,11 +340,11 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
             {/* Выход - если пользователь авторизован */}
             {user && (
-              <div className="pt-4 border-t border-white/10">
+              <div className="pt-3 border-t border-white/10">
                 <button
                   onClick={handleLogoutWithClose}
                   disabled={isLoading}
-                  className="w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center p-4 rounded-xl text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200 text-center font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>{isLoading ? (language === "en" ? "Signing out..." : "Выход...") : TEXTS[language].navigation.logout}</span>
                 </button>
@@ -388,7 +352,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
             )}
 
             {/* Переключатель языков */}
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-3 border-t border-white/10">
               <button
                 onClick={() => {
                   setIsLanguageChanging(true);
@@ -396,17 +360,17 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   setTimeout(() => setIsLanguageChanging(false), 300);
                 }}
                 disabled={isLanguageChanging}
-                className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-white hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center p-4 rounded-xl text-white/60 hover:bg-white/5 hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
-                <span className="text-sm font-medium">
+                <span>
                   {language === 'en' ? 'ENG' : 'RU'}
                 </span>
               </button>
             </div>
 
             {/* Подвал */}
-            <div className="pt-6 border-t border-white/10">
-              <p className="text-gray-500 text-xs text-center">
+            <div className="pt-6 pb-4 border-t border-white/10">
+              <p className="text-white/40 text-xs text-center font-light">
                 Pure.Progression
               </p>
             </div>
