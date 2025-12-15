@@ -19,7 +19,8 @@ const muscleGroupTranslations = {
     "legs": "Ноги",
     "glutes": "Ягодицы",
     "shoulders": "Плечи",
-    "chest": "Грудь"
+    "chest": "Грудь",
+    "complex": "COMPLEX"
   },
   en: {
     "back": "Back",
@@ -29,9 +30,12 @@ const muscleGroupTranslations = {
     "legs": "Legs",
     "glutes": "Glutes",
     "shoulders": "Shoulders",
-    "chest": "Chest"
+    "chest": "Chest",
+    "complex": "COMPLEX"
   }
 };
+
+const WORKOUT_DRAFT_STORAGE_KEY = "workout_builder_draft_v1";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
@@ -54,15 +58,76 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [tabSwipeStart, setTabSwipeStart] = useState(null); // начальная позиция для swipe между вкладками
   const [tabSwipeOffset, setTabSwipeOffset] = useState(0); // смещение для анимации переключения вкладок
   const [filterTransitioning, setFilterTransitioning] = useState(false);
+  const [viewModeTransitioning, setViewModeTransitioning] = useState(false);
+  const [visibleVersion, setVisibleVersion] = useState(0); // для принудительного перерендера видимости карточек
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
   const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2', 'grid-4'
+  const [draftRestored, setDraftRestored] = useState(false); // показывать ли уведомление о восстановленном черновике
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
   const [activeSlideIndex, setActiveSlideIndex] = useState(0); // Отслеживаем активный слайд для пагинации
   const swiperRef = useRef(null); // Ref для Swiper instance
   const previousViewModeRef = useRef(viewMode); // Отслеживаем предыдущий режим
   const firstExerciseIndexRef = useRef(0); // Индекс первого упражнения текущего слайда
-  
+  const visibleCardsRef = useRef(new Map()); // карта видимости карточек
+
+  // Восстанавливаем черновик тренировки из localStorage (только если нет initialWorkout)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (initialWorkout) return;
+
+    try {
+      const raw = window.localStorage.getItem(WORKOUT_DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data && typeof data === "object") {
+        if (typeof data.name === "string") {
+          setWorkoutName(data.name);
+        }
+        if (typeof data.description === "string") {
+          setWorkoutDescription(data.description);
+        }
+        if (Array.isArray(data.exercises) && data.exercises.length > 0) {
+          setSelectedExercises(data.exercises);
+          // Показываем мягкое уведомление, что черновик восстановлен
+          setDraftRestored(true);
+          // Автоматически скрываем подсказку через пару секунд
+          setTimeout(() => setDraftRestored(false), 2500);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore workout draft", e);
+    }
+  }, [initialWorkout]);
+
+  // Сохраняем черновик тренировки в localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hasData =
+      workoutName.trim().length > 0 ||
+      workoutDescription.trim().length > 0 ||
+      selectedExercises.length > 0;
+
+    try {
+      if (!hasData) {
+        window.localStorage.removeItem(WORKOUT_DRAFT_STORAGE_KEY);
+        return;
+      }
+
+      const draft = {
+        name: workoutName,
+        description: workoutDescription,
+        exercises: selectedExercises,
+      };
+      window.localStorage.setItem(
+        WORKOUT_DRAFT_STORAGE_KEY,
+        JSON.stringify(draft)
+      );
+    } catch (e) {
+      console.error("Failed to save workout draft", e);
+    }
+  }, [workoutName, workoutDescription, selectedExercises]);
   // Получаем уникальные категории из упражнений
   const categories = ["All", ...new Set(exercises.flatMap(ex => ex.muscleGroups))];
 
@@ -224,14 +289,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     
     // Используем requestAnimationFrame для асинхронной обработки, чтобы не блокировать UI
     requestAnimationFrame(() => {
-      // Сразу скрываем все видео на текущем слайде (чтобы не было видно постеров)
-      if (swiper.slides[currentIndex]) {
-        const currentVideos = swiper.slides[currentIndex].querySelectorAll('video');
-        currentVideos.forEach(video => {
-          video.style.opacity = '0';
-        });
-      }
-      
       // АГРЕССИВНО выгружаем видео на всех неактивных слайдах (кроме текущего и следующего)
       swiper.slides.forEach((slide, index) => {
         if (index !== currentIndex && index !== currentIndex + 1) {
@@ -244,6 +301,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             video.src = '';
             video.load();
             video.style.opacity = '0';
+            const card = video.closest('.exercise-card');
+            if (card) {
+              card.style.opacity = '0';
+              card.style.pointerEvents = 'none';
+            }
           });
         }
       });
@@ -267,6 +329,16 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       if (swiper.slides[currentIndex]) {
         const videos = Array.from(swiper.slides[currentIndex].querySelectorAll('video'));
         
+        // Сбрасываем видимость карточек текущего слайда перед показом
+        videos.forEach((video) => {
+          const card = video.closest('.exercise-card');
+          if (card) {
+            card.style.opacity = '0';
+            card.style.pointerEvents = 'none';
+          }
+          video.style.opacity = '0';
+        });
+        
         // Функция для показа видео последовательно
         const showVideoSequentially = (videoIndex) => {
           if (videoIndex >= videos.length) return;
@@ -274,14 +346,14 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           const video = videos[videoIndex];
           const dataSrc = video.getAttribute('data-src');
           if (!dataSrc) {
-            // Если нет src, переходим к следующему
             showVideoSequentially(videoIndex + 1);
             return;
           }
           
-          video.style.transition = 'opacity 0.4s ease-in-out';
-          
-          // Восстанавливаем src если нужно
+          // Готовим плавное появление конкретного видео
+          video.style.transition = 'opacity 0.4s ease';
+          video.style.opacity = '0';
+
           const currentSrc = video.src || '';
           if (!currentSrc || currentSrc !== dataSrc) {
             video.src = dataSrc;
@@ -289,24 +361,26 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           video.preload = 'auto';
           video.load();
           
-          // Функция для показа текущего видео и перехода к следующему
           const showAndContinue = () => {
             if (video.paused) {
               video.play().catch(() => {});
             }
             requestAnimationFrame(() => {
               video.style.opacity = '1';
+              const card = video.closest('.exercise-card');
+              if (card) {
+                card.style.opacity = '1';
+                card.style.pointerEvents = 'auto';
+              }
             });
-            
+
             // Показываем следующее видео сразу после появления текущего (без задержки)
             showVideoSequentially(videoIndex + 1);
           };
           
-          // Проверяем готовность видео
           if (video.readyState >= 2) {
             showAndContinue();
           } else {
-            // Ждем загрузки
             const onReady = () => {
               showAndContinue();
             };
@@ -338,6 +412,37 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     });
   }, [exerciseSlides.length, filteredExercises.length]);
 
+  // После смены фильтра: вернуть на первый слайд и запустить загрузку/воспроизведение
+  useEffect(() => {
+    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
+
+    const swiper = swiperRef.current;
+    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
+
+    // мгновенно перейти к первому слайду, затем применить handleSlideChange
+    swiper.slideTo(0, 0);
+    setActiveSlideIndex(0);
+    // небольшой async, чтобы DOM успел обновиться
+    requestAnimationFrame(() => {
+      handleSlideChange(swiper);
+    });
+  }, [selectedCategory, exerciseSlides.length, activeSection, handleSlideChange]);
+
+  // Плавный переход при смене режима просмотра — только перезапуск fade без изменения выделения
+  useEffect(() => {
+    const swiper = swiperRef.current;
+    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
+    requestAnimationFrame(() => handleSlideChange(swiper));
+  }, [viewMode, handleSlideChange]);
+
+  // При обновлении списка слайдов (после фильтрации/изменений) повторно запускаем fade-загрузку
+  useEffect(() => {
+    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
+    const swiper = swiperRef.current;
+    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
+    requestAnimationFrame(() => handleSlideChange(swiper));
+  }, [exerciseSlides.length, activeSection, handleSlideChange]);
+
   // Инициализация активного слайда при монтировании Swiper
   const handleSwiperInit = useCallback((swiper) => {
     swiperRef.current = swiper;
@@ -358,6 +463,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             video.load();
             video.play().catch(() => {});
           });
+          // Запускаем fade-появление так же, как при перелистывании
+          requestAnimationFrame(() => handleSlideChange(swiper));
         }
       }
     }, 100);
@@ -382,35 +489,24 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
         bullet.style.display = 'none';
       });
       
-      if (totalSlides <= 3) {
-        // Если слайдов 3 или меньше, показываем все
-        bullets.forEach((bullet, index) => {
-          if (index < totalSlides) {
-            bullet.style.display = 'inline-block';
-            bullet.style.transform = 'translateX(0)';
-            bullet.style.opacity = index === activeSlideIndex ? '1' : '0.3';
-          }
-        });
-      } else {
-        // Показываем только 3 точки: предыдущая, текущая, следующая
-        const visibleIndices = [];
-        if (activeSlideIndex > 0) visibleIndices.push(activeSlideIndex - 1);
-        visibleIndices.push(activeSlideIndex);
-        if (activeSlideIndex < totalSlides - 1) visibleIndices.push(activeSlideIndex + 1);
-        
-        visibleIndices.forEach((index) => {
-          const bullet = bullets[index];
-          if (bullet) {
-            const offset = index - activeSlideIndex;
-            const bulletWidth = 10;
-            const translateX = offset * bulletWidth;
-            
-            bullet.style.display = 'inline-block';
-            bullet.style.transform = `translateX(${translateX}px)`;
-            bullet.style.opacity = index === activeSlideIndex ? '1' : '0.3';
-          }
-        });
-      }
+      // Всегда рисуем максимум 3 "слота": предыдущая, текущая, следующая
+      const visibleIndices = [];
+      if (activeSlideIndex > 0) visibleIndices.push(activeSlideIndex - 1);
+      visibleIndices.push(activeSlideIndex);
+      if (activeSlideIndex < totalSlides - 1) visibleIndices.push(activeSlideIndex + 1);
+      
+      visibleIndices.forEach((index) => {
+        const bullet = bullets[index];
+        if (bullet) {
+          const offset = index - activeSlideIndex;
+          const bulletWidth = 10;
+          const translateX = offset * bulletWidth;
+          
+          bullet.style.display = 'inline-block';
+          bullet.style.transform = `translateX(${translateX}px)`;
+          bullet.style.opacity = index === activeSlideIndex ? '1' : '0.3';
+        }
+      });
     };
     
     // Используем небольшую задержку для того, чтобы DOM обновился
@@ -538,7 +634,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     setTabSwipeOffset(0);
   };
 
-  // Функции для swipe удаления
+  // Функции для swipe удаления (только touch / мобильные устройства)
   const handleTouchStart = (e, exerciseId) => {
     const touch = e.touches[0];
     setSwipedExercise({ id: exerciseId, startX: touch.clientX });
@@ -568,7 +664,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     }
   };
 
-  const handleTouchEnd = (e, exerciseId) => {
+  const handleTouchEnd = (_e, exerciseId) => {
     if (!swipedExercise || swipedExercise.id !== exerciseId) return;
     
     // Если смещение больше 80px, удаляем упражнение
@@ -677,13 +773,32 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       estimatedDuration: selectedExercises.length * 3 // Примерная оценка: 3 минуты на упражнение
     };
 
+    // После успешного сохранения очищаем черновик в localStorage
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(WORKOUT_DRAFT_STORAGE_KEY);
+      } catch (e) {
+        console.error("Failed to clear workout draft", e);
+      }
+    }
+
     onSave(workout);
   };
 
   return (
     <div 
-      className="min-h-screen bg-black p-4 pt-4"
+      className="min-h-screen bg-black p-4 pt-4 relative"
     >
+      {/* Мягкое уведомление о восстановленном черновике */}
+      {draftRestored && (
+        <div className="pointer-events-none fixed left-1/2 -translate-x-1/2 bottom-4 z-50">
+          <div className="pointer-events-auto px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+            <span>{language === "ru" ? "Черновик тренировки восстановлен" : "Workout draft restored"}</span>
+          </div>
+        </div>
+      )}
+
       <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden' : ''}`}>
         {/* Навигация по секциям */}
         <div className="flex justify-center items-center mb-4 h-12">
@@ -706,16 +821,35 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             {/* Круг - Моя тренировка */}
             <button
               onClick={() => setActiveSection("selected")}
-              className={`w-8 h-8 transition-all duration-300 flex items-center justify-center ${
+              className={`relative w-8 h-8 transition-all duration-300 flex items-center justify-center ${
                 activeSection === "selected" 
                   ? "scale-110" 
-                  : "hover:scale-105 opacity-60 hover:opacity-100"
+                  : "hover:scale-105"
               }`}
               title="Моя тренировка"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white">
-                <circle cx="12" cy="12" r="10" />
-              </svg>
+              <span
+                className={`transition-opacity duration-300 ${
+                  activeSection === "selected"
+                    ? "opacity-100"
+                    : "opacity-60 hover:opacity-100"
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-6 h-6 text-white"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </span>
+              {selectedExercises.length > 0 && (
+                <span className="absolute right-0.5 bottom-0 w-1.5 h-1.5 rounded-full bg-white"></span>
+              )}
             </button>
           </div>
         </div>
@@ -837,32 +971,49 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                               </div>
                             </div>
 
-                              {/* Стрелки перемещения внутри карточки упражнения */}
-                              {/* Верхний правый угол - переместить вверх */}
+                            {/* Столбец действий для мобилки: вверх / вниз (без крестика) */}
+                            <div className="absolute inset-y-1 right-1 flex flex-col items-center justify-between z-10 md:hidden">
+                              {/* Переместить вверх */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   moveExerciseByOne(exercise.id, 'left');
                                 }}
                                 disabled={realIndex === 0}
-                                className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center text-white text-xs hover:opacity-70 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed z-10"
+                                className="w-6 h-6 flex items-center justify-center text-white text-xs hover:opacity-80 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Переместить вверх"
                               >
                                 <div className="w-0 h-0 border-l-4 border-r-4 border-b-6 border-l-transparent border-r-transparent border-b-white"></div>
                               </button>
 
-                              {/* Нижний правый угол - переместить вниз */}
+                              {/* Переместить вниз */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   moveExerciseByOne(exercise.id, 'right');
                                 }}
                                 disabled={realIndex === selectedExercises.length - 1}
-                                className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center text-white text-xs hover:opacity-70 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed z-10"
+                                className="w-6 h-6 flex items-center justify-center text-white text-xs hover:opacity-80 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Переместить вниз"
                               >
                                 <div className="w-0 h-0 border-l-4 border-r-4 border-t-6 border-l-transparent border-r-transparent border-t-white"></div>
                               </button>
+                            </div>
+
+                            {/* Аккуратный крестик для десктопа (включая суженное окно) */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeExercise(exercise.id);
+                              }}
+                              className="hidden md:flex absolute top-1 right-1 w-6 h-6 items-center justify-center text-white/80 hover:text-red-400 hover:scale-105 transition-all duration-200 z-10"
+                              title="Удалить упражнение"
+                            >
+                              <span className="block w-3 h-3 relative">
+                                <span className="absolute inset-0 w-full h-px bg-current rotate-45 origin-center" />
+                                <span className="absolute inset-0 w-full h-px bg-current -rotate-45 origin-center" />
+                              </span>
+                            </button>
                           </div>
                         );
                       })}
@@ -907,6 +1058,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                   onTouchEnd={(e) => e.stopPropagation()}
                   style={{ touchAction: 'manipulation' }}
                 >
+                  {/* Режим 1: две горизонтальные полосы (список) */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -914,18 +1066,28 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       setViewMode('grid-4');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
                       viewMode === 'grid-4'
                         ? 'bg-white text-black'
                         : 'text-white/60 hover:text-white'
                     }`}
-                    title={language === 'ru' ? '4 в ряд' : '4 per row'}
+                    title={language === 'ru' ? 'Список' : 'List'}
                     style={{ touchAction: 'manipulation' }}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    <svg
+                      className="w-5 h-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 9h16M4 15h16" />
                     </svg>
                   </button>
+
+                  {/* Режим 2: четыре закрашенные точки */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -941,13 +1103,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     title={language === 'ru' ? '2 в ряд' : '2 per row'}
                     style={{ touchAction: 'manipulation' }}
                   >
-                    <svg 
-                      className="w-6 h-6" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="7" cy="8" r="2" />
+                      <circle cx="17" cy="8" r="2" />
+                      <circle cx="7" cy="16" r="2" />
+                      <circle cx="17" cy="16" r="2" />
                     </svg>
                   </button>
                   <button
@@ -966,12 +1126,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     style={{ touchAction: 'manipulation' }}
                   >
                     <svg 
-                      className="w-6 h-6" 
-                      fill="none" 
-                      stroke="currentColor" 
+                      className="w-5 h-5" 
+                      fill="currentColor" 
+                      stroke="none" 
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H9a1 1 0 01-1-1V8z" />
+                      <rect x="8" y="8" width="8" height="8" rx="2" ry="2" />
                     </svg>
                   </button>
                 </div>
@@ -1019,19 +1179,24 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                        className={`relative rounded-xl overflow-visible cursor-pointer group ${
+                        className={`exercise-card relative rounded-xl overflow-visible cursor-pointer group ${
                           viewMode === 'large' 
                             ? 'w-full max-w-[280px] mx-auto aspect-[9/16]'
                             : viewMode === 'grid-4'
                             ? 'aspect-[9/16]'
                             : 'aspect-[9/16] w-full h-full'
                         } ${
-                          isSelected ? 'ring-1 ring-green-500 ring-offset-1 ring-offset-black' : 'hover:ring-1 hover:ring-white/30'
+                          isSelected
+                            ? 'ring-1 ring-green-500 ring-offset-1 ring-offset-black'
+                            : 'hover:ring-1 hover:ring-white/30'
                         } ${filterTransitioning ? "filter-transitioning" : ""}`}
+                        data-exercise-id={exercise.id}
                         style={{ 
                           padding: isSelected ? '4px' : '0',
-                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out',
-                          willChange: isSelected ? 'padding' : 'auto'
+                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.45s ease-out',
+                          willChange: isSelected ? 'padding' : 'auto',
+                          opacity: 0,
+                          pointerEvents: 'none'
                         }}
                           onClick={() => {
                             if (isSelected) {
@@ -1051,40 +1216,61 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                             poster={exercise.poster}
                             className="w-full h-full object-cover"
                             style={{ 
-                              opacity: isCurrentSlide ? undefined : 0, // Управляется через JS
-                              transition: 'opacity 0.6s ease-in-out'
+                              opacity: 0,
+                              transition: 'opacity 0.4s ease-in-out'
                             }}
                             autoPlay={false}
                             muted
                             loop
                             playsInline
-                            preload="none"
+                            preload="metadata"
                           />
                         </div>
                         
-                        {/* Информация об упражнении для режима large */}
+                        {/* Информация об упражнении */}
                         {viewMode === 'large' && (
                           <motion.div 
-                            className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10 pointer-events-none"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3, delay: 0.1 }}
+                            className="absolute inset-x-0 bottom-0 px-3 pb-3 pt-6 bg-gradient-to-t from-black/85 via-black/60 to-transparent z-10 pointer-events-none flex flex-col items-center md:items-start"
+                            initial={{ opacity: 0, translateY: 12 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ duration: 0.35, delay: 0.12, ease: [0.22, 0.61, 0.36, 1] }}
                           >
-                            <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">
+                            <h3 className="text-white/90 text-xs md:text-sm font-medium tracking-wide mb-1.5 max-w-[90%] line-clamp-2 text-center md:text-left">
                               {exercise.title}
                             </h3>
                             {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
                                 {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
                                   <span
                                     key={idx}
-                                    className="text-white/60 font-light text-xs px-2 py-0.5 rounded-full bg-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                                    className="text-white/70 font-light text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-[1px]"
                                   >
                                     {muscleGroupTranslations[language]?.[group] || group}
                                   </span>
                                 ))}
                               </div>
                             )}
+                          </motion.div>
+                        )}
+
+                        {/* Для режима 2 в ряд – только группы мышц внизу без названия */}
+                        {viewMode === 'grid-2' && exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
+                          <motion.div
+                            className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-6 bg-gradient-to-t from-black/70 via-black/40 to-transparent z-10 pointer-events-none"
+                            initial={{ opacity: 0, translateY: 10 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1, ease: [0.22, 0.61, 0.36, 1] }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-white/70 font-light text-[10px] px-1.5 py-0.5 rounded-full bg-black/40 backdrop-blur-[1px]"
+                                >
+                                  {muscleGroupTranslations[language]?.[group] || group}
+                                </span>
+                              ))}
+                            </div>
                           </motion.div>
                         )}
 

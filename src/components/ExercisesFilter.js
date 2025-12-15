@@ -13,7 +13,8 @@ const muscleGroupTranslations = {
     "legs": "Ноги",
     "glutes": "Ягодицы",
     "shoulders": "Плечи",
-    "chest": "Грудь"
+    "chest": "Грудь",
+    "complex": "COMPLEX"
   },
   en: {
     "back": "Back",
@@ -23,7 +24,8 @@ const muscleGroupTranslations = {
     "legs": "Legs",
     "glutes": "Glutes",
     "shoulders": "Shoulders",
-    "chest": "Chest"
+    "chest": "Chest",
+    "complex": "COMPLEX"
   }
 };
 
@@ -36,7 +38,11 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const setIsExpanded = externalSetIsExpanded || setInternalIsExpanded;
   
   // Получаем все уникальные группы мышц (без "All")
-  const muscleGroups = Array.from(new Set(exercises.flatMap(ex => ex.muscleGroups)));
+  const uniqueGroups = Array.from(new Set(exercises.flatMap(ex => ex.muscleGroups)));
+  const hasComplex = uniqueGroups.includes("complex");
+  const muscleGroups = hasComplex
+    ? ["complex", ...uniqueGroups.filter((g) => g !== "complex")]
+    : uniqueGroups;
   
   // Функция для получения переведенного названия группы
   const getTranslatedGroup = (group) => {
@@ -47,7 +53,7 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
-    <div className="p-2 h-10 overflow-hidden">
+    <div className="pl-2 pr-4 h-10">
       <div 
         className="flex gap-2 overflow-x-auto scrollbar-hide h-full items-center min-h-[32px]"
         style={{ maxWidth: 'calc(100vw - 32px)' }}
@@ -80,10 +86,6 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
             isExpanded ? "bg-white/20" : "bg-white"
           }`}></div>
           
-          {/* Индикатор активного фильтра */}
-          {!isExpanded && selectedGroup !== "All" && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full ring-2 ring-black ring-offset-0"></div>
-          )}
         </div>
 
         {/* Раскрывающиеся фильтры в той же строке */}

@@ -188,6 +188,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           
           {/* Переключатель режимов просмотра */}
           <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1">
+            {/* Режим 1: список (две полосы) */}
             <button
               onClick={() => setViewMode('list')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -197,10 +198,19 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               }`}
               title="Список"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 9h16M4 15h16" />
               </svg>
             </button>
+            {/* Режим 2: закрашенный квадрат (крупный вид) */}
             <button
               onClick={() => setViewMode('large')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -210,10 +220,15 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               }`}
               title="Крупный вид"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <rect x="8" y="8" width="8" height="8" rx="2" ry="2" />
               </svg>
             </button>
+            {/* Режим 3: четыре точки (4 в ряд, как 2-я иконка в конструкторе) */}
             <button
               onClick={() => setViewMode('grid-4')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -223,8 +238,11 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               }`}
               title="4 в ряд"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="7" cy="8" r="2" />
+                <circle cx="17" cy="8" r="2" />
+                <circle cx="7" cy="16" r="2" />
+                <circle cx="17" cy="16" r="2" />
               </svg>
             </button>
           </div>

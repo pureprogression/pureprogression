@@ -13,14 +13,7 @@ export const exercises = [
         title: "Стойка на руках с опорой",
         video: `${ASSETS_BASE_URL}/videos/x113.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x113.jpg`,
-        muscleGroups: ["shoulders","arms","core"]
-    },
-    {
-        id: "7",
-        title: "Отжимания от брусьев взрывные",
-        video: `${ASSETS_BASE_URL}/videos/x84.mp4`,
-        poster: `${ASSETS_BASE_URL}/posters/x84.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["shoulders","arms"]
     },
     {
         id: "8",
@@ -41,14 +34,14 @@ export const exercises = [
         title: "Подтягивания в уголке",
         video: `${ASSETS_BASE_URL}/videos/x29.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x29.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","abs","arms","legs"]
     },
     {
         id: "11",
         title: "Динамичный передний вис",
         video: `${ASSETS_BASE_URL}/videos/x29.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x29.2.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["abs","back"]
     },
     {
         id: "12",
@@ -62,7 +55,7 @@ export const exercises = [
         title: "Лопаточные подтягивания",
         video: `${ASSETS_BASE_URL}/videos/x30.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x30.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back"]
     },
     {
         id: "14",
@@ -76,14 +69,14 @@ export const exercises = [
         title: "Отжимания от брусьев + мах ногами",
         video: `${ASSETS_BASE_URL}/videos/x31.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x31.2.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["complex","chest","abs","arms","legs"]
     },
     {
         id: "16",
         title: "Разгибание рук из упора лежа",
         video: `${ASSETS_BASE_URL}/videos/x31.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x31.3.jpg`,
-        muscleGroups: ["arms","shoulders","core"]
+        muscleGroups: ["arms","core"]
     },
     {
         id: "17",
@@ -97,14 +90,14 @@ export const exercises = [
         title: "Отжимания от брусьев + кор",
         video: `${ASSETS_BASE_URL}/videos/x32.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x32.2.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["complex","chest","arms","abs"]
     },
     {
         id: "19",
         title: "Выход на две с прыжка",
         video: `${ASSETS_BASE_URL}/videos/x32.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x32.3.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","chest","arms"]
     }
 ,
     {
@@ -112,35 +105,35 @@ export const exercises = [
         title: "Упор на руках",
         video: `${ASSETS_BASE_URL}/videos/x.1.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x.1.1.jpg`,
-        muscleGroups: ["arms","shoulders","core"]
+        muscleGroups: ["shoulders","arms","core"]
     },
     {
         id: "21",
         title: "Упор на руках с подъемом ног",
         video: `${ASSETS_BASE_URL}/videos/x.2.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x.2.1.jpg`,
-        muscleGroups: ["arms","shoulders","core"]
+        muscleGroups: ["complex","shoulders","arms","core"]
     },
     {
         id: "22",
         title: "Упор с прожимом вверх",
         video: `${ASSETS_BASE_URL}/videos/x.3.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x.3.1.jpg`,
-        muscleGroups: ["arms","shoulders","core"]
+        muscleGroups: ["shoulders","arms","core"]
     },
     {
         id: "23",
         title: "Упор с прожимом в стойку на руках",
         video: `${ASSETS_BASE_URL}/videos/x.4.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x.4.1.jpg`,
-        muscleGroups: ["shoulders","arms","core"]
+        muscleGroups: ["complex","shoulders","arms","core"]
     },
     {
         id: "24",
         title: "Вис в уголке динамично",
         video: `${ASSETS_BASE_URL}/videos/x1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","abs","legs"]
     },
     {
         id: "25",
@@ -161,14 +154,14 @@ export const exercises = [
         title: "Берпи-кор на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x10.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x10.3.jpg`,
-        muscleGroups: ["chest","arms","legs","core"]
+        muscleGroups: ["complex","abs","chest","arms","core"]
     },
     {
         id: "28",
         title: "Австралийские динамичные",
         video: `${ASSETS_BASE_URL}/videos/x10.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x10.4.jpg`,
-        muscleGroups: ["core"]
+        muscleGroups: ["back","arms"]
     },
     {
         id: "29",
@@ -179,10 +172,10 @@ export const exercises = [
     },
     {
         id: "30",
-        title: "Отжимания в в уголке на брусьях + отягощение",
+        title: "Отжимания в уголке на брусьях + отягощение",
         video: `${ASSETS_BASE_URL}/videos/x11.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x11.2.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["shoulders","arms"]
     },
     {
         id: "31",
@@ -196,7 +189,7 @@ export const exercises = [
         title: "Перекаты в упоре лежа",
         video: `${ASSETS_BASE_URL}/videos/x12.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x12.1.jpg`,
-        muscleGroups: ["arms","shoulders","core"]
+        muscleGroups: ["complex","chest","shoulders","core","arms"]
     },
     {
         id: "33",
@@ -224,35 +217,35 @@ export const exercises = [
         title: "Подтягивания в уголке с резиной",
         video: `${ASSETS_BASE_URL}/videos/x13.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x13.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","arms","legs"]
     },
     {
         id: "37",
         title: "Закрытый вис + уголок",
         video: `${ASSETS_BASE_URL}/videos/x13.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x13.2.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["complex"]
     },
     {
         id: "38",
         title: "Вис в уголке активный",
         video: `${ASSETS_BASE_URL}/videos/x13.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x13.3.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","arms","legs"]
     },
     {
         id: "39",
         title: "Вис в уголке с подъемом ног",
         video: `${ASSETS_BASE_URL}/videos/x13.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x13.4.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","abs","legs"]
     },
     {
         id: "40",
         title: "Выход на две с паузой",
         video: `${ASSETS_BASE_URL}/videos/x15.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x15.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex"]
     },
     {
         id: "42",
@@ -266,14 +259,14 @@ export const exercises = [
         title: "Отжимания на стойках низкие",
         video: `${ASSETS_BASE_URL}/videos/x16.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x16.1.jpg`,
-        muscleGroups: ["chest","arms","shoulders"]
+        muscleGroups: ["chest","arms"]
     },
     {
         id: "44",
         title: "Отжимания + выход в уголок",
         video: `${ASSETS_BASE_URL}/videos/x16.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x16.2.jpg`,
-        muscleGroups: ["back","arms","chest","shoulders","abs","core"]
+        muscleGroups: ["chest","abs","legs"]
     },
     {
         id: "45",
@@ -287,14 +280,14 @@ export const exercises = [
         title: "Уголок + выход закрытый планш",
         video: `${ASSETS_BASE_URL}/videos/x16.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x16.4.jpg`,
-        muscleGroups: ["abs","core"]
+        muscleGroups: ["abs","back","legs"]
     },
     {
         id: "47",
         title: "Выход в стойку на руках с локтей на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x17.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x17.1.jpg`,
-        muscleGroups: ["back","arms","chest","shoulders","core"]
+        muscleGroups: ["complex"]
     },
     {
         id: "48",
@@ -319,17 +312,17 @@ export const exercises = [
     },
     {
         id: "51",
-        title: "Подтягвиания попеременные",
+        title: "Подтягивания попеременные",
         video: `${ASSETS_BASE_URL}/videos/x18.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x18.2.jpg`,
         muscleGroups: ["back","arms"]
     },
     {
         id: "52",
-        title: "Подтягивания с группировкой",
+        title: "Подтягивания к корпусу группировкой",
         video: `${ASSETS_BASE_URL}/videos/x18.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x18.3.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["back","abs"]
     },
     {
         id: "53",
@@ -347,10 +340,10 @@ export const exercises = [
     },
     {
         id: "55",
-        title: "Подтягвиаиния + уголок",
+        title: "Подтягивания с группировкой + уголок",
         video: `${ASSETS_BASE_URL}/videos/x21.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x21.1.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["back","abs","legs"]
     },
     {
         id: "56",
@@ -392,7 +385,7 @@ export const exercises = [
         title: "Выход на две",
         video: `${ASSETS_BASE_URL}/videos/x23.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x23.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","arms"]
     },
     {
         id: "62",
@@ -413,7 +406,7 @@ export const exercises = [
         title: "Отжимания от брусьев с выходом на локти",
         video: `${ASSETS_BASE_URL}/videos/x24.1.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x24.1.1.jpg`,
-        muscleGroups: ["chest","arms","shoulders"]
+        muscleGroups: ["complex","chest","arms"]
     },
     {
         id: "65",
@@ -427,7 +420,7 @@ export const exercises = [
         title: "Отжимнаия от брусьев с группировкой",
         video: `${ASSETS_BASE_URL}/videos/x24.3.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x24.3.1.jpg`,
-        muscleGroups: ["chest","arms","abs","core"]
+        muscleGroups: ["chest","arms","abs"]
     },
     {
         id: "67",
@@ -441,14 +434,14 @@ export const exercises = [
         title: "Подтягвиаиния + вертикальный выход",
         video: `${ASSETS_BASE_URL}/videos/x26.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x26.2.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","arms"]
     },
     {
         id: "69",
         title: "Вис в уголке",
         video: `${ASSETS_BASE_URL}/videos/x26.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x26.3.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","arms"]
     },
     {
         id: "70",
@@ -469,7 +462,7 @@ export const exercises = [
         title: "Отжимания от брусьев + уголок",
         video: `${ASSETS_BASE_URL}/videos/x27.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x27.3.jpg`,
-        muscleGroups: ["chest","arms","abs","core"]
+        muscleGroups: ["complex","chest","arms","abs"]
     },
     {
         id: "73",
@@ -483,7 +476,7 @@ export const exercises = [
         title: "Выход в закрытую стойку",
         video: `${ASSETS_BASE_URL}/videos/x28.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x28.1.jpg`,
-        muscleGroups: ["back","arms","shoulders","core"]
+        muscleGroups: ["complex","shoulders","core"]
     },
     {
         id: "75",
@@ -525,14 +518,14 @@ export const exercises = [
         title: "Отжимания",
         video: `${ASSETS_BASE_URL}/videos/x3.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x3.4.jpg`,
-        muscleGroups: ["shoulders","arms"]
+        muscleGroups: ["chest","arms"]
     },
     {
         id: "81",
         title: "Подъем ног в висе динамично",
         video: `${ASSETS_BASE_URL}/videos/x3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x3.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["abs"]
     },
     {
         id: "82",
@@ -557,94 +550,94 @@ export const exercises = [
     },
     {
         id: "85",
-        title: "Отжимания от брусьев с поджатыми ногами",
+        title: "Отжимания от брусьев в прямой линии",
         video: `${ASSETS_BASE_URL}/videos/x33.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x33.3.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["complex","chest","arms"]
     },
     {
         id: "86",
-        title: "Отжимания от брусьев прямые",
+        title: "Выход в упор на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x4.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.1.jpg`,
-        muscleGroups: ["back","arms","chest","shoulders"]
+        muscleGroups: ["complex","shoulders","back","core"]
     },
     {
         id: "87",
-        title: "Отжимания от брусьев + выход в упор",
+        title: "Махи ногами с локтей",
         video: `${ASSETS_BASE_URL}/videos/x4.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.2.jpg`,
-        muscleGroups: ["chest","arms","abs","core"]
+        muscleGroups: ["complex","abs","abs","core"]
     },
     {
         id: "88",
         title: "Складка на брусьях с локтей",
         video: `${ASSETS_BASE_URL}/videos/x4.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.3.jpg`,
-        muscleGroups: ["chest","arms","shoulders"]
+        muscleGroups: ["chest","abs"]
     },
     {
         id: "89",
         title: "Выход в стойку на руках на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x4.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.4.jpg`,
-        muscleGroups: ["back","arms","chest","shoulders","core"]
+        muscleGroups: ["complex", "shoulders","core"]
     },
     {
         id: "90",
         title: "Вис + динамичный подъем ног",
         video: `${ASSETS_BASE_URL}/videos/x4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x4.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["abs"]
     },
     {
         id: "91",
-        title: "Вис + динамичный подъем ног",
+        title: "Подтягивания в уголке",
         video: `${ASSETS_BASE_URL}/videos/x5.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x5.1.jpg`,
-        muscleGroups: ["back","arms","chest"]
+        muscleGroups: ["complex","back","arms","abs","legs"]
     },
     {
         id: "92",
         title: "Подтягивания Австралийские на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x5.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x5.2.jpg`,
-        muscleGroups: ["back","arms","chest"]
+        muscleGroups: ["back","arms"]
     },
     {
         id: "93",
-        title: "Подтягивания Австралийские на брусьях",
+        title: "Уголок с разворотом",
         video: `${ASSETS_BASE_URL}/videos/x5.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x5.3.jpg`,
         muscleGroups: ["abs","core"]
     },
     {
         id: "94",
-        title: "Уголок + разворот",
+        title: "Выход в вертикальный вис с группировки",
         video: `${ASSETS_BASE_URL}/videos/x5.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x5.4.jpg`,
-        muscleGroups: ["back","arms","chest","shoulders"]
+        muscleGroups: ["complex","abs","arms"]
     },
     {
         id: "95",
-        title: "Вис на брусьях + вертикальный выход",
+        title: "Подтягивания в уголке",
         video: `${ASSETS_BASE_URL}/videos/x51.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x51.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","arms","abs"]
     },
     {
         id: "96",
-        title: "Подтягвиаиния в уголке",
+        title: "Выход на две с резиной",
         video: `${ASSETS_BASE_URL}/videos/x6.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x6.1.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["back","chest","arms"]
     },
     {
         id: "97",
-        title: "Выход на две с резиной",
+        title: "Подтягивания с группировкой",
         video: `${ASSETS_BASE_URL}/videos/x6.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x6.2.jpg`,
-        muscleGroups: ["back","arms","abs","core"]
+        muscleGroups: ["back","abs","arms"]
     },
     {
         id: "98",
@@ -658,7 +651,7 @@ export const exercises = [
         title: "Подъем ног с группировкой высокий",
         video: `${ASSETS_BASE_URL}/videos/x6.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x6.4.jpg`,
-        muscleGroups: ["abs","core"]
+        muscleGroups: ["abs"]
     },
     {
         id: "100",
@@ -672,56 +665,56 @@ export const exercises = [
         title: "Подъем ног + вертикальный выход",
         video: `${ASSETS_BASE_URL}/videos/x7.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x7.2.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["abs"]
     },
     {
         id: "102",
-        title: "Вертикальный выход динамично",
+        title: "Закрытый вис динамично",
         video: `${ASSETS_BASE_URL}/videos/x7.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x7.3.jpg`,
-        muscleGroups: ["abs","core"]
+        muscleGroups: ["abs","back"]
     },
     {
         id: "103",
         title: "Вис закрытый",
         video: `${ASSETS_BASE_URL}/videos/x7.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x7.4.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["abs","back"]
     },
     {
         id: "104",
-        title: "Вис закрытый",
+        title: "Отжимания от брусьев с подъемом таза",
         video: `${ASSETS_BASE_URL}/videos/x8.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x8.1.jpg`,
         muscleGroups: ["chest","arms"]
     },
     {
         id: "105",
-        title: "Отжимания с подъемом таза",
+        title: "Планш закрытый динамично",
         video: `${ASSETS_BASE_URL}/videos/x8.2.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x8.2.jpg`,
-        muscleGroups: ["core"]
+        muscleGroups: ["shoulders","abs","core"]
     },
     {
         id: "106",
-        title: "Подъемы с группировокой",
+        title: "Скручивания на брусьях",
         video: `${ASSETS_BASE_URL}/videos/x8.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x8.3.jpg`,
-        muscleGroups: ["chest","arms"]
+        muscleGroups: ["abs"]
     },
     {
         id: "107",
-        title: "Подъемы ног на брусьях",
+        title: "Отжимания от брусьев взрывные",
         video: `${ASSETS_BASE_URL}/videos/x8.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x8.4.jpg`,
         muscleGroups: ["chest","arms"]
     },
     {
         id: "108",
-        title: "Отжимнаия от брусьев взрывные",
+        title: "Подъем с переворотом",
         video: `${ASSETS_BASE_URL}/videos/x9.1.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x9.1.jpg`,
-        muscleGroups: ["core"]
+        muscleGroups: ["complex","core"]
     },
     {
         id: "109",
@@ -735,13 +728,13 @@ export const exercises = [
         title: "Выход на две с резиной",
         video: `${ASSETS_BASE_URL}/videos/x9.3.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x9.3.jpg`,
-        muscleGroups: ["back","arms"]
+        muscleGroups: ["complex","back","arms"]
     },
     {
         id: "111",
         title: "Выход вертикально с резиной",
         video: `${ASSETS_BASE_URL}/videos/x9.4.mp4`,
         poster: `${ASSETS_BASE_URL}/posters/x9.4.jpg`,
-        muscleGroups: ["shoulders","arms"]
+        muscleGroups: ["complex","abs","back"]
     }
 ]
