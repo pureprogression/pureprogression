@@ -58,13 +58,13 @@ export default function WorkoutBuilderPage() {
       // Отслеживаем создание тренировки
       trackWorkoutCreated(workout.exercises.length);
       
-      // Перенаправляем на страницу с тренировками
+      // Переходим сразу без анимации
+      setIsSaving(false);
       router.push('/my-workouts');
     } catch (error) {
       console.error("Ошибка при сохранении тренировки:", error);
-      // Ошибка логируется в консоль
-    } finally {
       setIsSaving(false);
+      // Ошибка логируется в консоль
     }
   };
 

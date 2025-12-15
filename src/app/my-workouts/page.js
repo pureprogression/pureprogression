@@ -20,6 +20,47 @@ export default function MyWorkoutsPage() {
   const router = useRouter();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
+  // Закрываем меню Navigation при загрузке страницы
+  useEffect(() => {
+    const cleanup = () => {
+      // Ищем все fixed элементы с высоким z-index и backdrop-blur
+      const allElements = document.querySelectorAll('*');
+      allElements.forEach(el => {
+        const style = window.getComputedStyle(el);
+        const zIndex = parseInt(style.zIndex) || 0;
+        const backdropFilter = style.backdropFilter || style.webkitBackdropFilter || '';
+        
+        // Если это fixed элемент с z-index >= 9998 и backdrop-blur
+        if (
+          style.position === 'fixed' && 
+          zIndex >= 9998 &&
+          backdropFilter !== 'none' &&
+          backdropFilter !== ''
+        ) {
+          const rect = el.getBoundingClientRect();
+          // Проверяем, что элемент занимает весь экран (overlay)
+          if (rect.width >= window.innerWidth * 0.9 && rect.height >= window.innerHeight * 0.9) {
+            el.remove();
+          }
+        }
+      });
+    };
+    
+    // Выполняем сразу и с задержками для надежности
+    cleanup();
+    const timer1 = setTimeout(cleanup, 10);
+    const timer2 = setTimeout(cleanup, 50);
+    const timer3 = setTimeout(cleanup, 100);
+    const timer4 = setTimeout(cleanup, 200);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+    };
+  }, []);
+
   // Сохраняем тренировку из localStorage если она есть
   useEffect(() => {
     if (!user || subscriptionLoading) return;

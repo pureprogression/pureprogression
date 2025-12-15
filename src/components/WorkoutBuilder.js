@@ -331,7 +331,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
   // Загружаем текущую страницу сразу + Observer для соседних страниц
   useEffect(() => {
-    if (exerciseSlides.length === 0) return;
+    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
     
     // Загружаем видео текущей страницы СРАЗУ
     const loadCurrentPage = () => {
@@ -344,7 +344,36 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       const videos = currentPageElement.querySelectorAll('video[data-src]');
       videos.forEach((video) => {
         const dataSrc = video.getAttribute('data-src');
-        if (dataSrc && !video.src) {
+        
+        // Проверяем, если видео уже было загружено ранее (при возврате на вкладку browse)
+        if (video.src && video.readyState >= 2) {
+          // Видео уже загружено, показываем его сразу
+          video.style.opacity = '1';
+          const card = video.closest('.exercise-card');
+          if (card) {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'auto';
+            card.setAttribute('data-video-loaded', 'true');
+            
+            const isSelected = card.getAttribute('data-selected') === 'true';
+            if (isSelected) {
+              setTimeout(() => {
+                card.setAttribute('data-show-ring', 'true');
+                card.offsetHeight;
+              }, 50);
+            }
+            
+            setTimeout(() => {
+              const infoElements = card.querySelectorAll('[data-exercise-info]');
+              infoElements.forEach(el => {
+                el.style.opacity = '1';
+                el.style.transition = 'opacity 0.3s ease-out';
+              });
+            }, 50);
+          }
+          video.play().catch(() => {});
+        } else if (dataSrc && !video.src) {
+          // Видео еще не загружено, загружаем его
           video.src = dataSrc;
           video.preload = 'auto';
           video.load();
@@ -380,29 +409,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             }
             video.play().catch(() => {});
           };
-          
-          // Если видео уже загружено, показываем информацию сразу
-          if (video.readyState >= 2) {
-            const card = video.closest('.exercise-card');
-            if (card) {
-              card.setAttribute('data-video-loaded', 'true');
-              const isSelected = card.getAttribute('data-selected') === 'true';
-              if (isSelected) {
-                setTimeout(() => {
-                  card.setAttribute('data-show-ring', 'true');
-                  // Принудительно обновляем стили через reflow
-                  card.offsetHeight;
-                }, 100);
-              }
-              setTimeout(() => {
-                const infoElements = card.querySelectorAll('[data-exercise-info]');
-                infoElements.forEach(el => {
-                  el.style.opacity = '1';
-                  el.style.transition = 'opacity 0.3s ease-out';
-                });
-              }, 50);
-            }
-          }
           
           if (video.readyState >= 2) {
             showVideo();
@@ -453,7 +459,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     return () => {
       observer.disconnect();
     };
-  }, [currentPage, exerciseSlides.length]);
+  }, [currentPage, exerciseSlides.length, activeSection]);
 
   // Убеждаемся что информация остается видимой при выделении карточки и переключении режима
   useEffect(() => {

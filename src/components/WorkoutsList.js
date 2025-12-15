@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -79,6 +80,7 @@ export default function WorkoutsList({ workouts, user }) {
       setDeleteConfirmWorkout(null);
     }
   };
+
 
   const handleDeleteCancel = () => {
     setDeleteConfirmWorkout(null);
@@ -198,11 +200,10 @@ export default function WorkoutsList({ workouts, user }) {
             onMouseEnter={() => { if (!isTouchDevice) startPreview(workout.id); }}
             onMouseLeave={stopPreview}
             onWheel={stopPreview}
-            {...itemAnimation}
             style={{
-              transform: swipedWorkout?.id === workout.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-              opacity: swipedWorkout?.id === workout.id ? swipeOpacity : 1,
-              transition: swipedWorkout?.id === workout.id && Math.abs(swipeOffset) < window.innerWidth ? 'none' : 'transform 0.4s ease-out, opacity 0.4s ease-out',
+              transform: swipedWorkout?.id === workout.id ? `translateX(${swipeOffset}px)` : undefined,
+              opacity: swipedWorkout?.id === workout.id ? swipeOpacity : undefined,
+              transition: swipedWorkout?.id === workout.id && Math.abs(swipeOffset) < window.innerWidth ? 'none' : undefined,
               touchAction: 'pan-y'
             }}
           >
@@ -278,53 +279,40 @@ export default function WorkoutsList({ workouts, user }) {
       </AnimatePresence>
 
       {/* Модальное окно подтверждения удаления */}
-      <AnimatePresence>
-        {deleteConfirmWorkout && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleDeleteCancel}
+      {deleteConfirmWorkout && typeof window !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          onClick={handleDeleteCancel}
+        >
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+          
+          {/* Modal */}
+          <div
+            className="relative bg-black/95 backdrop-blur-xl rounded-2xl p-6 max-w-sm w-full mx-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            
-            {/* Modal */}
-            <motion.div
-              className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-6 max-w-sm w-full mx-4 shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", duration: 0.3 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-white text-lg font-semibold mb-2">
-                {language === 'ru' ? 'Удалить тренировку?' : 'Delete workout?'}
-              </h3>
-              <p className="text-white/60 text-sm mb-6">
-                {language === 'ru' 
-                  ? 'Это действие нельзя отменить. Тренировка будет удалена навсегда.'
-                  : 'This action cannot be undone. The workout will be permanently deleted.'}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDeleteCancel}
-                  className="flex-1 py-2 px-4 bg-white/10 text-white rounded-lg font-medium hover:bg-white/20 transition-all duration-300"
-                >
-                  {language === 'ru' ? 'Отмена' : 'Cancel'}
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="flex-1 py-2 px-4 bg-red-500/80 text-white rounded-lg font-medium hover:bg-red-500 transition-all duration-300"
-                >
-                  {language === 'ru' ? 'Удалить' : 'Delete'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <h3 className="text-white text-xl font-light mb-6 text-center tracking-wide">
+              {TEXTS[language].workouts.confirmDelete}
+            </h3>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-light tracking-wide backdrop-blur-sm"
+              >
+                {TEXTS[language].workouts.cancel}
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="flex-1 py-3 px-4 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all duration-200 text-sm font-light tracking-wide shadow-lg shadow-red-500/20"
+              >
+                {TEXTS[language].workouts.delete}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </motion.div>
   );
 }
