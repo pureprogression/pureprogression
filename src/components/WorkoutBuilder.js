@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
@@ -64,8 +64,16 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
   const [currentPage, setCurrentPage] = useState(0); // Текущая страница (вместо activeSlideIndex)
-  const previousViewModeRef = useRef(viewMode); // Отслеживаем предыдущий режим
+  const previousViewModeRef = useRef(null); // Отслеживаем предыдущий режим (null при первой загрузке)
   const videoRefsRef = useRef(new Map()); // Ref для видео элементов: exerciseId -> videoElement
+  const swipeStartRef = useRef(null); // Начальная позиция свайпа
+  const swipeContainerRef = useRef(null); // Ref для контейнера страниц
+  const viewModeChangingRef = useRef(false); // Флаг изменения режима
+  const viewModeChangeTimeoutRef = useRef(null); // Таймер для debounce переключения режима
+  const currentExerciseIndexRef = useRef(0); // Индекс первого упражнения на текущей странице (для сохранения позиции при смене режима)
+  const currentExerciseIdRef = useRef(null); // ID первого упражнения на текущей странице (для более надежного сохранения позиции)
+  const exerciseSlidesRef = useRef([]); // Ref для актуальных exerciseSlides
+  const currentPageRef = useRef(0); // Ref для актуального currentPage
 
   // Восстанавливаем черновик тренировки из localStorage (только если нет initialWorkout)
   useEffect(() => {
@@ -203,11 +211,97 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       slides.push(allExercises.slice(i, i + exercisesPerSlide));
     }
     
-    // Сохраняем текущий режим
-    previousViewModeRef.current = viewMode;
-    
     return slides;
   }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray]);
+
+  // Обновляем refs для актуальных значений
+  useEffect(() => {
+    exerciseSlidesRef.current = exerciseSlides;
+  }, [exerciseSlides]);
+  
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  // Сохраняем индекс и ID первого упражнения на текущей странице при изменении страницы
+  useEffect(() => {
+    if (exerciseSlides.length === 0) return;
+    if (currentPage >= exerciseSlides.length) return;
+    
+    const currentSlide = exerciseSlides[currentPage];
+    if (currentSlide && currentSlide.length > 0) {
+      const allExercises = shuffledExercisesRef.current || [];
+      const firstExerciseId = currentSlide[0].id;
+      const exerciseIndex = allExercises.findIndex(ex => ex.id === firstExerciseId);
+      if (exerciseIndex !== -1) {
+        currentExerciseIndexRef.current = exerciseIndex;
+        currentExerciseIdRef.current = firstExerciseId;
+      }
+    }
+  }, [currentPage, exerciseSlides]);
+
+  // Восстанавливаем позицию при изменении режима - работает для всех переходов (1->2, 2->3, 3->2, 2->1 и т.д.)
+  useLayoutEffect(() => {
+    if (exerciseSlides.length === 0) return;
+    
+    const previousMode = previousViewModeRef.current;
+    const currentMode = viewMode;
+    
+    // Если режим действительно изменился (не первая загрузка)
+    if (previousMode !== null && previousMode !== currentMode) {
+      // Используем сохраненный ID упражнения (более надежно, чем индекс)
+      const targetExerciseId = currentExerciseIdRef.current;
+      
+      if (targetExerciseId) {
+        // Ищем страницу, которая содержит это упражнение
+        let foundPage = -1;
+        for (let i = 0; i < exerciseSlides.length; i++) {
+          if (exerciseSlides[i].some(ex => ex.id === targetExerciseId)) {
+            foundPage = i;
+            break;
+          }
+        }
+        
+        if (foundPage !== -1) {
+          // Нашли страницу с этим упражнением - устанавливаем её
+          setCurrentPage(foundPage);
+          // Обновляем previousViewModeRef после установки страницы
+          previousViewModeRef.current = currentMode;
+          return;
+        }
+      }
+      
+      // Если не нашли по ID, пробуем по индексу (fallback)
+      const allExercises = shuffledExercisesRef.current || [];
+      const targetExerciseIndex = currentExerciseIndexRef.current;
+      
+      if (targetExerciseIndex >= 0 && targetExerciseIndex < allExercises.length) {
+        const fallbackExerciseId = allExercises[targetExerciseIndex].id;
+        
+        let foundPage = -1;
+        for (let i = 0; i < exerciseSlides.length; i++) {
+          if (exerciseSlides[i].some(ex => ex.id === fallbackExerciseId)) {
+            foundPage = i;
+            break;
+          }
+        }
+        
+        if (foundPage !== -1) {
+          setCurrentPage(foundPage);
+          previousViewModeRef.current = currentMode;
+          return;
+        }
+      }
+    }
+    
+    // Обновляем previousViewModeRef в конце (включая первую загрузку)
+    previousViewModeRef.current = currentMode;
+    
+    // Корректируем currentPage если он выходит за границы
+    if (currentPage >= exerciseSlides.length) {
+      setCurrentPage(Math.max(0, exerciseSlides.length - 1));
+    }
+  }, [viewMode, exerciseSlides]); // Срабатывает при изменении режима или exerciseSlides
   
   // Анимация при изменении фильтра
   useEffect(() => {
@@ -259,11 +353,56 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             video.style.opacity = '1';
             const card = video.closest('.exercise-card');
             if (card) {
+              // Показываем карточку вместе с видео
               card.style.opacity = '1';
               card.style.pointerEvents = 'auto';
+              
+              // Сохраняем флаг что видео загружено
+              card.setAttribute('data-video-loaded', 'true');
+              
+              // Показываем выделение только после загрузки видео, если упражнение выбрано
+              const isSelected = card.getAttribute('data-selected') === 'true';
+              if (isSelected) {
+                // Небольшая задержка для плавного появления выделения после видео
+                setTimeout(() => {
+                  card.setAttribute('data-show-ring', 'true');
+                }, 100);
+              }
+              
+              // Показываем информацию об упражнении (группы мышц, названия) с небольшой задержкой
+              setTimeout(() => {
+                const infoElements = card.querySelectorAll('[data-exercise-info]');
+                infoElements.forEach(el => {
+                  el.style.opacity = '1';
+                  el.style.transition = 'opacity 0.3s ease-out';
+                });
+              }, 100);
             }
             video.play().catch(() => {});
           };
+          
+          // Если видео уже загружено, показываем информацию сразу
+          if (video.readyState >= 2) {
+            const card = video.closest('.exercise-card');
+            if (card) {
+              card.setAttribute('data-video-loaded', 'true');
+              const isSelected = card.getAttribute('data-selected') === 'true';
+              if (isSelected) {
+                setTimeout(() => {
+                  card.setAttribute('data-show-ring', 'true');
+                  // Принудительно обновляем стили через reflow
+                  card.offsetHeight;
+                }, 100);
+              }
+              setTimeout(() => {
+                const infoElements = card.querySelectorAll('[data-exercise-info]');
+                infoElements.forEach(el => {
+                  el.style.opacity = '1';
+                  el.style.transition = 'opacity 0.3s ease-out';
+                });
+              }, 50);
+            }
+          }
           
           if (video.readyState >= 2) {
             showVideo();
@@ -316,6 +455,46 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     };
   }, [currentPage, exerciseSlides.length]);
 
+  // Убеждаемся что информация остается видимой при выделении карточки и переключении режима
+  useEffect(() => {
+    // Проверяем все карточки с загруженным видео и показываем информацию
+    const cards = document.querySelectorAll('.exercise-card[data-video-loaded="true"]');
+    cards.forEach(card => {
+      const infoElements = card.querySelectorAll('[data-exercise-info]');
+      infoElements.forEach(el => {
+        if (el.style.opacity !== '1') {
+          el.style.opacity = '1';
+          el.style.transition = 'opacity 0.3s ease-out';
+        }
+      });
+    });
+  }, [selectedExercises, currentPage, viewMode]);
+
+  // Синхронизируем data-selected и data-show-ring с состоянием selectedExercises
+  useEffect(() => {
+    const cards = document.querySelectorAll('.exercise-card');
+    cards.forEach(card => {
+      const exerciseId = card.getAttribute('data-exercise-id');
+      const isSelected = selectedExercises.some(ex => ex.id === exerciseId);
+      card.setAttribute('data-selected', isSelected ? 'true' : 'false');
+      
+      // Показываем ring только если видео загружено и упражнение выбрано
+      if (isSelected) {
+        const videoLoaded = card.getAttribute('data-video-loaded') === 'true';
+        if (videoLoaded) {
+          setTimeout(() => {
+            card.setAttribute('data-show-ring', 'true');
+            card.offsetHeight;
+          }, 50);
+        } else {
+          card.setAttribute('data-show-ring', 'false');
+        }
+      } else {
+        card.setAttribute('data-show-ring', 'false');
+      }
+    });
+  }, [selectedExercises]);
+
   // Функции для навигации по страницам
   const goToNextPage = useCallback(() => {
     if (currentPage < exerciseSlides.length - 1) {
@@ -329,25 +508,75 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     }
   }, [currentPage]);
 
+  // Обработчики свайпа для навигации между страницами
+  const handlePageSwipeStart = useCallback((e) => {
+    swipeStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now()
+    };
+  }, []);
+
+  const handlePageSwipeMove = useCallback((e) => {
+    if (!swipeStartRef.current) return;
+    e.preventDefault(); // Предотвращаем скролл при свайпе
+  }, []);
+
+  const handlePageSwipeEnd = useCallback((e) => {
+    if (!swipeStartRef.current) return;
+    
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - swipeStartRef.current.x;
+    const deltaY = endY - swipeStartRef.current.y;
+    const deltaTime = Date.now() - swipeStartRef.current.time;
+    
+    // Проверяем что это горизонтальный свайп (не вертикальный скролл)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 300) {
+      if (deltaX > 0) {
+        // Свайп вправо - предыдущая страница
+        goToPrevPage();
+      } else {
+        // Свайп влево - следующая страница
+        goToNextPage();
+      }
+    }
+    
+    swipeStartRef.current = null;
+  }, [goToNextPage, goToPrevPage]);
+
 
 
 
   // Функция для безопасного переключения режима с debounce
   const handleViewModeChange = useCallback((newMode) => {
-    if (newMode === viewMode) return; // Уже в этом режиме
+    if (newMode === viewMode) return;
     
-    // Очищаем предыдущий таймер
+    // Сохраняем текущую позицию СИНХРОННО перед переключением режима (используем актуальные значения из refs)
+    const currentSlides = exerciseSlidesRef.current;
+    const currentPageIndex = currentPageRef.current;
+    
+    if (currentSlides.length > 0 && currentPageIndex < currentSlides.length) {
+      const currentSlide = currentSlides[currentPageIndex];
+      if (currentSlide && currentSlide.length > 0) {
+        const allExercises = shuffledExercisesRef.current || [];
+        const firstExerciseId = currentSlide[0].id;
+        const exerciseIndex = allExercises.findIndex(ex => ex.id === firstExerciseId);
+        if (exerciseIndex !== -1) {
+          currentExerciseIndexRef.current = exerciseIndex;
+          currentExerciseIdRef.current = firstExerciseId;
+        }
+      }
+    }
+    
     if (viewModeChangeTimeoutRef.current) {
       clearTimeout(viewModeChangeTimeoutRef.current);
     }
     
-    // Игнорируем переключение, если режим меняется
     if (viewModeChangingRef.current) return;
     
-    // Переключаем режим
     setViewMode(newMode);
     
-    // Блокируем переключение на 300ms
     viewModeChangingRef.current = true;
     viewModeChangeTimeoutRef.current = setTimeout(() => {
       viewModeChangingRef.current = false;
@@ -980,9 +1209,16 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               {/* Простая пагинация вместо Swiper */}
               <div>
                 {exerciseSlides.length > 0 ? (
-                  <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center' : ''}`}>
+                  <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center overflow-y-visible' : ''}`}>
                     {/* Контейнер для страниц */}
-                    <div className="relative w-full">
+                    <div 
+                      ref={swipeContainerRef}
+                      className={`relative w-full ${viewMode === 'large' ? 'overflow-visible' : ''}`}
+                      onTouchStart={handlePageSwipeStart}
+                      onTouchMove={handlePageSwipeMove}
+                      onTouchEnd={handlePageSwipeEnd}
+                      style={{ touchAction: 'pan-y' }} // Разрешаем только вертикальный скролл
+                    >
                       <AnimatePresence>
                         {visiblePages.map((pageIndex) => {
                           const slideExercises = exerciseSlides[pageIndex];
@@ -996,15 +1232,15 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                               animate={{ opacity: isCurrentPage ? 1 : 0 }}
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.2 }}
-                              className={`${isCurrentPage ? 'relative block' : 'absolute inset-0 pointer-events-none'}`}
+                              className={`${isCurrentPage ? 'relative block' : 'absolute inset-0 pointer-events-none'} ${viewMode === 'large' ? 'overflow-visible' : ''}`}
                               style={{ display: isCurrentPage ? 'block' : 'none' }}
                             >
-                              <div className={`gap-2 md:gap-4 transition-all duration-300 overflow-visible ${
+                              <div className={`gap-2 md:gap-4 transition-all duration-300 ${
                                 viewMode === 'large' 
                                   ? 'flex items-center justify-center w-full h-full pt-2'
                                   : viewMode === 'grid-2'
-                                  ? 'grid grid-cols-2 p-1 workout-builder-grid-2-container'
-                                  : 'grid grid-cols-4 p-1'
+                                  ? 'grid grid-cols-2 p-1 workout-builder-grid-2-container pb-6 overflow-visible'
+                                  : 'grid grid-cols-4 p-1 overflow-visible'
                               }`}>
                                 {slideExercises.map((exercise) => {
                       const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
@@ -1014,32 +1250,56 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                        className={`exercise-card relative rounded-xl overflow-visible cursor-pointer group ${
+                        className={`exercise-card relative rounded-xl overflow-hidden cursor-pointer group ${
                           viewMode === 'large' 
-                            ? 'w-full max-w-[280px] mx-auto aspect-[9/16]'
+                            ? 'w-full max-w-[250px] mx-auto aspect-[9/16]'
                             : viewMode === 'grid-4'
                             ? 'aspect-[9/16]'
                             : 'aspect-[9/16] w-full h-full'
-                        } ${
-                          isSelected
-                            ? 'ring-1 ring-green-500 ring-offset-1 ring-offset-black'
-                            : 'hover:ring-1 hover:ring-white/30'
-                        } ${filterTransitioning ? "filter-transitioning" : ""}`}
+                        } ${filterTransitioning ? "filter-transitioning" : ""} ${
+                          isSelected ? '' : 'hover:ring-1 hover:ring-white/30'
+                        }`}
                         data-exercise-id={exercise.id}
+                        data-selected={isSelected}
+                        data-show-ring="false"
+                        data-video-loaded="false"
                         style={{ 
-                          padding: isSelected ? '4px' : '0',
-                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out'
+                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease-out',
+                          opacity: 0, // Скрываем карточку до появления видео
+                          borderRadius: '0.75rem' // Явно задаем border-radius для плавного перехода
                         }}
                           onClick={() => {
                             if (isSelected) {
                               removeExercise(exercise.id);
+                              // Скрываем ring при снятии выделения
+                              const card = document.querySelector(`[data-exercise-id="${exercise.id}"]`);
+                              if (card) {
+                                card.setAttribute('data-show-ring', 'false');
+                                card.setAttribute('data-selected', 'false');
+                              }
                             } else {
                               addExercise(exercise);
+                              // Показываем ring только если видео загружено
+                              const card = document.querySelector(`[data-exercise-id="${exercise.id}"]`);
+                              if (card) {
+                                card.setAttribute('data-selected', 'true');
+                                const videoLoaded = card.getAttribute('data-video-loaded') === 'true';
+                                if (videoLoaded) {
+                                  setTimeout(() => {
+                                    card.setAttribute('data-show-ring', 'true');
+                                    card.offsetHeight;
+                                  }, 50);
+                                }
+                              }
                             }
                           }}
                         >
                         <div 
                           className="w-full h-full rounded-xl overflow-hidden relative"
+                          style={{ 
+                            transition: 'border-radius 0.2s ease-out',
+                            borderRadius: '0.75rem'
+                          }}
                         >
                         {/* Видео - обертка с overflow-hidden */}
                         <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
@@ -1066,11 +1326,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         
                         {/* Информация об упражнении */}
                         {viewMode === 'large' && (
-                          <motion.div 
+                          <div 
+                            data-exercise-info
                             className="absolute inset-x-0 bottom-0 px-3 pb-3 pt-6 bg-gradient-to-t from-black/85 via-black/60 to-transparent z-10 pointer-events-none flex flex-col items-center md:items-start"
-                            initial={{ opacity: 0, translateY: 12 }}
-                            animate={{ opacity: 1, translateY: 0 }}
-                            transition={{ duration: 0.35, delay: 0.12, ease: [0.22, 0.61, 0.36, 1] }}
+                            style={{ opacity: 0, transition: 'opacity 0.3s ease-out' }} // Скрываем до появления видео
                           >
                             <h3 className="text-white/90 text-xs md:text-sm font-medium tracking-wide mb-1.5 max-w-[90%] line-clamp-2 text-center md:text-left">
                               {exercise.title}
@@ -1087,28 +1346,27 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                 ))}
                               </div>
                             )}
-                          </motion.div>
+                          </div>
                         )}
 
                         {/* Для режима 2 в ряд – только группы мышц внизу без названия */}
                         {viewMode === 'grid-2' && exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
-                          <motion.div
-                            className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-6 bg-gradient-to-t from-black/70 via-black/40 to-transparent z-10 pointer-events-none"
-                            initial={{ opacity: 0, translateY: 10 }}
-                            animate={{ opacity: 1, translateY: 0 }}
-                            transition={{ duration: 0.3, delay: 0.1, ease: [0.22, 0.61, 0.36, 1] }}
+                          <div
+                            data-exercise-info
+                            className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5 pt-4 bg-gradient-to-t from-black/70 via-black/40 to-transparent z-10 pointer-events-none"
+                            style={{ opacity: 0, transition: 'opacity 0.3s ease-out' }} // Скрываем до появления видео
                           >
                             <div className="flex flex-wrap gap-1">
                               {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
                                 <span
                                   key={idx}
-                                  className="text-white/70 font-light text-[10px] px-1.5 py-0.5 rounded-full bg-black/40 backdrop-blur-[1px]"
+                                  className="text-white/70 font-light text-[8px] px-1 py-0.5 rounded-full bg-black/40 backdrop-blur-[1px]"
                                 >
                                   {muscleGroupTranslations[language]?.[group] || group}
                                 </span>
                               ))}
                             </div>
-                          </motion.div>
+                          </div>
                         )}
 
                         </div>
@@ -1121,55 +1379,31 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         })}
                       </AnimatePresence>
                       
-                      {/* Кнопки навигации */}
-                      <div className="flex items-center justify-center gap-4 mt-6 pb-8">
-                        <button
-                          onClick={goToPrevPage}
-                          disabled={currentPage === 0}
-                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
-                        >
-                          ← {language === 'ru' ? 'Назад' : 'Prev'}
-                        </button>
-                        
-                        {/* Индикатор страниц */}
-                        <div className="flex items-center gap-2">
-                          {Array.from({ length: Math.min(exerciseSlides.length, 10) }, (_, i) => {
-                            // Показываем максимум 10 точек, центрируя вокруг текущей страницы
-                            let displayIndex;
-                            if (exerciseSlides.length <= 10) {
-                              displayIndex = i;
-                            } else {
-                              const start = Math.max(0, Math.min(currentPage - 4, exerciseSlides.length - 10));
-                              displayIndex = start + i;
-                            }
-                            
-                            return (
-                              <button
-                                key={displayIndex}
-                                onClick={() => setCurrentPage(displayIndex)}
-                                className={`w-2 h-2 rounded-full transition-all ${
-                                  displayIndex === currentPage
-                                    ? 'bg-white w-6'
-                                    : 'bg-white/30 hover:bg-white/50'
-                                }`}
-                                aria-label={`Page ${displayIndex + 1}`}
-                              />
-                            );
-                          })}
-                          {exerciseSlides.length > 10 && (
-                            <span className="text-white/60 text-xs ml-2">
-                              {currentPage + 1} / {exerciseSlides.length}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <button
-                          onClick={goToNextPage}
-                          disabled={currentPage === exerciseSlides.length - 1}
-                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
-                        >
-                          {language === 'ru' ? 'Вперед' : 'Next'} →
-                        </button>
+                      {/* Индикатор страниц */}
+                      <div className={`flex items-center justify-center gap-1 ${viewMode === 'large' ? 'mt-4 pb-4' : 'mt-6 pb-6'}`}>
+                        {Array.from({ length: Math.min(exerciseSlides.length, 5) }, (_, i) => {
+                          // Показываем максимум 5 точек, центрируя вокруг текущей страницы
+                          let displayIndex;
+                          if (exerciseSlides.length <= 5) {
+                            displayIndex = i;
+                          } else {
+                            const start = Math.max(0, Math.min(currentPage - 2, exerciseSlides.length - 5));
+                            displayIndex = start + i;
+                          }
+                          
+                          return (
+                            <button
+                              key={displayIndex}
+                              onClick={() => setCurrentPage(displayIndex)}
+                              className={`rounded-full transition-all duration-300 ${
+                                displayIndex === currentPage
+                                  ? 'bg-white h-1 w-4'
+                                  : 'bg-white/40 h-1 w-1 hover:bg-white/60'
+                              }`}
+                              aria-label={`Page ${displayIndex + 1}`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
