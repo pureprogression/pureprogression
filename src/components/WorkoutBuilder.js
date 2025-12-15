@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, EffectFade } from "swiper/modules";
 import { exercises } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -65,11 +63,9 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [draftRestored, setDraftRestored] = useState(false); // показывать ли уведомление о восстановленном черновике
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0); // Отслеживаем активный слайд для пагинации
-  const swiperRef = useRef(null); // Ref для Swiper instance
+  const [currentPage, setCurrentPage] = useState(0); // Текущая страница (вместо activeSlideIndex)
   const previousViewModeRef = useRef(viewMode); // Отслеживаем предыдущий режим
-  const firstExerciseIndexRef = useRef(0); // Индекс первого упражнения текущего слайда
-  const visibleCardsRef = useRef(new Map()); // карта видимости карточек
+  const videoRefsRef = useRef(new Map()); // Ref для видео элементов: exerciseId -> videoElement
 
   // Восстанавливаем черновик тренировки из localStorage (только если нет initialWorkout)
   useEffect(() => {
@@ -213,48 +209,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     return slides;
   }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray]);
   
-  // Вычисляем начальный слайд для Swiper - упрощенная версия
-  const initialSlideIndex = useMemo(() => {
-    if (exerciseSlides.length === 0) return 0;
-    const allExercises = shuffledExercisesRef.current || filteredExercises;
-    if (allExercises.length === 0 || firstExerciseIndexRef.current === 0) return 0;
-    const targetExercise = allExercises[firstExerciseIndexRef.current];
-    if (!targetExercise) return 0;
-    const targetSlideIndex = exerciseSlides.findIndex(slide => 
-      slide.some(ex => ex.id === targetExercise.id)
-    );
-    return targetSlideIndex !== -1 ? targetSlideIndex : 0;
-  }, [exerciseSlides.length]); // Только длина, чтобы не пересоздавать постоянно
-
-  // Синхронизация активного слайда при изменении режима - упрощенная версия
-  useEffect(() => {
-    if (!swiperRef.current || exerciseSlides.length === 0) return;
-    
-    // Используем setTimeout для отложенной синхронизации, чтобы не блокировать UI
-    const timeoutId = setTimeout(() => {
-      const swiper = swiperRef.current;
-      if (!swiper) return;
-      
-      const allExercises = shuffledExercisesRef.current || filteredExercises;
-      if (allExercises.length === 0) return;
-      
-      // Находим слайд, который содержит упражнение с индексом firstExerciseIndexRef.current
-      const targetExercise = allExercises[firstExerciseIndexRef.current];
-      if (!targetExercise) return;
-      
-      // Находим индекс слайда, который содержит это упражнение
-      const targetSlideIndex = exerciseSlides.findIndex(slide => 
-        slide.some(ex => ex.id === targetExercise.id)
-      );
-      
-      if (targetSlideIndex !== -1 && targetSlideIndex !== swiper.activeIndex) {
-        swiper.slideTo(targetSlideIndex, 0); // 0 = без анимации для мгновенного переключения
-      }
-    }, 50);
-    
-    return () => clearTimeout(timeoutId);
-  }, [viewMode, exerciseSlides.length]); // Добавили exerciseSlides.length для отслеживания изменений
-
   // Анимация при изменении фильтра
   useEffect(() => {
     setFilterTransitioning(true);
@@ -264,255 +218,141 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     return () => clearTimeout(timer);
   }, [selectedCategory]);
 
-
-  // Инициализируем индекс первого упражнения для первого слайда
+  // Сбрасываем страницу при изменении фильтра
   useEffect(() => {
-    if (exerciseSlides.length > 0 && exerciseSlides[0] && activeSection === 'browse') {
-      const firstSlideExercises = exerciseSlides[0];
-      if (firstSlideExercises.length > 0 && firstExerciseIndexRef.current === 0) {
-        const allExercises = shuffledExercisesRef.current || filteredExercises;
-        const firstExercise = firstSlideExercises[0];
-        const firstIndex = allExercises.findIndex(ex => ex.id === firstExercise.id);
-        if (firstIndex !== -1) {
-          firstExerciseIndexRef.current = firstIndex;
-        }
-      }
+    setCurrentPage(0);
+  }, [selectedCategory]);
+
+  // Определяем видимые страницы (текущая + соседние ±1)
+  const visiblePages = useMemo(() => {
+    if (exerciseSlides.length === 0) return [];
+    const pages = [];
+    const startPage = Math.max(0, currentPage - 1);
+    const endPage = Math.min(exerciseSlides.length - 1, currentPage + 1);
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
     }
-  }, [filteredExercises.length, activeSection]); // Минимальные зависимости
+    return pages;
+  }, [currentPage, exerciseSlides.length]);
 
-  // Обработчик изменения слайда в Swiper - оптимизированная версия
-  const handleSlideChange = useCallback((swiper) => {
-    const currentIndex = swiper.activeIndex;
-    setActiveSlideIndex(currentIndex);
-    
-    if (!swiper.slides) return;
-    
-    // Используем requestAnimationFrame для асинхронной обработки, чтобы не блокировать UI
-    requestAnimationFrame(() => {
-      // АГРЕССИВНО выгружаем видео на всех неактивных слайдах (кроме текущего и следующего)
-      swiper.slides.forEach((slide, index) => {
-        if (index !== currentIndex && index !== currentIndex + 1) {
-          const videos = slide.querySelectorAll('video');
-          videos.forEach(video => {
-            video.pause();
-            video.currentTime = 0;
-            const videoSrc = video.getAttribute('data-src') || video.src;
-            video.setAttribute('data-src', videoSrc);
-            video.src = '';
-            video.load();
-            video.style.opacity = '0';
-            const card = video.closest('.exercise-card');
-            if (card) {
-              card.style.opacity = '0';
-              card.style.pointerEvents = 'none';
-            }
-          });
-        }
-      });
-      
-      // Предзагружаем следующий слайд и скрываем постеры
-      const nextIndex = currentIndex + 1;
-      if (swiper.slides[nextIndex]) {
-        const nextVideos = swiper.slides[nextIndex].querySelectorAll('video');
-        nextVideos.forEach(video => {
-          const dataSrc = video.getAttribute('data-src');
-          if (dataSrc && !video.src) {
-            video.src = dataSrc;
-            video.preload = 'auto';
-            video.load();
-          }
-          video.style.opacity = '0';
-        });
-      }
-      
-      // Загружаем и запускаем видео ТОЛЬКО на текущем слайде ПОСЛЕДОВАТЕЛЬНО
-      if (swiper.slides[currentIndex]) {
-        const videos = Array.from(swiper.slides[currentIndex].querySelectorAll('video'));
-        
-        // Сбрасываем видимость карточек текущего слайда перед показом
-        videos.forEach((video) => {
-          const card = video.closest('.exercise-card');
-          if (card) {
-            card.style.opacity = '0';
-            card.style.pointerEvents = 'none';
-          }
-          video.style.opacity = '0';
-        });
-        
-        // Функция для показа видео последовательно
-        const showVideoSequentially = (videoIndex) => {
-          if (videoIndex >= videos.length) return;
-          
-          const video = videos[videoIndex];
-          const dataSrc = video.getAttribute('data-src');
-          if (!dataSrc) {
-            showVideoSequentially(videoIndex + 1);
-            return;
-          }
-          
-          // Готовим плавное появление конкретного видео
-          video.style.transition = 'opacity 0.4s ease';
-          video.style.opacity = '0';
-
-          const currentSrc = video.src || '';
-          if (!currentSrc || currentSrc !== dataSrc) {
-            video.src = dataSrc;
-          }
-          video.preload = 'auto';
-          video.load();
-          
-          const showAndContinue = () => {
-            if (video.paused) {
-              video.play().catch(() => {});
-            }
-            requestAnimationFrame(() => {
-              video.style.opacity = '1';
-              const card = video.closest('.exercise-card');
-              if (card) {
-                card.style.opacity = '1';
-                card.style.pointerEvents = 'auto';
-              }
-            });
-
-            // Показываем следующее видео сразу после появления текущего (без задержки)
-            showVideoSequentially(videoIndex + 1);
-          };
-          
-          if (video.readyState >= 2) {
-            showAndContinue();
-          } else {
-            const onReady = () => {
-              showAndContinue();
-            };
-            video.addEventListener('canplay', onReady, { once: true });
-            video.addEventListener('loadeddata', onReady, { once: true });
-            video.addEventListener('loadedmetadata', () => {
-              if (video.readyState >= 2) {
-                showAndContinue();
-              }
-            }, { once: true });
-          }
-        };
-        
-        // Начинаем последовательный показ с первого видео
-        showVideoSequentially(0);
-      }
-      
-      // Сохраняем индекс первого упражнения (асинхронно)
-      setTimeout(() => {
-        const currentSlide = exerciseSlides[currentIndex];
-        if (currentSlide && currentSlide.length > 0) {
-          const allExercises = shuffledExercisesRef.current || filteredExercises;
-          const firstIndex = allExercises.findIndex(ex => ex.id === currentSlide[0].id);
-          if (firstIndex !== -1) {
-            firstExerciseIndexRef.current = firstIndex;
-          }
-        }
-      }, 0);
-    });
-  }, [exerciseSlides.length, filteredExercises.length]);
-
-  // После смены фильтра: вернуть на первый слайд и запустить загрузку/воспроизведение
-  useEffect(() => {
-    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
-
-    const swiper = swiperRef.current;
-    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
-
-    // мгновенно перейти к первому слайду, затем применить handleSlideChange
-    swiper.slideTo(0, 0);
-    setActiveSlideIndex(0);
-    // небольшой async, чтобы DOM успел обновиться
-    requestAnimationFrame(() => {
-      handleSlideChange(swiper);
-    });
-  }, [selectedCategory, exerciseSlides.length, activeSection, handleSlideChange]);
-
-  // Плавный переход при смене режима просмотра — только перезапуск fade без изменения выделения
-  useEffect(() => {
-    const swiper = swiperRef.current;
-    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
-    requestAnimationFrame(() => handleSlideChange(swiper));
-  }, [viewMode, handleSlideChange]);
-
-  // При обновлении списка слайдов (после фильтрации/изменений) повторно запускаем fade-загрузку
-  useEffect(() => {
-    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
-    const swiper = swiperRef.current;
-    if (!swiper || !swiper.slides || swiper.slides.length === 0) return;
-    requestAnimationFrame(() => handleSlideChange(swiper));
-  }, [exerciseSlides.length, activeSection, handleSlideChange]);
-
-  // Инициализация активного слайда при монтировании Swiper
-  const handleSwiperInit = useCallback((swiper) => {
-    swiperRef.current = swiper;
-    setActiveSlideIndex(swiper.activeIndex);
-    
-    // Загружаем и запускаем видео на первом слайде
-    setTimeout(() => {
-      if (swiper && swiper.slides && swiper.slides.length > 0) {
-        const firstSlide = swiper.slides[0];
-        if (firstSlide) {
-          const videos = firstSlide.querySelectorAll('video');
-          videos.forEach(video => {
-            const dataSrc = video.getAttribute('data-src');
-            if (dataSrc) {
-              video.src = dataSrc;
-            }
-            video.preload = 'auto';
-            video.load();
-            video.play().catch(() => {});
-          });
-          // Запускаем fade-появление так же, как при перелистывании
-          requestAnimationFrame(() => handleSlideChange(swiper));
-        }
-      }
-    }, 100);
-  }, []);
-
-
-  // Управляем видимостью и позицией точек пагинации - упрощенная версия
+  // Загружаем текущую страницу сразу + Observer для соседних страниц
   useEffect(() => {
     if (exerciseSlides.length === 0) return;
     
-    const updatePagination = () => {
-      const pagination = document.querySelector('.workout-builder-swiper .swiper-pagination');
-      if (!pagination) return;
+    // Загружаем видео текущей страницы СРАЗУ
+    const loadCurrentPage = () => {
+      const currentPageElement = document.querySelector(`[data-page-index="${currentPage}"]`);
+      if (!currentPageElement) {
+        setTimeout(loadCurrentPage, 50);
+        return;
+      }
       
-      const bullets = Array.from(pagination.querySelectorAll('.swiper-pagination-bullet'));
-      if (bullets.length === 0) return;
-      
-      const totalSlides = exerciseSlides.length;
-      
-      // Сначала скрываем все точки
-      bullets.forEach((bullet) => {
-        bullet.style.display = 'none';
-      });
-      
-      // Всегда рисуем максимум 3 "слота": предыдущая, текущая, следующая
-      const visibleIndices = [];
-      if (activeSlideIndex > 0) visibleIndices.push(activeSlideIndex - 1);
-      visibleIndices.push(activeSlideIndex);
-      if (activeSlideIndex < totalSlides - 1) visibleIndices.push(activeSlideIndex + 1);
-      
-      visibleIndices.forEach((index) => {
-        const bullet = bullets[index];
-        if (bullet) {
-          const offset = index - activeSlideIndex;
-          const bulletWidth = 10;
-          const translateX = offset * bulletWidth;
+      const videos = currentPageElement.querySelectorAll('video[data-src]');
+      videos.forEach((video) => {
+        const dataSrc = video.getAttribute('data-src');
+        if (dataSrc && !video.src) {
+          video.src = dataSrc;
+          video.preload = 'auto';
+          video.load();
           
-          bullet.style.display = 'inline-block';
-          bullet.style.transform = `translateX(${translateX}px)`;
-          bullet.style.opacity = index === activeSlideIndex ? '1' : '0.3';
+          const showVideo = () => {
+            video.style.opacity = '1';
+            const card = video.closest('.exercise-card');
+            if (card) {
+              card.style.opacity = '1';
+              card.style.pointerEvents = 'auto';
+            }
+            video.play().catch(() => {});
+          };
+          
+          if (video.readyState >= 2) {
+            showVideo();
+          } else {
+            video.addEventListener('canplay', showVideo, { once: true });
+            video.addEventListener('loadeddata', showVideo, { once: true });
+          }
         }
       });
     };
     
-    // Используем небольшую задержку для того, чтобы DOM обновился
-    const timeoutId = setTimeout(updatePagination, 50);
-    return () => clearTimeout(timeoutId);
-  }, [activeSlideIndex, exerciseSlides.length]);
+    loadCurrentPage();
+    
+    // Intersection Observer для предзагрузки только соседних страниц (текущая ±1)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const video = entry.target;
+            const dataSrc = video.getAttribute('data-src');
+            if (dataSrc && !video.src) {
+              video.src = dataSrc;
+              video.preload = 'auto';
+              video.load(); // Только предзагружаем, не показываем
+            }
+          }
+        });
+      },
+      { rootMargin: '200px' }
+    );
+
+    // Подключаем Observer только к соседним страницам (текущая ±1)
+    setTimeout(() => {
+      const prevPageIndex = currentPage - 1;
+      const nextPageIndex = currentPage + 1;
+      
+      [prevPageIndex, nextPageIndex].forEach(pageIndex => {
+        if (pageIndex >= 0 && pageIndex < exerciseSlides.length) {
+          const pageElement = document.querySelector(`[data-page-index="${pageIndex}"]`);
+          if (pageElement) {
+            const videos = pageElement.querySelectorAll('video[data-src]');
+            videos.forEach(video => observer.observe(video));
+          }
+        }
+      });
+    }, 50);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [currentPage, exerciseSlides.length]);
+
+  // Функции для навигации по страницам
+  const goToNextPage = useCallback(() => {
+    if (currentPage < exerciseSlides.length - 1) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [currentPage, exerciseSlides.length]);
+
+  const goToPrevPage = useCallback(() => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage]);
+
+
+
+
+  // Функция для безопасного переключения режима с debounce
+  const handleViewModeChange = useCallback((newMode) => {
+    if (newMode === viewMode) return; // Уже в этом режиме
+    
+    // Очищаем предыдущий таймер
+    if (viewModeChangeTimeoutRef.current) {
+      clearTimeout(viewModeChangeTimeoutRef.current);
+    }
+    
+    // Игнорируем переключение, если режим меняется
+    if (viewModeChangingRef.current) return;
+    
+    // Переключаем режим
+    setViewMode(newMode);
+    
+    // Блокируем переключение на 300ms
+    viewModeChangingRef.current = true;
+    viewModeChangeTimeoutRef.current = setTimeout(() => {
+      viewModeChangingRef.current = false;
+    }, 300);
+  }, [viewMode]);
 
   // Добавляем упражнение в тренировку
   const addExercise = useCallback((exercise) => {
@@ -1063,7 +903,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setViewMode('grid-4');
+                      handleViewModeChange('grid-4');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
@@ -1092,7 +932,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setViewMode('grid-2');
+                      handleViewModeChange('grid-2');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
@@ -1114,7 +954,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setViewMode('large');
+                      handleViewModeChange('large');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
                     className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
@@ -1137,41 +977,36 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                 </div>
               </div>
 
-              {/* Слайдер упражнений с виртуализацией */}
+              {/* Простая пагинация вместо Swiper */}
               <div>
                 {exerciseSlides.length > 0 ? (
                   <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center' : ''}`}>
-                    <Swiper
-                      modules={[Pagination, EffectFade]}
-                      effect="fade"
-                      fadeEffect={{
-                        crossFade: true
-                      }}
-                      spaceBetween={0}
-                      slidesPerView={1}
-                      centeredSlides={viewMode === 'large'}
-                      initialSlide={initialSlideIndex}
-                      pagination={{
-                        clickable: true,
-                      }}
-                      onSlideChange={handleSlideChange}
-                      onSwiper={handleSwiperInit}
-                      className={`!pb-8 w-full workout-builder-swiper ${viewMode === 'large' ? 'workout-builder-swiper-large' : ''}`}
-                    >
-                    {exerciseSlides.map((slideExercises, slideIndex) => {
-                      const isCurrentSlide = slideIndex === activeSlideIndex;
-                      const isNextSlide = slideIndex === activeSlideIndex + 1;
-                      
-                      return (
-                      <SwiperSlide key={slideIndex} className={viewMode === 'large' ? 'workout-builder-large flex items-center justify-center' : ''}>
-                        <div className={`gap-2 md:gap-4 transition-all duration-300 overflow-visible ${
-                          viewMode === 'large' 
-                            ? 'flex items-center justify-center w-full h-full pt-2'
-                            : viewMode === 'grid-2'
-                            ? 'grid grid-cols-2 p-1 workout-builder-grid-2-container'
-                            : 'grid grid-cols-4 p-1'
-                        }`}>
-                          {slideExercises.map((exercise) => {
+                    {/* Контейнер для страниц */}
+                    <div className="relative w-full">
+                      <AnimatePresence>
+                        {visiblePages.map((pageIndex) => {
+                          const slideExercises = exerciseSlides[pageIndex];
+                          const isCurrentPage = pageIndex === currentPage;
+                          
+                          return (
+                            <motion.div
+                              key={pageIndex}
+                              data-page-index={pageIndex}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: isCurrentPage ? 1 : 0 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className={`${isCurrentPage ? 'relative block' : 'absolute inset-0 pointer-events-none'}`}
+                              style={{ display: isCurrentPage ? 'block' : 'none' }}
+                            >
+                              <div className={`gap-2 md:gap-4 transition-all duration-300 overflow-visible ${
+                                viewMode === 'large' 
+                                  ? 'flex items-center justify-center w-full h-full pt-2'
+                                  : viewMode === 'grid-2'
+                                  ? 'grid grid-cols-2 p-1 workout-builder-grid-2-container'
+                                  : 'grid grid-cols-4 p-1'
+                              }`}>
+                                {slideExercises.map((exercise) => {
                       const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
                       return (
                         <motion.div
@@ -1193,10 +1028,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         data-exercise-id={exercise.id}
                         style={{ 
                           padding: isSelected ? '4px' : '0',
-                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.45s ease-out',
-                          willChange: isSelected ? 'padding' : 'auto',
-                          opacity: 0,
-                          pointerEvents: 'none'
+                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out'
                         }}
                           onClick={() => {
                             if (isSelected) {
@@ -1212,18 +1044,23 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         {/* Видео - обертка с overflow-hidden */}
                         <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
                           <video
+                            key={`video-${exercise.id}`}
                             data-src={exercise.video}
-                            poster={exercise.poster}
                             className="w-full h-full object-cover"
                             style={{ 
                               opacity: 0,
-                              transition: 'opacity 0.4s ease-in-out'
+                              transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}
                             autoPlay={false}
                             muted
                             loop
                             playsInline
                             preload="metadata"
+                            ref={(videoEl) => {
+                              if (videoEl) {
+                                videoRefsRef.current.set(exercise.id, videoEl);
+                              }
+                            }}
                           />
                         </div>
                         
@@ -1278,11 +1115,63 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       </motion.div>
                     );
                   })}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                      
+                      {/* Кнопки навигации */}
+                      <div className="flex items-center justify-center gap-4 mt-6 pb-8">
+                        <button
+                          onClick={goToPrevPage}
+                          disabled={currentPage === 0}
+                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
+                        >
+                          ← {language === 'ru' ? 'Назад' : 'Prev'}
+                        </button>
+                        
+                        {/* Индикатор страниц */}
+                        <div className="flex items-center gap-2">
+                          {Array.from({ length: Math.min(exerciseSlides.length, 10) }, (_, i) => {
+                            // Показываем максимум 10 точек, центрируя вокруг текущей страницы
+                            let displayIndex;
+                            if (exerciseSlides.length <= 10) {
+                              displayIndex = i;
+                            } else {
+                              const start = Math.max(0, Math.min(currentPage - 4, exerciseSlides.length - 10));
+                              displayIndex = start + i;
+                            }
+                            
+                            return (
+                              <button
+                                key={displayIndex}
+                                onClick={() => setCurrentPage(displayIndex)}
+                                className={`w-2 h-2 rounded-full transition-all ${
+                                  displayIndex === currentPage
+                                    ? 'bg-white w-6'
+                                    : 'bg-white/30 hover:bg-white/50'
+                                }`}
+                                aria-label={`Page ${displayIndex + 1}`}
+                              />
+                            );
+                          })}
+                          {exerciseSlides.length > 10 && (
+                            <span className="text-white/60 text-xs ml-2">
+                              {currentPage + 1} / {exerciseSlides.length}
+                            </span>
+                          )}
                         </div>
-                      </SwiperSlide>
-                      );
-                    })}
-                  </Swiper>
+                        
+                        <button
+                          onClick={goToNextPage}
+                          disabled={currentPage === exerciseSlides.length - 1}
+                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
+                        >
+                          {language === 'ru' ? 'Вперед' : 'Next'} →
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-12">
