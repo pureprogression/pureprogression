@@ -60,7 +60,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [visibleVersion, setVisibleVersion] = useState(0); // для принудительного перерендера видимости карточек
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
   const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2', 'grid-4'
-  const [draftRestored, setDraftRestored] = useState(false); // показывать ли уведомление о восстановленном черновике
+  const [pageReloadToken, setPageReloadToken] = useState(0); // триггер для безопасной повторной инициализации текущей страницы
+  const [isPageLoading, setIsPageLoading] = useState(false); // индикатор загрузки текущей страницы
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
   const [currentPage, setCurrentPage] = useState(0); // Текущая страница (вместо activeSlideIndex)
@@ -74,6 +75,37 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const currentExerciseIdRef = useRef(null); // ID первого упражнения на текущей странице (для более надежного сохранения позиции)
   const exerciseSlidesRef = useRef([]); // Ref для актуальных exerciseSlides
   const currentPageRef = useRef(0); // Ref для актуального currentPage
+  const timeoutRefsRef = useRef(new Set()); // Ref для хранения всех активных таймеров для очистки
+  const observerRef = useRef(null); // Ref для Intersection Observer
+
+  // Общая очистка при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      // Очищаем все таймеры
+      timeoutRefsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutRefsRef.current.clear();
+      
+      // Очищаем Observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      
+      // Очищаем таймер переключения режима
+      if (viewModeChangeTimeoutRef.current) {
+        clearTimeout(viewModeChangeTimeoutRef.current);
+        viewModeChangeTimeoutRef.current = null;
+      }
+      
+      // Останавливаем все видео
+      videoRefsRef.current.forEach((video) => {
+        if (video && !video.paused) {
+          video.pause();
+        }
+      });
+      videoRefsRef.current.clear();
+    };
+  }, []);
 
   // Восстанавливаем черновик тренировки из localStorage (только если нет initialWorkout)
   useEffect(() => {
@@ -93,10 +125,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
         }
         if (Array.isArray(data.exercises) && data.exercises.length > 0) {
           setSelectedExercises(data.exercises);
-          // Показываем мягкое уведомление, что черновик восстановлен
-          setDraftRestored(true);
-          // Автоматически скрываем подсказку через пару секунд
-          setTimeout(() => setDraftRestored(false), 2500);
         }
       }
     } catch (e) {
@@ -333,15 +361,36 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   useEffect(() => {
     if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
     
+    // Очищаем предыдущий Observer если есть
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    
     // Загружаем видео текущей страницы СРАЗУ
+    let retryCount = 0;
+    const MAX_RETRIES = 20; // Максимум 20 попыток (1 секунда)
+    
     const loadCurrentPage = () => {
-      const currentPageElement = document.querySelector(`[data-page-index="${currentPage}"]`);
-      if (!currentPageElement) {
-        setTimeout(loadCurrentPage, 50);
-        return;
+      try {
+        const currentPageElement = document.querySelector(`[data-page-index="${currentPage}"]`);
+        if (!currentPageElement) {
+          retryCount++;
+          if (retryCount < MAX_RETRIES) {
+            const timeoutId = setTimeout(loadCurrentPage, 50);
+            timeoutRefsRef.current.add(timeoutId);
+          }
+          return;
+        }
+        
+        const videos = currentPageElement.querySelectorAll('video[data-src]');
+      // Если есть видео на странице — показываем индикатор загрузки
+      if (videos.length > 0) {
+        setIsPageLoading(true);
+      } else {
+        setIsPageLoading(false);
       }
-      
-      const videos = currentPageElement.querySelectorAll('video[data-src]');
+
       videos.forEach((video) => {
         const dataSrc = video.getAttribute('data-src');
         
@@ -355,21 +404,28 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             card.style.pointerEvents = 'auto';
             card.setAttribute('data-video-loaded', 'true');
             
+            // Как только первая карточка появилась — убираем индикатор
+            setIsPageLoading(false);
+
             const isSelected = card.getAttribute('data-selected') === 'true';
             if (isSelected) {
-              setTimeout(() => {
+              const timeoutId = setTimeout(() => {
                 card.setAttribute('data-show-ring', 'true');
                 card.offsetHeight;
+                timeoutRefsRef.current.delete(timeoutId);
               }, 50);
+              timeoutRefsRef.current.add(timeoutId);
             }
             
-            setTimeout(() => {
+            const timeoutId2 = setTimeout(() => {
               const infoElements = card.querySelectorAll('[data-exercise-info]');
               infoElements.forEach(el => {
                 el.style.opacity = '1';
                 el.style.transition = 'opacity 0.3s ease-out';
               });
+              timeoutRefsRef.current.delete(timeoutId2);
             }, 50);
+            timeoutRefsRef.current.add(timeoutId2);
           }
           video.play().catch(() => {});
         } else if (dataSrc && !video.src) {
@@ -388,24 +444,31 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               
               // Сохраняем флаг что видео загружено
               card.setAttribute('data-video-loaded', 'true');
+
+              // Как только первая карточка появилась — убираем индикатор
+              setIsPageLoading(false);
               
               // Показываем выделение только после загрузки видео, если упражнение выбрано
               const isSelected = card.getAttribute('data-selected') === 'true';
               if (isSelected) {
                 // Небольшая задержка для плавного появления выделения после видео
-                setTimeout(() => {
+                const timeoutId = setTimeout(() => {
                   card.setAttribute('data-show-ring', 'true');
+                  timeoutRefsRef.current.delete(timeoutId);
                 }, 100);
+                timeoutRefsRef.current.add(timeoutId);
               }
               
               // Показываем информацию об упражнении (группы мышц, названия) с небольшой задержкой
-              setTimeout(() => {
+              const timeoutId2 = setTimeout(() => {
                 const infoElements = card.querySelectorAll('[data-exercise-info]');
                 infoElements.forEach(el => {
                   el.style.opacity = '1';
                   el.style.transition = 'opacity 0.3s ease-out';
                 });
+                timeoutRefsRef.current.delete(timeoutId2);
               }, 100);
+              timeoutRefsRef.current.add(timeoutId2);
             }
             video.play().catch(() => {});
           };
@@ -418,87 +481,183 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           }
         }
       });
+      } catch (error) {
+        console.error('Error loading current page videos:', error);
+        setIsPageLoading(false);
+      }
     };
     
     loadCurrentPage();
     
     // Intersection Observer для предзагрузки только соседних страниц (текущая ±1)
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const video = entry.target;
-            const dataSrc = video.getAttribute('data-src');
-            if (dataSrc && !video.src) {
-              video.src = dataSrc;
-              video.preload = 'auto';
-              video.load(); // Только предзагружаем, не показываем
+    let observer;
+    try {
+      observer = new IntersectionObserver(
+        (entries) => {
+          try {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                const video = entry.target;
+                if (!video) return;
+                const dataSrc = video.getAttribute('data-src');
+                if (dataSrc && !video.src) {
+                  video.src = dataSrc;
+                  video.preload = 'auto';
+                  video.load(); // Только предзагружаем, не показываем
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error in IntersectionObserver callback:', error);
+          }
+        },
+        { rootMargin: '200px' }
+      );
+    } catch (error) {
+      console.error('Error creating IntersectionObserver:', error);
+      return; // Если Observer не создался, выходим
+    }
+    
+    observerRef.current = observer;
+
+    // Подключаем Observer только к соседним страницам (текущая ±1)
+    const observerTimeoutId = setTimeout(() => {
+      try {
+        const prevPageIndex = currentPage - 1;
+        const nextPageIndex = currentPage + 1;
+        
+        [prevPageIndex, nextPageIndex].forEach(pageIndex => {
+          if (pageIndex >= 0 && pageIndex < exerciseSlides.length) {
+            const pageElement = document.querySelector(`[data-page-index="${pageIndex}"]`);
+            if (pageElement && observer) {
+              const videos = pageElement.querySelectorAll('video[data-src]');
+              videos.forEach(video => {
+                try {
+                  observer.observe(video);
+                } catch (error) {
+                  console.error('Error observing video:', error);
+                }
+              });
             }
           }
         });
-      },
-      { rootMargin: '200px' }
-    );
-
-    // Подключаем Observer только к соседним страницам (текущая ±1)
-    setTimeout(() => {
-      const prevPageIndex = currentPage - 1;
-      const nextPageIndex = currentPage + 1;
-      
-      [prevPageIndex, nextPageIndex].forEach(pageIndex => {
-        if (pageIndex >= 0 && pageIndex < exerciseSlides.length) {
-          const pageElement = document.querySelector(`[data-page-index="${pageIndex}"]`);
-          if (pageElement) {
-            const videos = pageElement.querySelectorAll('video[data-src]');
-            videos.forEach(video => observer.observe(video));
-          }
-        }
-      });
+      } catch (error) {
+        console.error('Error setting up IntersectionObserver:', error);
+      } finally {
+        timeoutRefsRef.current.delete(observerTimeoutId);
+      }
     }, 50);
+    timeoutRefsRef.current.add(observerTimeoutId);
 
     return () => {
-      observer.disconnect();
+      // Очищаем все таймеры
+      timeoutRefsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutRefsRef.current.clear();
+      
+      // Отключаем Observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
     };
-  }, [currentPage, exerciseSlides.length, activeSection]);
+  }, [currentPage, exerciseSlides.length, activeSection, pageReloadToken]);
+
+  // Watchdog: если по какой-то причине видео на текущей странице не инициализировались,
+  // пробуем мягко переинициализировать загрузку
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
+
+    const timeoutId = window.setTimeout(() => {
+      const currentPageElement = document.querySelector(`[data-page-index="${currentPage}"]`);
+      if (!currentPageElement) return;
+
+      const videos = currentPageElement.querySelectorAll('video');
+      const loadedCards = currentPageElement.querySelectorAll('.exercise-card[data-video-loaded="true"]');
+
+      // Если на странице есть видео, но ни одно не помечено как загруженное,
+      // считаем, что что-то пошло не так и мягко триггерим повторную инициализацию
+      if (videos.length > 0 && loadedCards.length === 0) {
+        setPageReloadToken((prev) => prev + 1);
+      }
+    }, 2500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [currentPage, activeSection, exerciseSlides.length]);
+
+  // При возврате вкладки из фона или восстановлении страницы из bfcache
+  // аккуратно пробуем переинициализировать текущую страницу
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityOrShow = () => {
+      if (document.visibilityState === 'visible') {
+        // Только для вкладки с браузингом упражнений
+        if (activeSection === 'browse' && exerciseSlides.length > 0) {
+          setPageReloadToken((prev) => prev + 1);
+        }
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityOrShow);
+    window.addEventListener('pageshow', handleVisibilityOrShow);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityOrShow);
+      window.removeEventListener('pageshow', handleVisibilityOrShow);
+    };
+  }, [activeSection, exerciseSlides.length]);
 
   // Убеждаемся что информация остается видимой при выделении карточки и переключении режима
   useEffect(() => {
-    // Проверяем все карточки с загруженным видео и показываем информацию
-    const cards = document.querySelectorAll('.exercise-card[data-video-loaded="true"]');
-    cards.forEach(card => {
-      const infoElements = card.querySelectorAll('[data-exercise-info]');
-      infoElements.forEach(el => {
-        if (el.style.opacity !== '1') {
-          el.style.opacity = '1';
-          el.style.transition = 'opacity 0.3s ease-out';
-        }
+    // Используем requestAnimationFrame для оптимизации DOM операций
+    const rafId = requestAnimationFrame(() => {
+      // Проверяем все карточки с загруженным видео и показываем информацию
+      const cards = document.querySelectorAll('.exercise-card[data-video-loaded="true"]');
+      cards.forEach(card => {
+        const infoElements = card.querySelectorAll('[data-exercise-info]');
+        infoElements.forEach(el => {
+          if (el.style.opacity !== '1') {
+            el.style.opacity = '1';
+            el.style.transition = 'opacity 0.3s ease-out';
+          }
+        });
       });
     });
+    
+    return () => cancelAnimationFrame(rafId);
   }, [selectedExercises, currentPage, viewMode]);
 
   // Синхронизируем data-selected и data-show-ring с состоянием selectedExercises
   useEffect(() => {
-    const cards = document.querySelectorAll('.exercise-card');
-    cards.forEach(card => {
-      const exerciseId = card.getAttribute('data-exercise-id');
-      const isSelected = selectedExercises.some(ex => ex.id === exerciseId);
-      card.setAttribute('data-selected', isSelected ? 'true' : 'false');
-      
-      // Показываем ring только если видео загружено и упражнение выбрано
-      if (isSelected) {
-        const videoLoaded = card.getAttribute('data-video-loaded') === 'true';
-        if (videoLoaded) {
-          setTimeout(() => {
-            card.setAttribute('data-show-ring', 'true');
-            card.offsetHeight;
-          }, 50);
+    // Используем requestAnimationFrame для оптимизации DOM операций
+    const rafId = requestAnimationFrame(() => {
+      const cards = document.querySelectorAll('.exercise-card');
+      cards.forEach(card => {
+        const exerciseId = card.getAttribute('data-exercise-id');
+        const isSelected = selectedExercises.some(ex => ex.id === exerciseId);
+        card.setAttribute('data-selected', isSelected ? 'true' : 'false');
+        
+        // Показываем ring только если видео загружено и упражнение выбрано
+        if (isSelected) {
+          const videoLoaded = card.getAttribute('data-video-loaded') === 'true';
+          if (videoLoaded) {
+            const timeoutId = setTimeout(() => {
+              card.setAttribute('data-show-ring', 'true');
+              card.offsetHeight;
+              timeoutRefsRef.current.delete(timeoutId);
+            }, 50);
+            timeoutRefsRef.current.add(timeoutId);
+          } else {
+            card.setAttribute('data-show-ring', 'false');
+          }
         } else {
           card.setAttribute('data-show-ring', 'false');
         }
-      } else {
-        card.setAttribute('data-show-ring', 'false');
-      }
+      });
     });
+    
+    return () => cancelAnimationFrame(rafId);
   }, [selectedExercises]);
 
   // Функции для навигации по страницам
@@ -514,36 +673,59 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     }
   }, [currentPage]);
 
-  // Обработчики свайпа для навигации между страницами
+  // Обработчики свайпа/drag для навигации между страницами (тач + мышь)
   const handlePageSwipeStart = useCallback((e) => {
-    swipeStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-      time: Date.now()
-    };
+    // Поддержка тач и мыши
+    if ('touches' in e) {
+      swipeStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    } else if ('button' in e) {
+      // Только левая кнопка мыши
+      if (e.button !== 0) return;
+      swipeStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        time: Date.now()
+      };
+    }
   }, []);
 
   const handlePageSwipeMove = useCallback((e) => {
     if (!swipeStartRef.current) return;
-    e.preventDefault(); // Предотвращаем скролл при свайпе
+    // Для тача блокируем вертикальный скролл, когда уже начали горизонтальный жест
+    if ('touches' in e) {
+      e.preventDefault();
+    }
   }, []);
 
   const handlePageSwipeEnd = useCallback((e) => {
     if (!swipeStartRef.current) return;
-    
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
+
+    let endX = 0;
+    let endY = 0;
+
+    if ('changedTouches' in e) {
+      endX = e.changedTouches[0].clientX;
+      endY = e.changedTouches[0].clientY;
+    } else {
+      endX = e.clientX;
+      endY = e.clientY;
+    }
+
     const deltaX = endX - swipeStartRef.current.x;
     const deltaY = endY - swipeStartRef.current.y;
     const deltaTime = Date.now() - swipeStartRef.current.time;
     
-    // Проверяем что это горизонтальный свайп (не вертикальный скролл)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 300) {
+    // Проверяем что это горизонтальный свайп/drag (не вертикальный скролл)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 400) {
       if (deltaX > 0) {
-        // Свайп вправо - предыдущая страница
+        // Свайп/drag вправо - предыдущая страница
         goToPrevPage();
       } else {
-        // Свайп влево - следующая страница
+        // Свайп/drag влево - следующая страница
         goToNextPage();
       }
     }
@@ -583,9 +765,15 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     
     setViewMode(newMode);
     
+    // Очищаем предыдущий таймер если есть
+    if (viewModeChangeTimeoutRef.current) {
+      clearTimeout(viewModeChangeTimeoutRef.current);
+    }
+    
     viewModeChangingRef.current = true;
     viewModeChangeTimeoutRef.current = setTimeout(() => {
       viewModeChangingRef.current = false;
+      viewModeChangeTimeoutRef.current = null;
     }, 300);
   }, [viewMode]);
 
@@ -605,7 +793,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       
       // Анимация клика
       setClickedExercise(exercise.id);
-      setTimeout(() => setClickedExercise(null), 600);
+      const timeoutId = setTimeout(() => {
+        setClickedExercise(null);
+        timeoutRefsRef.current.delete(timeoutId);
+      }, 600);
+      timeoutRefsRef.current.add(timeoutId);
       
       return [...prev, exerciseWithSettings];
     });
@@ -754,15 +946,19 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       setSwipeOpacity(0);
       
       // Удаляем упражнение через 300ms, когда анимация завершится
-      setTimeout(() => {
+      const timeoutId1 = setTimeout(() => {
         removeExercise(exerciseId);
+        timeoutRefsRef.current.delete(timeoutId1);
       }, 300);
+      timeoutRefsRef.current.add(timeoutId1);
       
       // Сбрасываем состояние после анимации
-      setTimeout(() => {
+      const timeoutId2 = setTimeout(() => {
         setSwipedExercise(null);
         setSwipeOpacity(1);
+        timeoutRefsRef.current.delete(timeoutId2);
       }, 300);
+      timeoutRefsRef.current.add(timeoutId2);
       
       return;
     } else {
@@ -864,16 +1060,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     <div 
       className="min-h-screen bg-black p-4 pt-4 relative"
     >
-      {/* Мягкое уведомление о восстановленном черновике */}
-      {draftRestored && (
-        <div className="pointer-events-none fixed left-1/2 -translate-x-1/2 bottom-4 z-50">
-          <div className="pointer-events-auto px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-            <span>{language === "ru" ? "Черновик тренировки восстановлен" : "Workout draft restored"}</span>
-          </div>
-        </div>
-      )}
-
       <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden' : ''}`}>
         {/* Навигация по секциям */}
         <div className="flex justify-center items-center mb-4 h-12">
@@ -1110,6 +1296,13 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             </div>
           )}
 
+          {/* Индикатор загрузки текущей страницы упражнений (browse) */}
+          {activeSection === "browse" && isPageLoading && (
+            <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full border border-white/35 animate-pulse shadow-[0_0_25px_rgba(255,255,255,0.25)]" />
+            </div>
+          )}
+
           {/* Секция выбора упражнений */}
           {activeSection === "browse" && (
             <div className="animate-fadeIn">
@@ -1223,7 +1416,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       onTouchStart={handlePageSwipeStart}
                       onTouchMove={handlePageSwipeMove}
                       onTouchEnd={handlePageSwipeEnd}
-                      style={{ touchAction: 'pan-y' }} // Разрешаем только вертикальный скролл
+                      onMouseDown={handlePageSwipeStart}
+                      onMouseMove={handlePageSwipeMove}
+                      onMouseUp={handlePageSwipeEnd}
+                      onMouseLeave={handlePageSwipeEnd}
+                      style={{ touchAction: 'pan-y' }} // Для тача разрешаем только вертикальный скролл
                     >
                       <AnimatePresence>
                         {visiblePages.map((pageIndex) => {
@@ -1291,10 +1488,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                 card.setAttribute('data-selected', 'true');
                                 const videoLoaded = card.getAttribute('data-video-loaded') === 'true';
                                 if (videoLoaded) {
-                                  setTimeout(() => {
+                                  const timeoutId = setTimeout(() => {
                                     card.setAttribute('data-show-ring', 'true');
                                     card.offsetHeight;
+                                    timeoutRefsRef.current.delete(timeoutId);
                                   }, 50);
+                                  timeoutRefsRef.current.add(timeoutId);
                                 }
                               }
                             }
