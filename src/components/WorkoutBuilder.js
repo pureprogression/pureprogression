@@ -567,15 +567,84 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     }, 50);
     timeoutRefsRef.current.add(observerTimeoutId);
 
+    // Паузим и очищаем видео на невидимых страницах для освобождения памяти
+    const cleanupNonVisiblePages = () => {
+      try {
+        const allPages = document.querySelectorAll('[data-page-index]');
+        allPages.forEach((pageElement) => {
+          const pageIndex = parseInt(pageElement.getAttribute('data-page-index'));
+          const isVisible = pageIndex >= currentPage - 1 && pageIndex <= currentPage + 1;
+          
+          if (!isVisible) {
+            const videos = pageElement.querySelectorAll('video');
+            videos.forEach((video) => {
+              try {
+                video.pause();
+                video.currentTime = 0;
+                // Очищаем src для далеких страниц (больше чем ±2 страницы)
+                if (Math.abs(pageIndex - currentPage) > 2) {
+                  video.src = '';
+                  video.load();
+                  const card = video.closest('.exercise-card');
+                  if (card) {
+                    card.setAttribute('data-video-loaded', 'false');
+                  }
+                }
+              } catch (error) {
+                console.error('Error cleaning up video:', error);
+              }
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error in cleanupNonVisiblePages:', error);
+      }
+    };
+    
+    // Запускаем очистку через небольшую задержку после загрузки текущей страницы
+    const cleanupTimeoutId = setTimeout(() => {
+      cleanupNonVisiblePages();
+      timeoutRefsRef.current.delete(cleanupTimeoutId);
+    }, 1000);
+    timeoutRefsRef.current.add(cleanupTimeoutId);
+
     return () => {
       // Очищаем все таймеры
       timeoutRefsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
       timeoutRefsRef.current.clear();
       
-      // Отключаем Observer
+      // Отключаем Observer и очищаем все наблюдаемые элементы
       if (observerRef.current) {
-        observerRef.current.disconnect();
+        try {
+          // Отключаем все наблюдения перед disconnect
+          const allVideos = document.querySelectorAll('video[data-src]');
+          allVideos.forEach(video => {
+            try {
+              observerRef.current.unobserve(video);
+            } catch (error) {
+              // Игнорируем ошибки если элемент уже удален
+            }
+          });
+          observerRef.current.disconnect();
+        } catch (error) {
+          console.error('Error disconnecting observer:', error);
+        }
         observerRef.current = null;
+      }
+      
+      // Паузим все видео при размонтировании
+      try {
+        const allVideos = document.querySelectorAll('video');
+        allVideos.forEach(video => {
+          try {
+            video.pause();
+            video.currentTime = 0;
+          } catch (error) {
+            // Игнорируем ошибки
+          }
+        });
+      } catch (error) {
+        console.error('Error pausing videos on cleanup:', error);
       }
     };
   }, [currentPage, exerciseSlides.length, activeSection, pageReloadToken]);
@@ -602,6 +671,46 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
     return () => window.clearTimeout(timeoutId);
   }, [currentPage, activeSection, exerciseSlides.length]);
+
+  // Периодическая очистка памяти каждые 2 минуты для предотвращения утечек
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (activeSection !== 'browse') return;
+
+    const cleanupInterval = setInterval(() => {
+      try {
+        // Очищаем видео на далеких страницах
+        const allPages = document.querySelectorAll('[data-page-index]');
+        allPages.forEach((pageElement) => {
+          const pageIndex = parseInt(pageElement.getAttribute('data-page-index'));
+          // Очищаем видео на страницах дальше чем ±3 от текущей
+          if (Math.abs(pageIndex - currentPage) > 3) {
+            const videos = pageElement.querySelectorAll('video');
+            videos.forEach((video) => {
+              try {
+                video.pause();
+                video.currentTime = 0;
+                video.src = '';
+                video.load();
+                const card = video.closest('.exercise-card');
+                if (card) {
+                  card.setAttribute('data-video-loaded', 'false');
+                }
+              } catch (error) {
+                // Игнорируем ошибки
+              }
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error in periodic cleanup:', error);
+      }
+    }, 120000); // Каждые 2 минуты
+
+    return () => {
+      clearInterval(cleanupInterval);
+    };
+  }, [currentPage, activeSection]);
 
   // При возврате вкладки из фона или восстановлении страницы из bfcache
   // аккуратно пробуем переинициализировать текущую страницу
