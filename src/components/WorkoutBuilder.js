@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { exercises } from "@/data/exercises";
+import { exercises, getExerciseTitle } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
@@ -1178,36 +1178,46 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                   </div>
                 ) : (
                   <>
-
+ 
                     {/* Вертикальный список выбранных упражнений */}
                     <div className="mb-8 space-y-4">
-                      {(tempOrder || selectedExercises).map((exercise, index) => {
-                        // Находим реальный индекс упражнения в оригинальном массиве
-                        const realIndex = selectedExercises.findIndex(ex => ex.id === exercise.id);
-                        return (
-                          <div 
-                            key={exercise.id} 
-                            data-exercise-card
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, exercise.id, realIndex)}
-                            onDragEnd={handleDragEnd}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, index)}
-                            onTouchStart={(e) => handleTouchStart(e, exercise.id)}
-                            onTouchMove={(e) => handleTouchMove(e, exercise.id)}
-                            onTouchEnd={(e) => handleTouchEnd(e, exercise.id)}
-                            className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group relative ${
-                              draggedExercise?.id === exercise.id ? 'opacity-50 scale-105' : ''
-                            } ${
-                              dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-1 ring-white/50' : ''
-                            }`}
-                            style={{
-                              transform: swipedExercise?.id === exercise.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                              opacity: swipedExercise?.id === exercise.id ? swipeOpacity : 1,
-                              transition: swipedExercise?.id === exercise.id && Math.abs(swipeOffset) < 400 ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
-                            }}
-                          >
+                      <AnimatePresence mode="popLayout">
+                        {(tempOrder || selectedExercises).map((exercise, index) => {
+                          // Находим реальный индекс упражнения в оригинальном массиве
+                          const realIndex = selectedExercises.findIndex(ex => ex.id === exercise.id);
+                          return (
+                            <motion.div 
+                              key={exercise.id} 
+                              data-exercise-card
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, exercise.id, realIndex)}
+                              onDragEnd={handleDragEnd}
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, index)}
+                              onTouchStart={(e) => handleTouchStart(e, exercise.id)}
+                              onTouchMove={(e) => handleTouchMove(e, exercise.id)}
+                              onTouchEnd={(e) => handleTouchEnd(e, exercise.id)}
+                              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                              animate={{ 
+                                opacity: swipedExercise?.id === exercise.id ? swipeOpacity : (draggedExercise?.id === exercise.id ? 0.5 : 1),
+                                y: 0,
+                                scale: draggedExercise?.id === exercise.id ? 1.05 : 1
+                              }}
+                              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                              transition={{ 
+                                duration: 0.4, 
+                                delay: index * 0.05,
+                                ease: [0.4, 0, 0.2, 1]
+                              }}
+                              className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group relative ${
+                                dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-1 ring-white/50' : ''
+                              }`}
+                              style={{
+                                transform: swipedExercise?.id === exercise.id ? `translateX(${swipeOffset}px)` : undefined,
+                                transition: swipedExercise?.id === exercise.id && Math.abs(swipeOffset) < 400 ? 'none' : undefined
+                              }}
+                            >
                             {/* Видео превью */}
                             <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
                               <video
@@ -1224,11 +1234,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
                             {/* Информация об упражнении */}
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-white font-medium text-sm line-clamp-2 mb-3">{exercise.title}</h4>
+                              <h4 className="text-white font-medium text-sm line-clamp-2 mb-3">{getExerciseTitle(exercise, language)}</h4>
                               
                               {/* Компактные настройки подходов и повторений */}
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="text-white/60">Сеты:</span>
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-white/60 text-[10px]">Сеты:</span>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1253,11 +1263,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                       updateExercise(exercise.id, 'sets', 20);
                                     }
                                   }}
-                                  className="w-10 px-1 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  className="w-7 px-0.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-[10px] focus:outline-none focus:bg-white/15 transition-all duration-300"
                                   style={{ fontSize: '16px' }}
                                 />
-                                <span className="text-white/60">×</span>
-                                <span className="text-white/60">Повт:</span>
+                                <span className="text-white/60 text-[10px]">×</span>
+                                <span className="text-white/60 text-[10px]">Повт:</span>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1282,7 +1292,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                       updateExercise(exercise.id, 'reps', 100);
                                     }
                                   }}
-                                  className="w-10 px-1 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  className="w-7 px-0.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-[10px] focus:outline-none focus:bg-white/15 transition-all duration-300"
                                   style={{ fontSize: '16px' }}
                                 />
                               </div>
@@ -1331,9 +1341,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                 <span className="absolute inset-0 w-full h-px bg-current -rotate-45 origin-center" />
                               </span>
                             </button>
-                          </div>
-                        );
-                      })}
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
                     </div>
 
                     {/* Кнопка сохранения */}
@@ -1354,7 +1365,15 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
           {/* Индикатор загрузки текущей страницы упражнений (browse) */}
           {activeSection === "browse" && isPageLoading && (
-            <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
+            <div 
+              className="pointer-events-none fixed z-30 flex items-center justify-center"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                position: 'fixed'
+              }}
+            >
               <div className="w-9 h-9 rounded-full border border-white/35 animate-pulse shadow-[0_0_25px_rgba(255,255,255,0.25)]" />
             </div>
           )}
@@ -1595,7 +1614,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                             style={{ opacity: 0, transition: 'opacity 0.3s ease-out' }} // Скрываем до появления видео
                           >
                             <h3 className="text-white/90 text-xs md:text-sm font-medium tracking-wide mb-1.5 max-w-[90%] line-clamp-2 text-center md:text-left">
-                              {exercise.title}
+                              {getExerciseTitle(exercise, language)}
                             </h3>
                             {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
                               <div className="flex flex-wrap justify-center md:justify-start gap-1.5">

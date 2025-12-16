@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getExerciseTitle } from "@/data/exercises";
 
 // Переводы групп мышц
 const muscleGroupTranslations = {
@@ -624,7 +625,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 pt-20 relative">
+    <div className="min-h-screen bg-black text-white p-4 pt-16 relative">
       {/* Заголовок тренировки, прогресс и переключатель режимов */}
       <div className="max-w-7xl mx-auto mb-4">
         <div className="flex items-center justify-between mb-3">
@@ -737,7 +738,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-white/40 text-xs font-medium">#{index + 1}</span>
                         <h3 className={`text-white font-semibold text-sm md:text-base ${isCompleted ? 'text-green-400' : ''}`}>
-                          {exercise.title}
+                          {getExerciseTitle(exercise, language)}
                         </h3>
                       </div>
                       {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
@@ -879,9 +880,9 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                         
                         {/* Информация об упражнении для режима large */}
                         {viewMode === 'large' && (
-                          <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10" style={{ marginBottom: isCompleted ? '4px' : '0' }}>
+                          <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10">
                             <h3 className={`text-white font-medium text-sm mb-2 line-clamp-2 ${isCompleted ? 'text-green-400' : ''}`}>
-                              {exercise.title}
+                              {getExerciseTitle(exercise, language)}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-white/70 mb-2">
                               <span>{exercise.sets || 3} подходов</span>

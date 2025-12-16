@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { trackWorkoutCreated } from '@/lib/analytics';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function PaymentSuccess() {
   const router = useRouter();
@@ -16,6 +17,56 @@ export default function PaymentSuccess() {
   const [user, setUser] = useState(null);
   const [activationAttempts, setActivationAttempts] = useState(0);
   const [activationError, setActivationError] = useState(null);
+  const { hasSubscription, isLoading: subscriptionLoading } = useSubscription();
+
+  // Функция для сохранения тренировки из localStorage
+  const savePendingWorkout = async (currentUser) => {
+    try {
+      const pendingWorkoutStr = localStorage.getItem('pending_workout');
+      if (!pendingWorkoutStr) {
+        console.log('[Payment Success] No pending workout found');
+        return;
+      }
+
+      const pendingWorkout = JSON.parse(pendingWorkoutStr);
+      console.log('[Payment Success] Saving pending workout:', pendingWorkout);
+
+      const workoutData = {
+        name: pendingWorkout.name,
+        description: pendingWorkout.description || "",
+        exercises: pendingWorkout.exercises,
+        userId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, 'workouts'), workoutData);
+      console.log('[Payment Success] Workout saved with ID:', docRef.id);
+
+      // Отслеживаем создание тренировки
+      trackWorkoutCreated(currentUser.uid);
+
+      // Удаляем из localStorage после успешного сохранения
+      localStorage.removeItem('pending_workout');
+    } catch (error) {
+      console.error('[Payment Success] Error saving pending workout:', error);
+    }
+  };
+
+  // Проверяем подписку при загрузке - если уже активна, сразу редиректим
+  useEffect(() => {
+    if (!subscriptionLoading && user && hasSubscription) {
+      console.log('[Payment Success] Subscription already active, redirecting immediately');
+      // Сохраняем тренировку если есть
+      if (typeof window !== 'undefined' && localStorage.getItem('pending_workout')) {
+        savePendingWorkout(user).then(() => {
+          router.replace('/my-workouts');
+        });
+      } else {
+        router.replace('/my-workouts');
+      }
+    }
+  }, [hasSubscription, subscriptionLoading, user, router]);
 
   useEffect(() => {
     // Ждем авторизации пользователя
@@ -48,39 +99,6 @@ export default function PaymentSuccess() {
       clearTimeout(overallTimeout);
     };
   }, []);
-
-  // Функция для сохранения тренировки из localStorage
-  const savePendingWorkout = async (currentUser) => {
-    try {
-      const pendingWorkoutStr = localStorage.getItem('pending_workout');
-      if (!pendingWorkoutStr) {
-        console.log('[Payment Success] No pending workout found');
-        return;
-      }
-
-      const pendingWorkout = JSON.parse(pendingWorkoutStr);
-      console.log('[Payment Success] Saving pending workout:', pendingWorkout);
-
-      const workoutData = {
-        name: pendingWorkout.name,
-        description: pendingWorkout.description || "",
-        exercises: pendingWorkout.exercises,
-        userId: currentUser.uid,
-        createdAt: serverTimestamp(),
-        estimatedDuration: pendingWorkout.estimatedDuration
-      };
-
-      await addDoc(collection(db, 'workouts'), workoutData);
-      trackWorkoutCreated(pendingWorkout.exercises.length);
-      
-      // Удаляем из localStorage после успешного сохранения
-      localStorage.removeItem('pending_workout');
-      console.log('✅ [Payment Success] Workout saved successfully!');
-    } catch (error) {
-      console.error('[Payment Success] Error saving pending workout:', error);
-      // Не удаляем из localStorage при ошибке, чтобы можно было попробовать еще раз
-    }
-  };
 
   const initializeActivation = async (currentUser) => {
     // Получаем параметры из URL
@@ -250,10 +268,9 @@ export default function PaymentSuccess() {
         localStorage.removeItem('last_subscription_type');
         localStorage.removeItem('last_subscription_user_id');
         
-        // Автоматический редирект на "Мои тренировки" через 2 секунды
-        setTimeout(() => {
-          router.push('/my-workouts');
-        }, 2000);
+        // Автоматический редирект на "Мои тренировки" сразу
+        // Используем replace чтобы не было возможности вернуться назад
+        router.replace('/my-workouts');
         
         return; // Останавливаем дальнейшие попытки
       } else {
@@ -327,10 +344,9 @@ export default function PaymentSuccess() {
         // Сохраняем тренировку из localStorage если есть
         await savePendingWorkout(currentUser);
         
-        // Автоматический редирект на "Мои тренировки" через 2 секунды
-        setTimeout(() => {
-          router.push('/my-workouts');
-        }, 2000);
+        // Автоматический редирект на "Мои тренировки" сразу
+        // Используем replace чтобы не было возможности вернуться назад
+        router.replace('/my-workouts');
         
         return true;
       } else {
@@ -481,19 +497,19 @@ export default function PaymentSuccess() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <motion.div
-        className="bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-xl border border-white/20 rounded-2xl max-w-md w-full p-8 text-center"
+        className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl max-w-md w-full p-8 text-center"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         {/* Иконка успеха */}
         <motion.div
-          className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"
+          className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         >
-          <span className="text-3xl">✓</span>
+          <span className="text-3xl text-white">✓</span>
         </motion.div>
 
         {/* Заголовок */}
@@ -508,8 +524,8 @@ export default function PaymentSuccess() {
             : 'Спасибо за поддержку!'}
         </motion.h1>
 
-        {/* Информация о платеже */}
-        {paymentInfo && (
+        {/* Информация о платеже - показываем только для донаций */}
+        {paymentInfo && new URLSearchParams(window.location.search).get('type') !== 'subscription' && (
           <motion.div
             className="bg-white/10 rounded-xl p-4 mb-6"
             initial={{ y: 20, opacity: 0 }}
@@ -517,7 +533,7 @@ export default function PaymentSuccess() {
             transition={{ delay: 0.4 }}
           >
             <p className="text-white/80 text-sm mb-2">Сумма платежа:</p>
-            <p className="text-2xl font-bold text-green-400">
+            <p className="text-2xl font-bold text-green-500">
               {paymentInfo.amount} {paymentInfo.currency}
             </p>
             <p className="text-white/60 text-sm mt-2">
@@ -565,7 +581,7 @@ export default function PaymentSuccess() {
           >
             <button
               onClick={() => router.push('/my-workouts')}
-              className="w-full p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300"
+              className="w-full p-4 bg-green-500 text-white rounded-xl font-light hover:bg-green-400 transition-all duration-300"
             >
               Перейти к моим тренировкам
             </button>
@@ -582,7 +598,7 @@ export default function PaymentSuccess() {
           >
             <button
               onClick={() => router.push('/')}
-              className="w-full p-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300"
+              className="w-full p-4 bg-green-500 text-white rounded-xl font-light hover:bg-green-400 transition-all duration-300"
             >
               Вернуться на главную
             </button>
