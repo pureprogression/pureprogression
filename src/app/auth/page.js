@@ -12,6 +12,7 @@ export default function AuthPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const { hasSubscription, isLoading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
@@ -22,6 +23,16 @@ export default function AuthPage() {
 
     return () => unsubscribe();
   }, []);
+
+  // Плавное появление видео после монтирования
+  useEffect(() => {
+    if (mounted) {
+      const timer = setTimeout(() => {
+        setVideoLoaded(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mounted]);
 
   // Обрабатываем редирект после загрузки подписки
   useEffect(() => {
@@ -71,13 +82,19 @@ export default function AuthPage() {
         playsInline
         preload="auto"
         poster={posterSrc}
-        style={{ zIndex: 0 }}
+        onCanPlay={() => setVideoLoaded(true)}
+        onLoadedData={() => setVideoLoaded(true)}
+        style={{ 
+          zIndex: 0,
+          opacity: videoLoaded ? 1 : 0,
+          transition: 'opacity 1.5s ease-in-out'
+        }}
       >
         <source src={videoSrc} type="video/mp4" />
       </video>
       
-      {/* Затемнение для читаемости формы */}
-      <div className="fixed inset-0 bg-black/40" style={{ zIndex: 1 }} />
+      {/* Затемнение для читаемости формы - сделано менее темным */}
+      <div className="fixed inset-0 bg-black/5" style={{ zIndex: 1 }} />
 
       {/* Контент поверх видео */}
       <div className="relative" style={{ zIndex: 10 }}>

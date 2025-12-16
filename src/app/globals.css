@@ -189,19 +189,32 @@
 }
 
 /* Выделение появляется только после загрузки видео */
-.exercise-card[data-selected="true"][data-show-ring="true"] {
-  --tw-ring-width: 1px;
-  --tw-ring-color: rgb(34 197 94);
-  --tw-ring-offset-width: 1px;
-  --tw-ring-offset-color: black;
-  box-shadow: 0 0 0 1px rgb(34 197 94), 0 0 0 2px black;
-  padding: 4px;
+.exercise-card {
+  position: relative;
 }
 
-.exercise-card[data-selected="true"][data-show-ring="false"] {
-  --tw-ring-width: 0;
-  box-shadow: none;
-  padding: 0;
+.exercise-selection-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgb(34 197 94);
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.exercise-card[data-selected="true"][data-show-ring="true"] .exercise-selection-ring {
+  opacity: 1;
+}
+
+/* Убираем hover-эффекты с карточек, пока видео не загрузилось */
+.exercise-card[data-video-loaded="false"]:hover {
+  box-shadow: none !important;
 }
 
 /* Убираем обрезание карточек в Swiper только для WorkoutBuilder */

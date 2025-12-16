@@ -239,27 +239,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Статистика активности */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
-            <h3 className="text-white text-sm font-semibold mb-3">{TEXTS[language].profile.activity}</h3>
-                {isLoading ? (
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                      <div className="animate-pulse">
-                        <div className="h-6 bg-white/20 rounded mb-2"></div>
-                        <div className="h-3 bg-white/10 rounded w-3/4 mx-auto"></div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                      <div className="text-white text-lg font-bold">{stats.completedWorkouts}</div>
-                      <div className="text-gray-400 text-xs">{TEXTS[language].profile.completedWorkouts}</div>
-                    </div>
-                  </div>
-                )}
-          </div>
+          {/* Статистика активности временно скрыта перед релизом */}
         </div>
       </div>
     </>

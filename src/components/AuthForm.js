@@ -10,7 +10,8 @@ import {
   sendPasswordResetEmail,
   confirmPasswordReset,
   applyActionCode,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
@@ -99,6 +100,16 @@ export default function AuthForm() {
             createdAt: new Date(),
             updatedAt: new Date()
           });
+        }
+
+        // Отправляем письмо для подтверждения email
+        try {
+          await sendEmailVerification(user, {
+            url: `${window.location.origin}/auth`,
+            handleCodeInApp: false
+          });
+        } catch (e) {
+          console.error("Failed to send verification email", e);
         }
         
         setDisplayName("");

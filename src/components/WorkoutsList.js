@@ -28,6 +28,13 @@ export default function WorkoutsList({ workouts, user }) {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [deletePressTimer, setDeletePressTimer] = useState(null);
   const [deleteConfirmWorkout, setDeleteConfirmWorkout] = useState(null); // workoutId для подтверждения удаления
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [workoutsState, setWorkoutsState] = useState(workouts || []);
+
+  // Синхронизируем локальное состояние, если пропсы обновились
+  useEffect(() => {
+    setWorkoutsState(workouts || []);
+  }, [workouts]);
 
 
   const handleStartWorkout = (workout) => {
@@ -70,14 +77,23 @@ export default function WorkoutsList({ workouts, user }) {
   const handleDeleteConfirm = async () => {
     if (!deleteConfirmWorkout) return;
     try {
+      setIsDeleting(true);
       if (navigator.vibrate) navigator.vibrate(100);
-      await deleteDoc(doc(db, 'workouts', deleteConfirmWorkout));
-      localStorage.removeItem(`workout_${deleteConfirmWorkout}`);
+      const idToDelete = deleteConfirmWorkout;
+
+      // Удаляем из Firebase
+      await deleteDoc(doc(db, 'workouts', idToDelete));
+      localStorage.removeItem(`workout_${idToDelete}`);
+
+      // Мягко убираем тренировку из списка без полной перезагрузки страницы
+      setWorkoutsState((prev) => prev.filter((w) => w.id !== idToDelete));
+
       setDeleteConfirmWorkout(null);
-      window.location.reload();
+      setIsDeleting(false);
     } catch (error) {
       console.error("Ошибка при удалении тренировки:", error);
       setDeleteConfirmWorkout(null);
+      setIsDeleting(false);
     }
   };
 
@@ -185,7 +201,7 @@ export default function WorkoutsList({ workouts, user }) {
       {...containerAnimation}
     >
       <AnimatePresence>
-        {workouts.map((workout, index) => {
+        {workoutsState.map((workout, index) => {
           const total = workout.exercises?.length || 0;
           const columns = total <= 3 ? total : (total <= 6 ? 3 : 4);
           
@@ -285,7 +301,7 @@ export default function WorkoutsList({ workouts, user }) {
           onClick={handleDeleteCancel}
         >
           {/* Overlay */}
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl" />
           
           {/* Modal */}
           <div
@@ -299,14 +315,18 @@ export default function WorkoutsList({ workouts, user }) {
               <button
                 onClick={handleDeleteCancel}
                 className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-light tracking-wide backdrop-blur-sm"
+                disabled={isDeleting}
               >
                 {TEXTS[language].workouts.cancel}
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="flex-1 py-3 px-4 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all duration-200 text-sm font-light tracking-wide shadow-lg shadow-red-500/20"
+                disabled={isDeleting}
+                className="flex-1 py-3 px-4 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all duration-200 text-sm font-light tracking-wide shadow-lg shadow-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {TEXTS[language].workouts.delete}
+                {isDeleting
+                  ? (language === 'ru' ? 'Удаление...' : 'Deleting...')
+                  : TEXTS[language].workouts.delete}
               </button>
             </div>
           </div>

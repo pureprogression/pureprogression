@@ -359,7 +359,13 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
   // Загружаем текущую страницу сразу + Observer для соседних страниц
   useEffect(() => {
-    if (exerciseSlides.length === 0 || activeSection !== 'browse') return;
+    if (exerciseSlides.length === 0 || activeSection !== 'browse') {
+      setIsPageLoading(false);
+      return;
+    }
+    
+    // Показываем индикатор загрузки сразу при переходе на новую страницу
+    setIsPageLoading(true);
     
     // Очищаем предыдущий Observer если есть
     if (observerRef.current) {
@@ -370,6 +376,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     // Загружаем видео текущей страницы СРАЗУ
     let retryCount = 0;
     const MAX_RETRIES = 20; // Максимум 20 попыток (1 секунда)
+    let loadedCount = 0; // Счетчик загруженных видео
+    let totalVideos = 0; // Общее количество видео на странице
     
     const loadCurrentPage = () => {
       try {
@@ -379,33 +387,40 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           if (retryCount < MAX_RETRIES) {
             const timeoutId = setTimeout(loadCurrentPage, 50);
             timeoutRefsRef.current.add(timeoutId);
+          } else {
+            // Если не удалось найти элемент, скрываем индикатор
+            setIsPageLoading(false);
           }
           return;
         }
         
         const videos = currentPageElement.querySelectorAll('video[data-src]');
-      // Если есть видео на странице — показываем индикатор загрузки
-      if (videos.length > 0) {
-        setIsPageLoading(true);
-      } else {
-        setIsPageLoading(false);
-      }
-
-      videos.forEach((video) => {
-        const dataSrc = video.getAttribute('data-src');
+        totalVideos = videos.length;
         
-        // Проверяем, если видео уже было загружено ранее (при возврате на вкладку browse)
-        if (video.src && video.readyState >= 2) {
-          // Видео уже загружено, показываем его сразу
-          video.style.opacity = '1';
-          const card = video.closest('.exercise-card');
-          if (card) {
-            card.style.opacity = '1';
-            card.style.pointerEvents = 'auto';
-            card.setAttribute('data-video-loaded', 'true');
-            
-            // Как только первая карточка появилась — убираем индикатор
-            setIsPageLoading(false);
+        // Если на странице нет видео, скрываем индикатор
+        if (totalVideos === 0) {
+          setIsPageLoading(false);
+          return;
+        }
+
+        videos.forEach((video) => {
+          const dataSrc = video.getAttribute('data-src');
+          
+          // Проверяем, если видео уже было загружено ранее (при возврате на вкладку browse)
+          if (video.src && video.readyState >= 2) {
+            // Видео уже загружено, показываем его сразу
+            loadedCount++;
+            video.style.opacity = '1';
+            const card = video.closest('.exercise-card');
+            if (card) {
+              card.style.opacity = '1';
+              card.style.pointerEvents = 'auto';
+              card.setAttribute('data-video-loaded', 'true');
+              
+              // Как только первое видео появилось — убираем индикатор
+              if (loadedCount === 1) {
+                setIsPageLoading(false);
+              }
 
             const isSelected = card.getAttribute('data-selected') === 'true';
             if (isSelected) {
@@ -435,6 +450,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           video.load();
           
           const showVideo = () => {
+            loadedCount++;
             video.style.opacity = '1';
             const card = video.closest('.exercise-card');
             if (card) {
@@ -445,8 +461,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               // Сохраняем флаг что видео загружено
               card.setAttribute('data-video-loaded', 'true');
 
-              // Как только первая карточка появилась — убираем индикатор
-              setIsPageLoading(false);
+              // Как только первое видео появилось — убираем индикатор
+              if (loadedCount === 1) {
+                setIsPageLoading(false);
+              }
               
               // Показываем выделение только после загрузки видео, если упражнение выбрано
               const isSelected = card.getAttribute('data-selected') === 'true';
@@ -1212,22 +1230,60 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="text-white/60">Сеты:</span>
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   min="1"
                                   max="20"
                                   value={exercise.sets}
-                                  onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value))}
+                                  onFocus={(e) => {
+                                    e.target.select();
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 20)) {
+                                      updateExercise(exercise.id, 'sets', value === '' ? 1 : parseInt(value) || 1);
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = parseInt(e.target.value) || 1;
+                                    if (value < 1) {
+                                      updateExercise(exercise.id, 'sets', 1);
+                                    } else if (value > 20) {
+                                      updateExercise(exercise.id, 'sets', 20);
+                                    }
+                                  }}
                                   className="w-10 px-1 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  style={{ fontSize: '16px' }}
                                 />
                                 <span className="text-white/60">×</span>
                                 <span className="text-white/60">Повт:</span>
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   min="1"
                                   max="100"
                                   value={exercise.reps}
-                                  onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value))}
+                                  onFocus={(e) => {
+                                    e.target.select();
+                                  }}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 100)) {
+                                      updateExercise(exercise.id, 'reps', value === '' ? 1 : parseInt(value) || 1);
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = parseInt(e.target.value) || 1;
+                                    if (value < 1) {
+                                      updateExercise(exercise.id, 'reps', 1);
+                                    } else if (value > 100) {
+                                      updateExercise(exercise.id, 'reps', 100);
+                                    }
+                                  }}
                                   className="w-10 px-1 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  style={{ fontSize: '16px' }}
                                 />
                               </div>
                             </div>
@@ -1467,7 +1523,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         data-show-ring="false"
                         data-video-loaded="false"
                         style={{ 
-                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease-out',
+                          transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease-out',
                           opacity: 0, // Скрываем карточку до появления видео
                           borderRadius: '0.75rem' // Явно задаем border-radius для плавного перехода
                         }}
@@ -1506,6 +1562,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                             borderRadius: '0.75rem'
                           }}
                         >
+                        {/* Элемент выделения */}
+                        <div className="exercise-selection-ring"></div>
                         {/* Видео - обертка с overflow-hidden */}
                         <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
                           <video

@@ -39,13 +39,55 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   const [isCompleted, setIsCompleted] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list', 'grid-4', 'large'
   const [currentPage, setCurrentPage] = useState(0); // Текущая страница
+  const [pageReloadToken, setPageReloadToken] = useState(0); // триггер для безопасной повторной инициализации текущей страницы
+  const [isPageLoading, setIsPageLoading] = useState(false); // индикатор загрузки текущей страницы
   const videoRefsRef = useRef(new Map()); // Ref для видео элементов
   const swipeStartRef = useRef(null); // Начальная позиция свайпа
   const swipeContainerRef = useRef(null); // Ref для контейнера страниц
 
-  // Инициализация результатов
+  const getStorageKey = useCallback(() => {
+    if (!workout || !workout.id) return null;
+    return `workout-progress-${workout.id}`;
+  }, [workout]);
+
+  // Инициализация результатов (с попыткой восстановить прогресс при перезагрузке страницы)
   useEffect(() => {
-    if (workout && workout.exercises) {
+    if (!workout || !workout.exercises) return;
+    if (typeof window === 'undefined') return;
+
+    const key = getStorageKey();
+    let restored = false;
+
+    if (key) {
+      try {
+        const navEntries = performance.getEntriesByType?.('navigation');
+        const navType = navEntries && navEntries[0] ? navEntries[0].type : performance.navigation?.type;
+        const isReload = navType === 'reload' || navType === 1;
+
+        if (isReload) {
+          const raw = window.sessionStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.exercises)) {
+              setWorkoutResults({
+                exercises: parsed.exercises.map((exercise, idx) => ({
+                  ...exercise,
+                  // гарантия, что базовые поля есть
+                  sets: exercise.sets || workout.exercises[idx]?.sets || 3,
+                  reps: exercise.reps || workout.exercises[idx]?.reps || 12,
+                  completedSets: exercise.completedSets ?? 0
+                }))
+              });
+              restored = true;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to restore workout progress', e);
+      }
+    }
+
+    if (!restored) {
       const initialResults = {
         exercises: workout.exercises.map(exercise => ({
           ...exercise,
@@ -55,9 +97,10 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         }))
       };
       setWorkoutResults(initialResults);
-      setStartTime(Date.now());
     }
-  }, [workout]);
+
+    setStartTime(Date.now());
+  }, [workout, getStorageKey]);
 
 
   const handleCompleteWorkout = () => {
@@ -65,6 +108,16 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
       ...workoutResults
     };
     
+    // После завершения тренировки очищаем сохранённый прогресс
+    try {
+      const key = getStorageKey();
+      if (key && typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.error('Failed to clear workout progress', e);
+    }
+
     setIsCompleted(true);
     onComplete(finalResults);
   };
@@ -116,6 +169,26 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     
     setWorkoutResults(updatedResults);
   };
+
+  // Сохраняем прогресс выполнения тренировки в sessionStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const key = getStorageKey();
+    if (!key) return;
+
+    // Сохраняем только если есть хоть одно выполненное упражнение
+    const hasProgress = workoutResults.exercises.some(ex => ex.completedSets && ex.completedSets > 0);
+    if (!hasProgress) {
+      window.sessionStorage.removeItem(key);
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(key, JSON.stringify(workoutResults));
+    } catch (e) {
+      console.error('Failed to save workout progress', e);
+    }
+  }, [workoutResults, getStorageKey]);
 
   const getPosterFromExercise = (exercise) => {
     if (!exercise) return "";
@@ -176,10 +249,30 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     return pages;
   }, [currentPage, exerciseSlides.length]);
 
-  // Сбрасываем страницу при изменении режима
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [viewMode]);
+  // Переключение режимов просмотра:
+  // - при переходе в large открываем страницу с первым невыполненным упражнением
+  // - для list и grid-4 возвращаемся на первую страницу
+  const handleChangeViewMode = useCallback((mode) => {
+    if (mode === viewMode) return;
+
+    if (!workoutResults.exercises || workoutResults.exercises.length === 0) {
+      setViewMode(mode);
+      setCurrentPage(0);
+      return;
+    }
+
+    if (mode === 'large') {
+      const nextIndex = workoutResults.exercises.findIndex(ex => !ex.completedSets || ex.completedSets === 0);
+      const targetIndex = nextIndex === -1 ? workoutResults.exercises.length - 1 : nextIndex;
+      const perSlide = 1; // в режиме large по одному упражнению на страницу
+      const pageIndex = Math.floor(targetIndex / perSlide);
+      setCurrentPage(Math.max(0, pageIndex));
+    } else {
+      setCurrentPage(0);
+    }
+
+    setViewMode(mode);
+  }, [viewMode, workoutResults.exercises]);
 
   // Функции для навигации по страницам
   const goToNextPage = useCallback(() => {
@@ -194,30 +287,50 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     }
   }, [currentPage]);
 
-  // Обработчики свайпа для навигации между страницами
+  // Обработчики свайпа/drag для навигации между страницами (тач + мышь)
   const handlePageSwipeStart = useCallback((e) => {
-    swipeStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-      time: Date.now()
-    };
+    if ('touches' in e) {
+      swipeStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    } else if ('button' in e) {
+      if (e.button !== 0) return;
+      swipeStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        time: Date.now()
+      };
+    }
   }, []);
 
   const handlePageSwipeMove = useCallback((e) => {
     if (!swipeStartRef.current) return;
-    e.preventDefault();
+    if ('touches' in e) {
+      e.preventDefault();
+    }
   }, []);
 
   const handlePageSwipeEnd = useCallback((e) => {
     if (!swipeStartRef.current) return;
-    
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
+
+    let endX = 0;
+    let endY = 0;
+
+    if ('changedTouches' in e) {
+      endX = e.changedTouches[0].clientX;
+      endY = e.changedTouches[0].clientY;
+    } else {
+      endX = e.clientX;
+      endY = e.clientY;
+    }
+
     const deltaX = endX - swipeStartRef.current.x;
     const deltaY = endY - swipeStartRef.current.y;
     const deltaTime = Date.now() - swipeStartRef.current.time;
     
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 300) {
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 400) {
       if (deltaX > 0) {
         goToPrevPage();
       } else {
@@ -239,8 +352,46 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         const pageElement = document.querySelector(`[data-page-index="${pageIndex}"]`);
         if (pageElement) {
           const videos = pageElement.querySelectorAll('video[data-src]');
+          const loadedCards = pageElement.querySelectorAll('.exercise-card[data-video-loaded="true"]');
+
+          // Если уже есть загруженные карточки — индикатор не нужен
+          if (loadedCards.length > 0) {
+            setIsPageLoading(false);
+          } else if (videos.length > 0) {
+            // Видео есть, но ни одно ещё не загружено — показываем индикатор
+            setIsPageLoading(true);
+          } else {
+            setIsPageLoading(false);
+          }
+
           videos.forEach(video => {
             const dataSrc = video.getAttribute('data-src');
+
+            // Если видео уже было загружено ранее (src есть и readyState достаточный),
+            // сразу показываем его и убираем индикатор
+            if (video.src && video.readyState >= 2) {
+              const card = video.closest('.exercise-card');
+              if (card) {
+                card.style.opacity = '1';
+                card.style.pointerEvents = 'auto';
+                card.setAttribute('data-video-loaded', 'true');
+
+                // Как только первая карточка появилась — убираем индикатор
+                setIsPageLoading(false);
+
+                const isCompleted = card.getAttribute('data-selected') === 'true';
+                if (isCompleted) {
+                  setTimeout(() => {
+                    card.setAttribute('data-show-ring', 'true');
+                    card.offsetHeight; // Принудительный reflow
+                  }, 100);
+                }
+              }
+              video.style.opacity = '1';
+              video.play().catch(() => {});
+              return;
+            }
+
             if (dataSrc && !video.src) {
               video.src = dataSrc;
               video.load();
@@ -252,6 +403,9 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                   card.style.opacity = '1';
                   card.style.pointerEvents = 'auto';
                   card.setAttribute('data-video-loaded', 'true');
+
+                  // Как только первая карточка появилась — убираем индикатор
+                  setIsPageLoading(false);
                   
                   // Показываем выделение только после загрузки видео, если упражнение выполнено
                   const isCompleted = card.getAttribute('data-selected') === 'true';
@@ -366,7 +520,48 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
     return () => {
       observer.disconnect();
     };
-  }, [currentPage, exerciseSlides.length, visiblePages]);
+  }, [currentPage, exerciseSlides.length, visiblePages, pageReloadToken]);
+
+  // Watchdog: если по какой-то причине видео на текущей странице не инициализировались,
+  // пробуем мягко переинициализировать загрузку
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (exerciseSlides.length === 0) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const currentPageElement = document.querySelector(`[data-page-index="${currentPage}"]`);
+      if (!currentPageElement) return;
+
+      const videos = currentPageElement.querySelectorAll('video');
+      const loadedCards = currentPageElement.querySelectorAll('.exercise-card[data-video-loaded="true"]');
+
+      if (videos.length > 0 && loadedCards.length === 0) {
+        setPageReloadToken((prev) => prev + 1);
+      }
+    }, 2500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [currentPage, exerciseSlides.length]);
+
+  // При возврате вкладки из фона или восстановлении страницы из bfcache
+  // аккуратно пробуем переинициализировать текущую страницу
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityOrShow = () => {
+      if (document.visibilityState === 'visible' && exerciseSlides.length > 0) {
+        setPageReloadToken((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityOrShow);
+    window.addEventListener('pageshow', handleVisibilityOrShow);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityOrShow);
+      window.removeEventListener('pageshow', handleVisibilityOrShow);
+    };
+  }, [exerciseSlides.length]);
 
   // Синхронизируем data-selected и data-show-ring с состоянием workoutResults
   useEffect(() => {
@@ -429,14 +624,14 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 pt-20">
+    <div className="min-h-screen bg-black text-white p-4 pt-20 relative">
       {/* Заголовок тренировки, прогресс и переключатель режимов */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="max-w-7xl mx-auto mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{workout.name}</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-white mb-1.5">{workout.name}</h1>
             {workout.description && (
-              <p className="text-white/60 text-sm md:text-base">
+              <p className="text-white/60 text-xs md:text-sm">
                 {workout.description}
               </p>
             )}
@@ -446,7 +641,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1">
             {/* Режим 1: список (две полосы) */}
       <button
-              onClick={() => setViewMode('list')}
+              onClick={() => handleChangeViewMode('list')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'list'
                   ? 'bg-white text-black'
@@ -468,7 +663,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
       </button>
             {/* Режим 2: закрашенный квадрат (крупный вид) */}
             <button
-              onClick={() => setViewMode('large')}
+              onClick={() => handleChangeViewMode('large')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'large'
                   ? 'bg-white text-black'
@@ -486,7 +681,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             </button>
             {/* Режим 3: четыре точки (4 в ряд, как 2-я иконка в конструкторе) */}
             <button
-              onClick={() => setViewMode('grid-4')}
+              onClick={() => handleChangeViewMode('grid-4')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'grid-4'
                   ? 'bg-white text-black'
@@ -504,17 +699,17 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           </div>
         </div>
         
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-white/70 text-sm">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-white/70 text-xs">
             {workoutResults.exercises.filter(ex => ex.completedSets > 0).length} / {workoutResults.exercises.length} выполнено
           </span>
-          <span className="text-white/70 text-sm">
+          <span className="text-white/70 text-xs">
             {Math.round((workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100)}%
           </span>
         </div>
-        <div className="w-full bg-white/20 rounded-full h-2">
+        <div className="w-full bg-white/15 rounded-full h-1.5">
           <div 
-            className="bg-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+            className="bg-green-500 h-1.5 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${(workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100}%` }}
           ></div>
         </div>
@@ -598,6 +793,10 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               onTouchStart={handlePageSwipeStart}
               onTouchMove={handlePageSwipeMove}
               onTouchEnd={handlePageSwipeEnd}
+              onMouseDown={handlePageSwipeStart}
+              onMouseMove={handlePageSwipeMove}
+              onMouseUp={handlePageSwipeEnd}
+              onMouseLeave={handlePageSwipeEnd}
               style={{ touchAction: 'pan-y' }}
             >
               <AnimatePresence>
@@ -642,7 +841,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                         data-show-ring="false"
                         data-video-loaded="false"
                         style={{ 
-                          transition: 'padding 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                          transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease-out',
                           opacity: 0,
                           borderRadius: '0.75rem'
                         }}
@@ -654,6 +853,8 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                             borderRadius: '0.75rem'
                           }}
                         >
+                        {/* Элемент выделения */}
+                        <div className="exercise-selection-ring"></div>
                         {/* Видео - обертка с overflow-hidden */}
                         <div className="absolute inset-0 rounded-xl overflow-hidden z-0">
                           <video
@@ -759,6 +960,13 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
           </button>
         </div>
       )}
+
+      {/* Индикатор загрузки текущей страницы упражнений */}
+      {isPageLoading && (
+        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full border border-white/35 animate-pulse shadow-[0_0_25px_rgba(255,255,255,0.25)]" />
         </div>
-      );
-    }
+      )}
+    </div>
+  );
+}
