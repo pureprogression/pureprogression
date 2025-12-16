@@ -504,12 +504,13 @@ export default function PaymentSuccess() {
       >
         {/* Иконка успеха */}
         <motion.div
-          className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
+          className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-6"
+          style={{ backgroundColor: 'rgb(34 197 94)' }}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         >
-          <span className="text-3xl text-white">✓</span>
+          <span className="text-xl text-white">✓</span>
         </motion.div>
 
         {/* Заголовок */}
@@ -533,7 +534,7 @@ export default function PaymentSuccess() {
             transition={{ delay: 0.4 }}
           >
             <p className="text-white/80 text-sm mb-2">Сумма платежа:</p>
-            <p className="text-2xl font-bold text-green-500">
+            <p className="text-2xl font-bold" style={{ color: 'rgb(34 197 94)' }}>
               {paymentInfo.amount} {paymentInfo.currency}
             </p>
             <p className="text-white/60 text-sm mt-2">
@@ -581,7 +582,10 @@ export default function PaymentSuccess() {
           >
             <button
               onClick={() => router.push('/my-workouts')}
-              className="w-full p-4 bg-green-500 text-white rounded-xl font-light hover:bg-green-400 transition-all duration-300"
+              className="w-full p-4 text-white rounded-xl font-light transition-all duration-300"
+              style={{ backgroundColor: 'rgb(34 197 94)', '--tw-ring-color': 'rgb(34 197 94)' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgb(34 197 94 / 0.9)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'rgb(34 197 94)'}
             >
               Перейти к моим тренировкам
             </button>
@@ -598,7 +602,10 @@ export default function PaymentSuccess() {
           >
             <button
               onClick={() => router.push('/')}
-              className="w-full p-4 bg-green-500 text-white rounded-xl font-light hover:bg-green-400 transition-all duration-300"
+              className="w-full p-4 text-white rounded-xl font-light transition-all duration-300"
+              style={{ backgroundColor: 'rgb(34 197 94)', '--tw-ring-color': 'rgb(34 197 94)' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgb(34 197 94 / 0.9)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'rgb(34 197 94)'}
             >
               Вернуться на главную
             </button>

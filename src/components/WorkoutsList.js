@@ -30,6 +30,7 @@ export default function WorkoutsList({ workouts, user }) {
   const [deleteConfirmWorkout, setDeleteConfirmWorkout] = useState(null); // workoutId для подтверждения удаления
   const [isDeleting, setIsDeleting] = useState(false);
   const [workoutsState, setWorkoutsState] = useState(workouts || []);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Синхронизируем локальное состояние, если пропсы обновились
   useEffect(() => {
@@ -44,7 +45,13 @@ export default function WorkoutsList({ workouts, user }) {
       return;
     }
     
-    router.push(`/workout/${workout.id}`);
+    // Запускаем плавный переход
+    setIsTransitioning(true);
+    
+    // После fade-out анимации выполняем переход
+    setTimeout(() => {
+      router.push(`/workout/${workout.id}`);
+    }, 300); // Длительность fade-out анимации
   };
 
   useEffect(() => {
@@ -198,6 +205,14 @@ export default function WorkoutsList({ workouts, user }) {
     <motion.div 
       className="grid grid-cols-1 gap-4" 
       onWheel={stopPreview}
+      animate={{
+        opacity: isTransitioning ? 0 : 1,
+        scale: isTransitioning ? 0.98 : 1
+      }}
+      transition={{
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1]
+      }}
       {...containerAnimation}
     >
       <AnimatePresence>

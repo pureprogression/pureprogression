@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
@@ -141,7 +142,11 @@ export default function WorkoutPage() {
   }
 
   return (
-    <>
+    <motion.div
+      initial={{ opacity: 0, scale: 1.02 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    >
       <Navigation currentPage="workout-execution" user={user} />
       <WorkoutExecution 
         workout={workout}
@@ -149,6 +154,6 @@ export default function WorkoutPage() {
         onCancel={handleCancelWorkout}
         isSaving={isSaving}
       />
-    </>
+    </motion.div>
   );
 }
