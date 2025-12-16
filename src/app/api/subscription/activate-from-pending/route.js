@@ -174,15 +174,16 @@ export async function POST(request) {
       }
     }
 
-    // Проверяем, что платеж успешен
-    if (payment.status !== 'succeeded' || !payment.paid) {
+    // Проверяем, что платеж успешен или оплачен (для СБП может быть paid=true, но статус еще не succeeded)
+    // Если платеж оплачен (paid=true), но статус еще не succeeded, все равно активируем подписку
+    if (!payment.paid) {
       const statusMessage = payment.status === 'pending' 
         ? 'Платеж обрабатывается. Подождите несколько минут и попробуйте снова.'
         : payment.status === 'canceled' || payment.cancelled
         ? 'Платеж отменен.'
-        : `Платеж не завершен. Статус: ${payment.status}`;
+        : `Платеж не оплачен. Статус: ${payment.status}`;
       
-      console.log(`[Activate From Pending] Payment ${paymentId} not completed yet. Status: ${payment.status}, Paid: ${payment.paid}`);
+      console.log(`[Activate From Pending] Payment ${paymentId} not paid yet. Status: ${payment.status}, Paid: ${payment.paid}`);
       return NextResponse.json(
         { 
           error: 'Payment not completed',
@@ -196,6 +197,46 @@ export async function POST(request) {
             captured_at: payment.captured_at,
             created_at: payment.created_at
           }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Если платеж оплачен (paid=true), но статус еще не succeeded, пытаемся захватить его еще раз
+    if (payment.paid && payment.status !== 'succeeded' && payment.status !== 'waiting_for_capture') {
+      console.log(`[Activate From Pending] Payment ${paymentId} is paid but status is ${payment.status}, attempting to capture...`);
+      // Пытаемся захватить платеж еще раз
+      try {
+        const captureResponse = await fetch(`https://api.yookassa.ru/v3/payments/${paymentId}/capture`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_YOOKASSA_SHOP_ID}:${process.env.YOOKASSA_SECRET_KEY}`).toString('base64')}`,
+            'Content-Type': 'application/json',
+            'Idempotence-Key': `capture_${paymentId}_${Date.now()}`
+          },
+          body: JSON.stringify({})
+        });
+
+        if (captureResponse.ok) {
+          const capturedPayment = await captureResponse.json();
+          console.log(`[Activate From Pending] Payment ${paymentId} captured successfully, new status: ${capturedPayment.status}`);
+          payment.status = capturedPayment.status;
+        }
+      } catch (error) {
+        console.warn(`[Activate From Pending] Could not capture payment, but continuing with activation since paid=true:`, error);
+      }
+    }
+
+    // Если платеж оплачен (paid=true), активируем подписку даже если статус еще не succeeded
+    // Это важно для СБП, где платеж может быть оплачен, но статус обновляется с задержкой
+    if (!payment.paid) {
+      console.log(`[Activate From Pending] Payment ${paymentId} is not paid, cannot activate subscription`);
+      return NextResponse.json(
+        { 
+          error: 'Payment not paid',
+          status: payment.status,
+          paid: payment.paid,
+          message: 'Платеж не оплачен'
         },
         { status: 400 }
       );
