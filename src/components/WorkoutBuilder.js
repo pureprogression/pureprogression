@@ -1237,8 +1237,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                               <h4 className="text-white font-medium text-sm line-clamp-2 mb-3">{getExerciseTitle(exercise, language)}</h4>
                               
                               {/* Компактные настройки подходов и повторений */}
-                              <div className="flex items-center gap-1.5 text-xs">
-                                <span className="text-white/60 text-[10px]">Сеты:</span>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-white/60">Сеты:</span>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1263,11 +1263,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                       updateExercise(exercise.id, 'sets', 20);
                                     }
                                   }}
-                                  className="w-7 px-0.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-[10px] focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  className="w-8 h-6 px-1 py-0 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
                                   style={{ fontSize: '16px' }}
                                 />
-                                <span className="text-white/60 text-[10px]">×</span>
-                                <span className="text-white/60 text-[10px]">Повт:</span>
+                                <span className="text-white/60">×</span>
+                                <span className="text-white/60">Повт:</span>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -1292,7 +1292,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                       updateExercise(exercise.id, 'reps', 100);
                                     }
                                   }}
-                                  className="w-7 px-0.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-white text-center text-[10px] focus:outline-none focus:bg-white/15 transition-all duration-300"
+                                  className="w-8 h-6 px-1 py-0 bg-white/10 backdrop-blur-sm rounded text-white text-center text-xs focus:outline-none focus:bg-white/15 transition-all duration-300"
                                   style={{ fontSize: '16px' }}
                                 />
                               </div>
