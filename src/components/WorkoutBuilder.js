@@ -1181,43 +1181,33 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
  
                     {/* Вертикальный список выбранных упражнений */}
                     <div className="mb-8 space-y-4">
-                      <AnimatePresence mode="popLayout">
-                        {(tempOrder || selectedExercises).map((exercise, index) => {
-                          // Находим реальный индекс упражнения в оригинальном массиве
-                          const realIndex = selectedExercises.findIndex(ex => ex.id === exercise.id);
-                          return (
-                            <motion.div 
-                              key={exercise.id} 
-                              data-exercise-card
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, exercise.id, realIndex)}
-                              onDragEnd={handleDragEnd}
-                              onDragOver={(e) => handleDragOver(e, index)}
-                              onDragLeave={handleDragLeave}
-                              onDrop={(e) => handleDrop(e, index)}
-                              onTouchStart={(e) => handleTouchStart(e, exercise.id)}
-                              onTouchMove={(e) => handleTouchMove(e, exercise.id)}
-                              onTouchEnd={(e) => handleTouchEnd(e, exercise.id)}
-                              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                              animate={{ 
-                                opacity: swipedExercise?.id === exercise.id ? swipeOpacity : (draggedExercise?.id === exercise.id ? 0.5 : 1),
-                                y: 0,
-                                scale: draggedExercise?.id === exercise.id ? 1.05 : 1
-                              }}
-                              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                              transition={{ 
-                                duration: 0.4, 
-                                delay: index * 0.05,
-                                ease: [0.4, 0, 0.2, 1]
-                              }}
-                              className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group relative ${
-                                dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-1 ring-white/50' : ''
-                              }`}
-                              style={{
-                                transform: swipedExercise?.id === exercise.id ? `translateX(${swipeOffset}px)` : undefined,
-                                transition: swipedExercise?.id === exercise.id && Math.abs(swipeOffset) < 400 ? 'none' : undefined
-                              }}
-                            >
+                      {(tempOrder || selectedExercises).map((exercise, index) => {
+                        // Находим реальный индекс упражнения в оригинальном массиве
+                        const realIndex = selectedExercises.findIndex(ex => ex.id === exercise.id);
+                        return (
+                          <div 
+                            key={exercise.id} 
+                            data-exercise-card
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, exercise.id, realIndex)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, index)}
+                            onTouchStart={(e) => handleTouchStart(e, exercise.id)}
+                            onTouchMove={(e) => handleTouchMove(e, exercise.id)}
+                            onTouchEnd={(e) => handleTouchEnd(e, exercise.id)}
+                            className={`flex items-center gap-4 p-4 rounded-lg bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group relative ${
+                              draggedExercise?.id === exercise.id ? 'opacity-50 scale-105' : ''
+                            } ${
+                              dragOverIndex === index && draggedExercise?.id !== exercise.id ? 'ring-1 ring-white/50' : ''
+                            }`}
+                            style={{
+                              transform: swipedExercise?.id === exercise.id ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                              opacity: swipedExercise?.id === exercise.id ? swipeOpacity : 1,
+                              transition: swipedExercise?.id === exercise.id && Math.abs(swipeOffset) < 400 ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
+                            }}
+                          >
                             {/* Видео превью */}
                             <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
                               <video
@@ -1341,10 +1331,9 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                 <span className="absolute inset-0 w-full h-px bg-current -rotate-45 origin-center" />
                               </span>
                             </button>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Кнопка сохранения */}
