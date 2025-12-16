@@ -7,6 +7,93 @@ import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
 
+// Компонент для ленивой загрузки видео превью на вкладке круга
+const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
+  const videoRef = useRef(null);
+  const observerRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // IntersectionObserver для определения видимости
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          } else {
+            // Паузим видео когда оно не видно
+            const currentVideo = videoRef.current;
+            if (currentVideo && !currentVideo.paused) {
+              currentVideo.pause();
+            }
+          }
+        });
+      },
+      {
+        rootMargin: '150px', // Начинаем загрузку за 150px до появления в viewport
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(video);
+    observerRef.current = observer;
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      const currentVideo = videoRef.current;
+      if (currentVideo) {
+        currentVideo.pause();
+        currentVideo.src = '';
+        currentVideo.load();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isVisible) return;
+
+    // Загружаем видео только когда оно видно
+    if (!hasLoaded && src) {
+      const currentVideo = videoRef.current;
+      if (currentVideo && !currentVideo.src) {
+        currentVideo.src = src;
+        currentVideo.preload = 'metadata';
+        currentVideo.load();
+        setHasLoaded(true);
+      }
+    }
+
+    // Воспроизводим только видимые видео после загрузки
+    if (isVisible && hasLoaded && video.paused && video.readyState >= 2) {
+      video.play().catch(() => {
+        // Игнорируем ошибки autoplay
+      });
+    }
+  }, [isVisible, hasLoaded, src]);
+
+  return (
+    <video
+      ref={videoRef}
+      poster={poster}
+      className="w-full h-full object-cover"
+      muted
+      loop
+      playsInline
+      preload="none"
+    />
+  );
+});
+
+LazyVideoPreview.displayName = 'LazyVideoPreview';
+
 // Переводы групп мышц
 const muscleGroupTranslations = {
   ru: {
@@ -1358,17 +1445,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                               transition: swipedExercise?.id === exercise.id && Math.abs(swipeOffset) < 400 ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
                             }}
                           >
-                            {/* Видео превью */}
+                            {/* Видео превью с ленивой загрузкой */}
                             <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
-                              <video 
+                              <LazyVideoPreview
                                 src={exercise.video}
                                 poster={exercise.poster}
-                                className="w-full h-full object-cover"
-                                autoPlay
-                                muted
-                                loop
-                                playsInline
-                                preload="metadata"
+                                exerciseId={exercise.id}
                               />
                             </div>
 
