@@ -103,7 +103,7 @@ export async function POST(request) {
       startDate: Timestamp.fromDate(startDate),
       endDate: Timestamp.fromDate(endDate),
       paymentId: `manual_${Date.now()}`,
-      amount: subscriptionType === 'monthly' ? 990 : subscriptionType === '3months' ? 2490 : 8290,
+      amount: 1,
       updatedAt: serverTimestamp()
     };
 

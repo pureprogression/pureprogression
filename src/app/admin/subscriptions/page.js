@@ -236,7 +236,7 @@ export default function AdminSubscriptionsPage() {
         startDate: Timestamp.fromDate(now),
         endDate: Timestamp.fromDate(endDate),
         paymentId: `manual_${Date.now()}`,
-        amount: type === 'monthly' ? 990 : type === '3months' ? 2490 : 8290,
+        amount: 1,
         updatedAt: serverTimestamp()
       };
 
