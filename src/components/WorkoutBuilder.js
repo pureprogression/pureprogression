@@ -7,34 +7,60 @@ import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
 
-// Компонент для ленивой загрузки видео превью на вкладке круга
+// Упрощенный компонент для видео превью на вкладке круга
+// Загружает все видео сразу, но паузит невидимые для экономии ресурсов
 const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
   const videoRef = useRef(null);
   const observerRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !src) return;
 
-    // IntersectionObserver для определения видимости
+    // Загружаем видео сразу при монтировании
+    if (!video.src) {
+      video.src = src;
+      video.preload = 'metadata';
+      video.load();
+    }
+
+    // Запускаем воспроизведение после загрузки
+    const handleCanPlay = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+    const handleLoadedData = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+
+    video.addEventListener('canplay', handleCanPlay, { once: true });
+    video.addEventListener('loadeddata', handleLoadedData, { once: true });
+
+    // IntersectionObserver только для паузы невидимых видео
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          const currentVideo = videoRef.current;
+          if (!currentVideo) return;
+
           if (entry.isIntersecting) {
-            setIsVisible(true);
+            // Видео видно - воспроизводим
+            if (currentVideo.paused && currentVideo.readyState >= 2) {
+              currentVideo.play().catch(() => {});
+            }
           } else {
-            // Паузим видео когда оно не видно
-            const currentVideo = videoRef.current;
-            if (currentVideo && !currentVideo.paused) {
+            // Видео не видно - паузим
+            if (!currentVideo.paused) {
               currentVideo.pause();
             }
           }
         });
       },
       {
-        rootMargin: '150px', // Начинаем загрузку за 150px до появления в viewport
+        rootMargin: '50px',
         threshold: 0.01
       }
     );
@@ -43,6 +69,8 @@ const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
     observerRef.current = observer;
 
     return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadeddata', handleLoadedData);
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
@@ -54,30 +82,7 @@ const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
         currentVideo.load();
       }
     };
-  }, []);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !isVisible) return;
-
-    // Загружаем видео только когда оно видно
-    if (!hasLoaded && src) {
-      const currentVideo = videoRef.current;
-      if (currentVideo && !currentVideo.src) {
-        currentVideo.src = src;
-        currentVideo.preload = 'metadata';
-        currentVideo.load();
-        setHasLoaded(true);
-      }
-    }
-
-    // Воспроизводим только видимые видео после загрузки
-    if (isVisible && hasLoaded && video.paused && video.readyState >= 2) {
-      video.play().catch(() => {
-        // Игнорируем ошибки autoplay
-      });
-    }
-  }, [isVisible, hasLoaded, src]);
+  }, [src]);
 
   return (
     <video
@@ -87,7 +92,7 @@ const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
       muted
       loop
       playsInline
-      preload="none"
+      preload="metadata"
     />
   );
 });
