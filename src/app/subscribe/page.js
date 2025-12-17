@@ -16,7 +16,7 @@ const SUBSCRIPTION_PLANS = {
   monthly: {
     name: 'Месячная подписка',
     nameEn: 'Monthly Subscription',
-    price: 1,
+    price: 990,
     period: '1 месяц',
     periodEn: '1 month',
     description: 'Полный доступ ко всем функциям на 1 месяц',
@@ -25,7 +25,7 @@ const SUBSCRIPTION_PLANS = {
   '3months': {
     name: 'Подписка на 3 месяца',
     nameEn: '3 Months Subscription',
-    price: 1, // 830 руб/мес, экономия 16%
+    price: 2490, // 830 руб/мес, экономия 16%
     period: '3 месяца',
     periodEn: '3 months',
     description: 'Экономия 16% при оплате за 3 месяца',
@@ -35,7 +35,7 @@ const SUBSCRIPTION_PLANS = {
   yearly: {
     name: 'Годовая подписка',
     nameEn: 'Yearly Subscription',
-    price: 1, // 691 руб/мес, экономия 30%
+    price: 8290, // 691 руб/мес, экономия 30%
     period: '1 год',
     periodEn: '1 year',
     description: 'Максимальная экономия - 30%',

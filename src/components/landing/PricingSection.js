@@ -10,7 +10,7 @@ const PLANS = {
   monthly: {
     name: 'Месяц',
     nameEn: 'Month',
-    price: 1,
+    price: 990,
     period: 'мес',
     periodEn: 'mo',
     popular: false
@@ -18,7 +18,7 @@ const PLANS = {
   '3months': {
     name: '3 месяца',
     nameEn: '3 Months',
-    price: 1,
+    price: 2490,
     period: '3 мес',
     periodEn: '3 mo',
     savings: '16%',
@@ -27,7 +27,7 @@ const PLANS = {
   yearly: {
     name: 'Год',
     nameEn: 'Year',
-    price: 1,
+    price: 8290,
     period: 'год',
     periodEn: 'yr',
     savings: '30%',
