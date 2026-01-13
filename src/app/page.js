@@ -37,23 +37,22 @@ export default function Home() {
   }, []);
 
   const handleSaveWorkout = async (workout) => {
-    // Сохраняем тренировку в localStorage перед редиректом
-    const workoutToSave = {
-      name: workout.name,
-      description: workout.description || "",
-      exercises: workout.exercises,
-      estimatedDuration: workout.estimatedDuration,
-      savedAt: Date.now()
-    };
-    localStorage.setItem('pending_workout', JSON.stringify(workoutToSave));
-
-    // Если пользователь не авторизован или нет подписки - редирект на подписку
-    if (!user || (!hasSubscription && !isAdmin(user))) {
-      router.push('/subscribe');
+    // Если пользователь не авторизован - редирект на авторизацию
+    if (!user) {
+      // Сохраняем тренировку в localStorage перед редиректом
+      const workoutToSave = {
+        name: workout.name,
+        description: workout.description || "",
+        exercises: workout.exercises,
+        estimatedDuration: workout.estimatedDuration,
+        savedAt: Date.now()
+      };
+      localStorage.setItem('pending_workout', JSON.stringify(workoutToSave));
+      router.push('/auth?redirect=/subscribe');
       return;
     }
 
-    // Если все есть - сохраняем сразу
+    // Все авторизованные пользователи могут сохранять тренировки
     setIsSaving(true);
     
     try {

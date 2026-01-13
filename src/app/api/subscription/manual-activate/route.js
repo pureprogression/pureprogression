@@ -21,6 +21,7 @@ export async function POST(request) {
     console.log(`[Manual Activate] Activating subscription for ${email}...`);
 
     // Находим пользователя по email в коллекции users
+    // ВАЖНО: Всегда используем первый найденный документ с таким email
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', email));
     const querySnapshot = await getDocs(q);
@@ -32,6 +33,12 @@ export async function POST(request) {
       );
     }
 
+    // Если найдено несколько документов с таким email, используем первый (самый старый)
+    // и логируем предупреждение
+    if (querySnapshot.size > 1) {
+      console.warn(`[Manual Activate] ⚠️ Found ${querySnapshot.size} documents with email ${email}, using the first one`);
+    }
+    
     const userDoc = querySnapshot.docs[0];
     const userId = userDoc.id;
 
@@ -69,19 +76,22 @@ export async function POST(request) {
     }
     
     // Добавляем период новой подписки
-    switch (subscriptionType) {
-      case 'monthly':
-        endDate.setMonth(endDate.getMonth() + 1);
-        break;
-      case '3months':
-        endDate.setMonth(endDate.getMonth() + 3);
-        break;
-      case 'yearly':
-        endDate.setFullYear(endDate.getFullYear() + 1);
-        break;
-      default:
-        endDate.setMonth(endDate.getMonth() + 1);
-    }
+    // Используем более надежный способ: добавляем дни напрямую
+    const daysToAdd = (() => {
+      switch (subscriptionType) {
+        case 'monthly':
+          return 30; // 30 дней для месячной подписки
+        case '3months':
+          return 90; // 90 дней для 3-месячной подписки
+        case 'yearly':
+          return 365; // 365 дней для годовой подписки
+        default:
+          return 30;
+      }
+    })();
+    
+    endDate.setDate(endDate.getDate() + daysToAdd);
+    console.log(`[Manual Activate] Adding ${daysToAdd} days (${subscriptionType}): ${endDate.toISOString()}`);
 
     // Определяем startDate: если продлеваем - оставляем старую, если новая - текущая дата
     let startDate = now;
@@ -96,6 +106,22 @@ export async function POST(request) {
       console.log(`[Manual Activate] Keeping original start date: ${startDate.toISOString()}`);
     }
 
+    // Определяем сумму подписки
+    let subscriptionAmount = 990;
+    switch (subscriptionType) {
+      case 'monthly':
+        subscriptionAmount = 990;
+        break;
+      case '3months':
+        subscriptionAmount = 2490;
+        break;
+      case 'yearly':
+        subscriptionAmount = 8290;
+        break;
+      default:
+        subscriptionAmount = 990;
+    }
+
     // Создаем данные подписки
     const subscriptionData = {
       active: true,
@@ -103,7 +129,7 @@ export async function POST(request) {
       startDate: Timestamp.fromDate(startDate),
       endDate: Timestamp.fromDate(endDate),
       paymentId: `manual_${Date.now()}`,
-      amount: 1,
+      amount: subscriptionAmount,
       updatedAt: serverTimestamp()
     };
 
@@ -124,6 +150,24 @@ export async function POST(request) {
       });
       console.log(`[Manual Activate] Updated subscription for existing user ${userId}`);
     }
+
+    // Проверяем, что подписка действительно сохранилась
+    const verifyDoc = await getDoc(userRef);
+    const verifyData = verifyDoc.exists() ? verifyDoc.data() : {};
+    
+    if (!verifyData.subscription || !verifyData.subscription.active) {
+      console.error(`[Manual Activate] ❌ Subscription was not saved correctly for ${userId}`);
+      return NextResponse.json(
+        { error: 'Subscription was not saved correctly', success: false },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`[Manual Activate] ✅ Subscription verified for ${userId}:`, {
+      active: verifyData.subscription.active,
+      type: verifyData.subscription.type,
+      endDate: verifyData.subscription.endDate
+    });
 
     return NextResponse.json({
       success: true,

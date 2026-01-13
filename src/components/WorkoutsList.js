@@ -45,7 +45,8 @@ export default function WorkoutsList({ workouts, user }) {
       return;
     }
     
-    // Запускаем плавный переход
+    // Проверка подписки будет на странице /workout/[id]
+    // Просто переходим на страницу тренировки
     setIsTransitioning(true);
     
     // После fade-out анимации выполняем переход

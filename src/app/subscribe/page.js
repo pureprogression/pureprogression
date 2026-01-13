@@ -89,6 +89,19 @@ export default function SubscribePage() {
     }
   }, [user, router]);
 
+  // Функция для возврата к тренировке после подписки
+  const redirectToWorkout = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const pendingWorkoutId = localStorage.getItem('pending_workout_id');
+      if (pendingWorkoutId) {
+        localStorage.removeItem('pending_workout_id');
+        router.replace(`/workout/${pendingWorkoutId}`);
+        return true;
+      }
+    }
+    return false;
+  }, [router]);
+
   // Редирект неавторизованных пользователей
   useEffect(() => {
     if (subscriptionLoading) return; // Ждем загрузки подписки
@@ -105,15 +118,23 @@ export default function SubscribePage() {
       return;
     }
 
-    // Если пользователь авторизован и имеет активную подписку - проверяем есть ли pending workout
-    // НЕ редиректим автоматически, чтобы пользователь мог продлить подписку
+    // Если пользователь авторизован и имеет активную подписку
     if (user && (hasSubscription || isAdmin(user))) {
+      // Проверяем, есть ли pending workout для сохранения
       const hasPendingWorkout = typeof window !== 'undefined' && localStorage.getItem('pending_workout');
       if (hasPendingWorkout) {
         // Сохраняем тренировку и редиректим
         savePendingWorkout();
+        return;
       }
-      // Не редиректим на /my-workouts, позволяем пользователю продлить подписку
+      
+      // Проверяем, есть ли pending workout_id для возврата к тренировке
+      if (redirectToWorkout()) {
+        return;
+      }
+      
+      // Если нет pending данных, редиректим на my-workouts
+      router.replace('/my-workouts');
     }
   }, [user, hasSubscription, subscriptionLoading, router, savePendingWorkout]);
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, collection, query, where, getDocs, limit, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 /**
  * API endpoint для активации подписки после проверки платежа
@@ -111,14 +111,38 @@ export async function POST(request) {
     
     // Если subscription_type не совпадает, используем тот что в metadata или переданный
     const finalSubscriptionType = metadata.subscription_type || subscriptionType || 'monthly';
-
+    
+    console.log(`[Activate From Payment] Subscription type: ${finalSubscriptionType} (metadata: ${metadata.subscription_type}, provided: ${subscriptionType})`);
+    
     // Вычисляем дату окончания подписки
     const now = new Date();
     let endDate = new Date(now);
     
+    console.log(`[Activate From Payment] Starting date calculation from: ${now.toISOString()}`);
+    
     // Проверяем, есть ли активная подписка
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
+    // Сначала проверяем документ с userId
+    let userRef = doc(db, 'users', userId);
+    let userDoc = await getDoc(userRef);
+    
+    // Если документ не найден, но есть email в metadata, ищем существующий документ с таким email
+    const paymentEmail = metadata.email || metadata.user_email || null;
+    if (!userDoc.exists() && paymentEmail) {
+      console.log(`[Activate From Payment] User document not found by userId, searching by email: ${paymentEmail}`);
+      const usersRef = collection(db, 'users');
+      const emailQuery = query(usersRef, where('email', '==', paymentEmail), limit(1));
+      const emailQuerySnapshot = await getDocs(emailQuery);
+      
+      if (!emailQuerySnapshot.empty) {
+        const existingUserDoc = emailQuerySnapshot.docs[0];
+        const existingUserId = existingUserDoc.id;
+        console.log(`[Activate From Payment] Found existing user by email: ${existingUserId}, using it instead of creating new`);
+        userRef = doc(db, 'users', existingUserId);
+        userDoc = await getDoc(userRef);
+        // Обновляем userId для дальнейшего использования
+        userId = existingUserId;
+      }
+    }
     
     let existingEndDate = null;
     if (userDoc.exists()) {
@@ -144,19 +168,25 @@ export async function POST(request) {
     }
     
     // Добавляем период новой подписки
-    switch (finalSubscriptionType) {
-      case 'monthly':
-        endDate.setMonth(endDate.getMonth() + 1);
-        break;
-      case '3months':
-        endDate.setMonth(endDate.getMonth() + 3);
-        break;
-      case 'yearly':
-        endDate.setFullYear(endDate.getFullYear() + 1);
-        break;
-      default:
-        endDate.setMonth(endDate.getMonth() + 1);
-    }
+    // Используем более надежный способ: добавляем дни напрямую
+    const beforeAdd = new Date(endDate);
+    const daysToAdd = (() => {
+      switch (finalSubscriptionType) {
+        case 'monthly':
+          return 30; // 30 дней для месячной подписки
+        case '3months':
+          return 90; // 90 дней для 3-месячной подписки
+        case 'yearly':
+          return 365; // 365 дней для годовой подписки
+        default:
+          return 30;
+      }
+    })();
+    
+    endDate.setDate(endDate.getDate() + daysToAdd);
+    console.log(`[Activate From Payment] Adding ${daysToAdd} days (${finalSubscriptionType}): ${beforeAdd.toISOString()} -> ${endDate.toISOString()}`);
+    
+    console.log(`[Activate From Payment] Final end date: ${endDate.toISOString()}, type: ${finalSubscriptionType}`);
 
     // Определяем startDate: если продлеваем - оставляем старую, если новая - текущая дата
     let startDate = now;
@@ -184,15 +214,53 @@ export async function POST(request) {
     
     console.log('Creating subscription:', subscriptionData);
 
+    // Пытаемся получить email из метаданных платежа
+    const paymentEmail = payment.metadata?.email || payment.metadata?.user_email || null;
+    
+    // ВАЖНО: Всегда сначала ищем по email, чтобы избежать дубликатов
+    // Если документ не найден по userId, но есть email - ищем существующий документ по email
+    if (!userDoc.exists() && paymentEmail) {
+      console.log(`[Activate From Payment] User document not found by userId, searching by email: ${paymentEmail}`);
+      const usersRef = collection(db, 'users');
+      const emailQuery = query(usersRef, where('email', '==', paymentEmail), limit(1));
+      const emailQuerySnapshot = await getDocs(emailQuery);
+      
+      if (!emailQuerySnapshot.empty) {
+        const existingUserDoc = emailQuerySnapshot.docs[0];
+        const existingUserId = existingUserDoc.id;
+        console.log(`[Activate From Payment] ✅ Found existing user by email: ${existingUserId}, using it instead of creating new`);
+        userRef = doc(db, 'users', existingUserId);
+        userDoc = await getDoc(userRef);
+        userId = existingUserId; // Обновляем userId для дальнейшего использования
+      }
+    }
+    
     if (!userDoc.exists()) {
-      // Создаем документ пользователя, если его нет
-      await setDoc(userRef, {
+      // Создаем документ пользователя, если его нет (и не найден по email)
+      const userDataToSave = {
         subscription: subscriptionData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      };
+      
+      // Сохраняем email, если он есть в метаданных платежа
+      if (paymentEmail) {
+        userDataToSave.email = paymentEmail;
+        console.log(`[Activate From Payment] Saving email from payment metadata: ${paymentEmail}`);
+      }
+      
+      await setDoc(userRef, userDataToSave, { merge: true });
       console.log(`[Activate From Payment] Created new user document for ${userId}`);
     } else {
+      // Если email отсутствует в документе, но есть в метаданных платежа, обновляем
+      const currentUserData = userDoc.data();
+      if (!currentUserData.email && paymentEmail) {
+        await updateDoc(userRef, {
+          email: paymentEmail,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`[Activate From Payment] Updated email from payment metadata: ${paymentEmail}`);
+      }
       // Обновляем существующую подписку
       await updateDoc(userRef, {
         subscription: subscriptionData,

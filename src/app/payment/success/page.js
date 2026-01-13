@@ -57,6 +57,17 @@ export default function PaymentSuccess() {
   useEffect(() => {
     if (!subscriptionLoading && user && hasSubscription) {
       console.log('[Payment Success] Subscription already active, redirecting immediately');
+      
+      // Проверяем, есть ли pending workout_id для возврата к тренировке
+      if (typeof window !== 'undefined') {
+        const pendingWorkoutId = localStorage.getItem('pending_workout_id');
+        if (pendingWorkoutId) {
+          localStorage.removeItem('pending_workout_id');
+          router.replace(`/workout/${pendingWorkoutId}`);
+          return;
+        }
+      }
+      
       // Сохраняем тренировку если есть
       if (typeof window !== 'undefined' && localStorage.getItem('pending_workout')) {
         savePendingWorkout(user).then(() => {

@@ -503,11 +503,8 @@ export const isAdmin = (user) => {
     'makspolun@gmail.com'
   ].filter(Boolean); // Убираем undefined/null значения
   
-  // Для отладки (только в development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Admin Check] User email:', user.email);
-    console.log('[Admin Check] Admin emails:', adminEmails);
-  }
+  // Для отладки (только в development, но не логируем каждый раз)
+  // Логирование убрано, чтобы не засорять консоль
   
   if (adminEmails.length === 0) {
     console.warn('[Admin Check] NEXT_PUBLIC_ADMIN_EMAIL не установлен в переменных окружения');

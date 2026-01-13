@@ -3,18 +3,39 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, isAdmin } from "@/lib/firebase";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutExecution from "@/components/WorkoutExecution";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export default function WorkoutPage() {
   const params = useParams();
   const router = useRouter();
+  const { user: subscriptionUser, hasSubscription, isLoading: subscriptionLoading } = useSubscription();
   const [user, setUser] = useState(null);
   const [workout, setWorkout] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Синхронизируем user из subscription hook
+  useEffect(() => {
+    if (subscriptionUser) {
+      setUser(subscriptionUser);
+    }
+  }, [subscriptionUser]);
+
+  // Проверка подписки при загрузке - если нет подписки, редирект на страницу подписки
+  useEffect(() => {
+    if (!subscriptionLoading && user && !hasSubscription && !isAdmin(user) && params.id) {
+      // Сохраняем workoutId для возврата после подписки
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pending_workout_id', params.id);
+      }
+      router.push('/subscribe');
+      return;
+    }
+  }, [user, hasSubscription, subscriptionLoading, params.id, router]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -121,7 +142,7 @@ export default function WorkoutPage() {
     router.push('/my-workouts');
   };
 
-  if (isLoading) {
+  if (isLoading || subscriptionLoading) {
     return null; // Убираем загрузочный экран
   }
 
@@ -129,6 +150,15 @@ export default function WorkoutPage() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Пожалуйста, войдите в аккаунт</div>
+      </div>
+    );
+  }
+
+  // Если нет подписки и пользователь не админ - показываем сообщение (редирект уже произошел)
+  if (!hasSubscription && !isAdmin(user)) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Перенаправление на страницу подписки...</div>
       </div>
     );
   }

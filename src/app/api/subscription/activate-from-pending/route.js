@@ -249,13 +249,36 @@ export async function POST(request) {
 
     console.log(`[Activate From Pending] Activating subscription type: ${subscriptionType}`);
 
+    // Пытаемся получить email из pendingPayment (делаем это раньше, чтобы использовать в проверке)
+    const pendingEmail = pendingPaymentData.email || null;
+    
     // Вычисляем дату окончания подписки
     const now = new Date();
     let endDate = new Date(now);
     
     // Проверяем, есть ли активная подписка
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
+    // ВАЖНО: Всегда сначала ищем по email, чтобы избежать дубликатов
+    // Сначала проверяем документ с userId
+    let userRef = doc(db, 'users', userId);
+    let userDoc = await getDoc(userRef);
+    
+    // Если документ не найден по userId, но есть email - ищем существующий документ по email
+    if (!userDoc.exists() && pendingEmail) {
+      console.log(`[Activate From Pending] User document not found by userId, searching by email: ${pendingEmail}`);
+      const usersRef = collection(db, 'users');
+      const emailQuery = query(usersRef, where('email', '==', pendingEmail), limit(1));
+      const emailQuerySnapshot = await getDocs(emailQuery);
+      
+      if (!emailQuerySnapshot.empty) {
+        const existingUserDoc = emailQuerySnapshot.docs[0];
+        const existingUserId = existingUserDoc.id;
+        console.log(`[Activate From Pending] ✅ Found existing user by email: ${existingUserId}, using it instead of creating new`);
+        userRef = doc(db, 'users', existingUserId);
+        userDoc = await getDoc(userRef);
+        // Обновляем userId для дальнейшего использования
+        userId = existingUserId;
+      }
+    }
     
     let existingEndDate = null;
     if (userDoc.exists()) {
@@ -281,19 +304,25 @@ export async function POST(request) {
     }
     
     // Добавляем период новой подписки
-    switch (subscriptionType) {
-      case 'monthly':
-        endDate.setMonth(endDate.getMonth() + 1);
-        break;
-      case '3months':
-        endDate.setMonth(endDate.getMonth() + 3);
-        break;
-      case 'yearly':
-        endDate.setFullYear(endDate.getFullYear() + 1);
-        break;
-      default:
-        endDate.setMonth(endDate.getMonth() + 1);
-    }
+    // Используем более надежный способ: добавляем дни напрямую
+    const beforeAdd = new Date(endDate);
+    const daysToAdd = (() => {
+      switch (subscriptionType) {
+        case 'monthly':
+          return 30; // 30 дней для месячной подписки
+        case '3months':
+          return 90; // 90 дней для 3-месячной подписки
+        case 'yearly':
+          return 365; // 365 дней для годовой подписки
+        default:
+          return 30;
+      }
+    })();
+    
+    endDate.setDate(endDate.getDate() + daysToAdd);
+    console.log(`[Activate From Pending] Adding ${daysToAdd} days (${subscriptionType}): ${beforeAdd.toISOString()} -> ${endDate.toISOString()}`);
+    
+    console.log(`[Activate From Pending] Final end date: ${endDate.toISOString()}, subscription type: ${subscriptionType}`);
 
     // Определяем startDate: если продлеваем - оставляем старую, если новая - текущая дата
     let startDate = now;
@@ -320,16 +349,33 @@ export async function POST(request) {
     };
 
     console.log(`[Activate From Pending] Creating subscription:`, subscriptionData);
-
+    
     if (!userDoc.exists()) {
-      // Создаем документ пользователя, если его нет
-      await setDoc(userRef, {
+      // Создаем документ пользователя, если его нет (и не найден по email)
+      const userDataToSave = {
         subscription: subscriptionData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      };
+      
+      // Сохраняем email, если он есть в pendingPayment
+      if (pendingEmail) {
+        userDataToSave.email = pendingEmail;
+        console.log(`[Activate From Pending] Saving email from pending payment: ${pendingEmail}`);
+      }
+      
+      await setDoc(userRef, userDataToSave, { merge: true });
       console.log(`[Activate From Pending] Created new user document for ${userId}`);
     } else {
+      // Если email отсутствует в документе, но есть в pendingPayment, обновляем
+      const currentUserData = userDoc.data();
+      if (!currentUserData.email && pendingEmail) {
+        await updateDoc(userRef, {
+          email: pendingEmail,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`[Activate From Pending] Updated email from pending payment: ${pendingEmail}`);
+      }
       // Обновляем существующую подписку
       await updateDoc(userRef, {
         subscription: subscriptionData,

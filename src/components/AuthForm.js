@@ -13,7 +13,7 @@ import {
   updateProfile,
   sendEmailVerification
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { trackRegistration, trackLogin } from "@/lib/analytics";
@@ -89,17 +89,76 @@ export default function AuthForm() {
         }
         
         // Создаем документ пользователя в коллекции users
+        // ВАЖНО: Всегда используем документ с правильным uid (из Firebase Auth)
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        let userDoc = await getDoc(userDocRef);
         
-        // Создаем документ только если его еще нет
+        // Если документ не найден по uid, но есть email - ищем существующий документ по email для копирования данных
+        let existingUserDoc = null;
+        let existingUserData = null;
+        if (!userDoc.exists() && user.email) {
+          const usersRef = collection(db, 'users');
+          const emailQuery = query(usersRef, where('email', '==', user.email), limit(1));
+          const emailQuerySnapshot = await getDocs(emailQuery);
+          
+          if (!emailQuerySnapshot.empty) {
+            existingUserDoc = emailQuerySnapshot.docs[0];
+            existingUserData = existingUserDoc.data();
+            console.log(`[Auth] Found existing user document with email ${user.email}, userId: ${existingUserDoc.id}, copying data to new document with uid ${user.uid}`);
+          }
+        }
+        
+        // Создаем документ с правильным uid, копируя данные из существующего если есть
         if (!userDoc.exists()) {
-          await setDoc(userDocRef, {
+          const newUserData = {
             email: user.email,
-            displayName: displayName.trim() || null,
-            createdAt: new Date(),
+            displayName: displayName.trim() || existingUserData?.displayName || null,
+            createdAt: existingUserData?.createdAt || new Date(),
             updatedAt: new Date()
-          });
+          };
+          
+          // Копируем подписку из существующего документа, если она есть
+          if (existingUserData?.subscription) {
+            newUserData.subscription = existingUserData.subscription;
+            console.log(`[Auth] ✅ Copied subscription from existing document to new document with uid ${user.uid}`);
+          }
+          
+          await setDoc(userDocRef, newUserData);
+          
+          // Удаляем старый документ после копирования данных
+          if (existingUserDoc) {
+            console.log(`[Auth] Deleting old user document with id ${existingUserDoc.id}`);
+            await deleteDoc(existingUserDoc.ref);
+            console.log(`[Auth] ✅ Old document deleted`);
+          }
+        } else {
+          // Обновляем email и displayName, если они изменились
+          const existingData = userDoc.data();
+          const updates = {};
+          if (user.email && existingData.email !== user.email) {
+            updates.email = user.email;
+          }
+          if (displayName.trim() && existingData.displayName !== displayName.trim()) {
+            updates.displayName = displayName.trim();
+          }
+          
+          // Если нет подписки, но есть в другом документе с таким email - копируем и удаляем старый
+          if (!existingData.subscription && existingUserData?.subscription) {
+            updates.subscription = existingUserData.subscription;
+            console.log(`[Auth] ✅ Copied subscription from existing document to current document`);
+            
+            // Удаляем старый документ после копирования подписки
+            if (existingUserDoc) {
+              console.log(`[Auth] Deleting old user document with id ${existingUserDoc.id}`);
+              await deleteDoc(existingUserDoc.ref);
+              console.log(`[Auth] ✅ Old document deleted`);
+            }
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            updates.updatedAt = new Date();
+            await updateDoc(userDocRef, updates);
+          }
         }
 
         // Отправляем письмо для подтверждения email
@@ -118,17 +177,90 @@ export default function AuthForm() {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Создаем документ пользователя в коллекции users, если его еще нет
+        // ВАЖНО: Всегда используем документ с правильным uid (из Firebase Auth)
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        let userDoc = await getDoc(userDocRef);
         
+        // Всегда проверяем наличие других документов с таким email (для удаления дубликатов)
+        let existingUserData = null;
+        const oldDocsToDelete = [];
+        if (user.email) {
+          const usersRef = collection(db, 'users');
+          const emailQuery = query(usersRef, where('email', '==', user.email));
+          const emailQuerySnapshot = await getDocs(emailQuery);
+          
+          // Находим все документы с таким email, кроме текущего
+          for (const docSnapshot of emailQuerySnapshot.docs) {
+            if (docSnapshot.id !== user.uid) {
+              oldDocsToDelete.push(docSnapshot);
+              // Сохраняем данные первого найденного документа для копирования
+              if (!existingUserData) {
+                existingUserData = docSnapshot.data();
+                console.log(`[Auth] Found existing user document with email ${user.email}, userId: ${docSnapshot.id}, will copy data to document with uid ${user.uid}`);
+              }
+            }
+          }
+          
+          if (oldDocsToDelete.length > 0) {
+            console.log(`[Auth] Found ${oldDocsToDelete.length} old document(s) with email ${user.email}, will delete after copying data`);
+          }
+        }
+        
+        // Создаем документ с правильным uid, копируя данные из существующего если есть
         if (!userDoc.exists()) {
-          await setDoc(userDocRef, {
+          const newUserData = {
             email: user.email,
-            displayName: user.displayName || null,
-            createdAt: new Date(),
+            displayName: user.displayName || existingUserData?.displayName || null,
+            createdAt: existingUserData?.createdAt || new Date(),
             updatedAt: new Date()
-          });
+          };
+          
+          // Копируем подписку из существующего документа, если она есть
+          if (existingUserData?.subscription) {
+            newUserData.subscription = existingUserData.subscription;
+            console.log(`[Auth] ✅ Copied subscription from existing document to new document with uid ${user.uid}`);
+          }
+          
+          await setDoc(userDocRef, newUserData);
+          
+          // Удаляем все старые документы после копирования данных
+          if (oldDocsToDelete.length > 0) {
+            console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
+            for (const oldDoc of oldDocsToDelete) {
+              await deleteDoc(oldDoc.ref);
+              console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
+            }
+          }
+        } else {
+          // Обновляем email и displayName, если они изменились
+          const existingData = userDoc.data();
+          const updates = {};
+          if (user.email && existingData.email !== user.email) {
+            updates.email = user.email;
+          }
+          if (user.displayName && existingData.displayName !== user.displayName) {
+            updates.displayName = user.displayName;
+          }
+          
+          // Если нет подписки, но есть в другом документе с таким email - копируем
+          if (!existingData.subscription && existingUserData?.subscription) {
+            updates.subscription = existingUserData.subscription;
+            console.log(`[Auth] ✅ Copied subscription from existing document to current document`);
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            updates.updatedAt = new Date();
+            await updateDoc(userDocRef, updates);
+          }
+          
+          // Удаляем все старые документы с таким email
+          if (oldDocsToDelete.length > 0) {
+            console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
+            for (const oldDoc of oldDocsToDelete) {
+              await deleteDoc(oldDoc.ref);
+              console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
+            }
+          }
         }
         
         trackLogin('email');
@@ -192,19 +324,93 @@ export default function AuthForm() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      // Создаем документ пользователя в коллекции users, если его еще нет
+      // ВАЖНО: Всегда используем документ с правильным uid (из Firebase Auth)
       const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      let userDoc = await getDoc(userDocRef);
       
+      // Всегда проверяем наличие других документов с таким email (для удаления дубликатов)
+      let existingUserData = null;
+      const oldDocsToDelete = [];
+      if (user.email) {
+        const usersRef = collection(db, 'users');
+        const emailQuery = query(usersRef, where('email', '==', user.email));
+        const emailQuerySnapshot = await getDocs(emailQuery);
+        
+        // Находим все документы с таким email, кроме текущего
+        for (const docSnapshot of emailQuerySnapshot.docs) {
+          if (docSnapshot.id !== user.uid) {
+            oldDocsToDelete.push(docSnapshot);
+            // Сохраняем данные первого найденного документа для копирования
+            if (!existingUserData) {
+              existingUserData = docSnapshot.data();
+              console.log(`[Auth] Found existing user document with email ${user.email}, userId: ${docSnapshot.id}, will copy data to document with uid ${user.uid}`);
+            }
+          }
+        }
+        
+        if (oldDocsToDelete.length > 0) {
+          console.log(`[Auth] Found ${oldDocsToDelete.length} old document(s) with email ${user.email}, will delete after copying data`);
+        }
+      }
+      
+      // Создаем документ с правильным uid, копируя данные из существующего если есть
       if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
+        const newUserData = {
           email: user.email,
-          displayName: user.displayName || null,
-          createdAt: new Date(),
+          displayName: user.displayName || existingUserData?.displayName || null,
+          createdAt: existingUserData?.createdAt || new Date(),
           updatedAt: new Date()
-        });
+        };
+        
+        // Копируем подписку из существующего документа, если она есть
+        if (existingUserData?.subscription) {
+          newUserData.subscription = existingUserData.subscription;
+          console.log(`[Auth] ✅ Copied subscription from existing document to new document with uid ${user.uid}`);
+        }
+        
+        await setDoc(userDocRef, newUserData);
+        
+        // Удаляем все старые документы после копирования данных
+        if (oldDocsToDelete.length > 0) {
+          console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
+          for (const oldDoc of oldDocsToDelete) {
+            await deleteDoc(oldDoc.ref);
+            console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
+          }
+        }
+        
         trackRegistration('google');
       } else {
+        // Обновляем email и displayName, если они изменились
+        const existingData = userDoc.data();
+        const updates = {};
+        if (user.email && existingData.email !== user.email) {
+          updates.email = user.email;
+        }
+        if (user.displayName && existingData.displayName !== user.displayName) {
+          updates.displayName = user.displayName;
+        }
+        
+        // Если нет подписки, но есть в другом документе с таким email - копируем
+        if (!existingData.subscription && existingUserData?.subscription) {
+          updates.subscription = existingUserData.subscription;
+          console.log(`[Auth] ✅ Copied subscription from existing document to current document`);
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          updates.updatedAt = new Date();
+          await updateDoc(userDocRef, updates);
+        }
+        
+        // Удаляем все старые документы с таким email
+        if (oldDocsToDelete.length > 0) {
+          console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
+          for (const oldDoc of oldDocsToDelete) {
+            await deleteDoc(oldDoc.ref);
+            console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
+          }
+        }
+        
         trackLogin('google');
       }
     } catch (error) {

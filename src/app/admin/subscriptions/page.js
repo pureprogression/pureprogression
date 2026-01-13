@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db, isAdmin } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, updateDoc, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, limit, doc, updateDoc, getDoc, setDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -44,11 +44,14 @@ export default function AdminSubscriptionsPage() {
   const loadSubscribers = async () => {
     try {
       setIsLoading(true);
+      console.log('[Admin] Loading subscribers...');
       const usersRef = collection(db, 'users');
       const querySnapshot = await getDocs(usersRef);
       
       const subscribersList = [];
       const allUsersList = [];
+      
+      console.log('[Admin] Total users found:', querySnapshot.size);
       
       querySnapshot.forEach((doc) => {
         const userData = doc.data();
@@ -85,6 +88,26 @@ export default function AdminSubscriptionsPage() {
             isActive = true; // Если active=true, но нет даты, считаем активной
           }
           
+          // Логируем для отладки
+          if (userData.email === 'massimpolunin@gmail.com' || doc.id === 'Hqq91BOgI9gOo13U573OfxEw4mV2' || doc.id === 'sGmrEy7q8gQyQSUjVRikcANrAC82') {
+            console.log('[Admin] Found subscription for user:', {
+              userId: doc.id,
+              email: userData.email,
+              subscriptionType: subscription.type,
+              subscription: subscription,
+              isActive: isActive,
+              endDate: endDate,
+              endDateFormatted: endDate ? endDate.toLocaleDateString('ru-RU') : 'N/A'
+            });
+          }
+          
+          // Вычисляем количество дней до окончания для отладки
+          let daysUntilExpiry = null;
+          if (endDate) {
+            const now = new Date();
+            daysUntilExpiry = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+          }
+          
           subscribersList.push({
             ...userInfo,
             subscription: {
@@ -95,9 +118,45 @@ export default function AdminSubscriptionsPage() {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-              }) : 'N/A'
+              }) : 'N/A',
+              daysUntilExpiry: daysUntilExpiry
             }
           });
+          
+          // Логируем для пользователя с проблемной датой
+          if (doc.id === 'sGmrEy7q8gQyQSUjVRikcANrAC82') {
+            console.log('[Admin] ===== User sGmrEy7q8gQyQSUjVRikcANrAC82 subscription details =====');
+            console.log('[Admin] Type:', subscription.type);
+            console.log('[Admin] Active:', subscription.active);
+            console.log('[Admin] Amount:', subscription.amount);
+            console.log('[Admin] Payment ID:', subscription.paymentId);
+            console.log('[Admin] Start Date (raw):', subscription.startDate);
+            console.log('[Admin] End Date (raw):', subscription.endDate);
+            console.log('[Admin] End Date (formatted):', endDate ? endDate.toLocaleDateString('ru-RU') : 'N/A');
+            console.log('[Admin] Days until expiry:', daysUntilExpiry);
+            console.log('[Admin] Full subscription object:', JSON.stringify(subscription, null, 2));
+            console.log('[Admin] ================================================================');
+          }
+        }
+      });
+      
+      // Группируем по email и помечаем дубликаты
+      const emailGroups = new Map();
+      subscribersList.forEach(sub => {
+        const email = sub.email.toLowerCase();
+        if (!emailGroups.has(email)) {
+          emailGroups.set(email, []);
+        }
+        emailGroups.get(email).push(sub);
+      });
+      
+      // Помечаем дубликаты (если у одного email несколько документов)
+      subscribersList.forEach(sub => {
+        const email = sub.email.toLowerCase();
+        const group = emailGroups.get(email);
+        if (group && group.length > 1) {
+          sub.hasDuplicates = true;
+          sub.duplicateCount = group.length;
         }
       });
       
@@ -111,10 +170,26 @@ export default function AdminSubscriptionsPage() {
         return 0;
       });
       
-      setSubscribers(subscribersList);
-      setAllUsers(allUsersList);
+      console.log('[Admin] Subscribers loaded:', {
+        total: subscribersList.length,
+        active: subscribersList.filter(s => s.subscription.isActive).length,
+        expired: subscribersList.filter(s => !s.subscription.isActive).length
+      });
+      
+      // Принудительно обновляем состояние
+      setSubscribers([...subscribersList]); // Создаем новый массив для принудительного обновления
+      setAllUsers([...allUsersList]);
+      
+      // Логируем для отладки
+      const activeSubs = subscribersList.filter(s => s.subscription.isActive);
+      console.log('[Admin] Active subscriptions:', activeSubs.map(s => ({
+        id: s.id,
+        email: s.email,
+        type: s.subscription.type,
+        endDate: s.subscription.endDateFormatted
+      })));
     } catch (error) {
-      console.error('Error loading subscribers:', error);
+      console.error('[Admin] Error loading subscribers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +235,9 @@ export default function AdminSubscriptionsPage() {
   };
 
   const handleExtendSubscription = async (userId, days = 30) => {
-    if (!confirm(`Продлить подписку на ${days} дней?`)) return;
+    if (!confirm(language === 'en' 
+      ? `Extend subscription by ${days} days?` 
+      : `Продлить подписку на ${days} дней?`)) return;
     
     try {
       const userRef = doc(db, 'users', userId);
@@ -181,11 +258,159 @@ export default function AdminSubscriptionsPage() {
         'subscription.updatedAt': serverTimestamp()
       });
       
-      alert('Подписка продлена!');
+      alert(language === 'en' ? 'Subscription extended!' : 'Подписка продлена!');
       await loadSubscribers();
     } catch (error) {
       console.error('Error extending subscription:', error);
-      alert('Ошибка при продлении подписки: ' + error.message);
+      alert((language === 'en' ? 'Error extending subscription: ' : 'Ошибка при продлении подписки: ') + error.message);
+    }
+  };
+
+  const handleMergeDuplicateAccounts = async (email) => {
+    if (!confirm(language === 'en' 
+      ? `Merge all accounts with email ${email} into one? This will keep the most recent active subscription and remove duplicates.`
+      : `Объединить все аккаунты с email ${email} в один? Будет сохранена самая свежая активная подписка, дубликаты будут удалены.`)) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Находим все документы с таким email
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        alert(language === 'en' ? 'No users found with this email' : 'Пользователи с таким email не найдены');
+        return;
+      }
+      
+      console.log(`[Admin] Found ${querySnapshot.size} accounts with email ${email}`);
+      
+      // Находим документ с самой свежей активной подпиской
+      let mainDoc = null;
+      let mainDocData = null;
+      let latestEndDate = null;
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.subscription && data.subscription.active) {
+          let endDate = null;
+          if (data.subscription.endDate?.toDate) {
+            endDate = data.subscription.endDate.toDate();
+          } else if (data.subscription.endDate?.seconds) {
+            endDate = new Date(data.subscription.endDate.seconds * 1000);
+          }
+          
+          if (endDate && (!latestEndDate || endDate > latestEndDate)) {
+            latestEndDate = endDate;
+            mainDoc = doc;
+            mainDocData = data;
+          }
+        }
+      });
+      
+      // Если нет активной подписки, берем самый последний документ
+      if (!mainDoc) {
+        mainDoc = querySnapshot.docs[0];
+        mainDocData = mainDoc.data();
+        console.log('[Admin] No active subscription found, using first document');
+      }
+      
+      const mainUserId = mainDoc.id;
+      console.log(`[Admin] Main account to keep: ${mainUserId}`);
+      
+      // Объединяем данные: берем подписку из главного документа, но сохраняем все остальные данные
+      const mergedData = {
+        email: email,
+        displayName: mainDocData.displayName || 'No name',
+        subscription: mainDocData.subscription,
+        updatedAt: serverTimestamp()
+      };
+      
+      // Если есть createdAt в главном документе, сохраняем его
+      if (mainDocData.createdAt) {
+        mergedData.createdAt = mainDocData.createdAt;
+      }
+      
+      // Обновляем главный документ
+      await updateDoc(doc(db, 'users', mainUserId), mergedData);
+      console.log(`[Admin] Updated main account ${mainUserId}`);
+      
+      // Удаляем все остальные документы
+      const deletePromises = [];
+      querySnapshot.forEach((doc) => {
+        if (doc.id !== mainUserId) {
+          console.log(`[Admin] Deleting duplicate account ${doc.id}`);
+          deletePromises.push(deleteDoc(doc.ref));
+        }
+      });
+      
+      await Promise.all(deletePromises);
+      console.log(`[Admin] Deleted ${deletePromises.length} duplicate accounts`);
+      
+      alert(language === 'en' 
+        ? `Successfully merged! Kept account ${mainUserId}, removed ${deletePromises.length} duplicates.`
+        : `Успешно объединено! Сохранен аккаунт ${mainUserId}, удалено ${deletePromises.length} дубликатов.`);
+      
+      await loadSubscribers();
+    } catch (error) {
+      console.error('[Admin] Error merging accounts:', error);
+      alert((language === 'en' ? 'Error merging accounts: ' : 'Ошибка при объединении аккаунтов: ') + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFixSubscriptionDate = async (userId) => {
+    if (!confirm(language === 'en' 
+      ? 'Fix subscription end date to 1 month from now? This will correct the subscription period.' 
+      : 'Исправить дату окончания подписки на 1 месяц с сегодняшнего дня? Это исправит период подписки.')) return;
+    
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists() || !userDoc.data().subscription) {
+        alert(language === 'en' ? 'User or subscription not found' : 'Пользователь или подписка не найдены');
+        return;
+      }
+      
+      const userData = userDoc.data();
+      const subscription = userData.subscription;
+      
+      // Вычисляем правильную дату окончания: текущая дата + период подписки
+      const now = new Date();
+      const newEndDate = new Date(now);
+      
+      switch (subscription.type) {
+        case 'monthly':
+          newEndDate.setMonth(newEndDate.getMonth() + 1);
+          break;
+        case '3months':
+          newEndDate.setMonth(newEndDate.getMonth() + 3);
+          break;
+        case 'yearly':
+          newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+          break;
+        default:
+          newEndDate.setMonth(newEndDate.getMonth() + 1);
+      }
+      
+      // Обновляем дату начала на текущую дату и дату окончания на правильную
+      await updateDoc(userRef, {
+        'subscription.startDate': Timestamp.fromDate(now),
+        'subscription.endDate': Timestamp.fromDate(newEndDate),
+        'subscription.active': true,
+        'subscription.updatedAt': serverTimestamp()
+      });
+      
+      alert(language === 'en' 
+        ? `Subscription date fixed! New end date: ${newEndDate.toLocaleDateString()}`
+        : `Дата подписки исправлена! Новая дата окончания: ${newEndDate.toLocaleDateString('ru-RU')}`);
+      await loadSubscribers();
+    } catch (error) {
+      console.error('Error fixing subscription date:', error);
+      alert((language === 'en' ? 'Error fixing subscription date: ' : 'Ошибка при исправлении даты подписки: ') + error.message);
     }
   };
 
@@ -211,58 +436,293 @@ export default function AdminSubscriptionsPage() {
 
   const handleActivateSubscription = async (userId, type = 'monthly') => {
     try {
-      const userRef = doc(db, 'users', userId);
+      // Получаем email пользователя для поиска
+      const userEmail = selectedUserForSubscription?.email;
+      const userDisplayName = selectedUserForSubscription?.displayName;
+      
+      console.log('[Admin] Starting activation:', { userId, userEmail, userDisplayName, type });
+      
+      // Если есть email, сначала пытаемся использовать API endpoint (более надежно)
+      if (userEmail && userEmail !== 'No email') {
+        try {
+          console.log('[Admin] Trying API endpoint activation for:', userEmail);
+          const response = await fetch('/api/subscription/manual-activate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: userEmail,
+              subscriptionType: type
+            })
+          });
+
+          const result = await response.json();
+          console.log('[Admin] API response:', result);
+
+          if (response.ok && result.success) {
+            console.log('[Admin] ✅ API activation successful!', result);
+            
+            // Проверяем, что подписка действительно сохранилась в Firestore
+            const userRef = doc(db, 'users', result.userId);
+            await new Promise(resolve => setTimeout(resolve, 500)); // Небольшая задержка для синхронизации Firestore
+            
+            const verifyDoc = await getDoc(userRef);
+            const verifyData = verifyDoc.exists() ? verifyDoc.data() : {};
+            
+            console.log('[Admin] Verification - user document:', {
+              exists: verifyDoc.exists(),
+              hasSubscription: !!verifyData.subscription,
+              subscription: verifyData.subscription
+            });
+            
+            if (!verifyData.subscription || !verifyData.subscription.active) {
+              console.error('[Admin] ❌ Subscription was not saved correctly!');
+              throw new Error(language === 'en' 
+                ? 'Subscription was activated but not saved. Please try again.'
+                : 'Подписка была активирована, но не сохранена. Попробуйте еще раз.');
+            }
+            
+            const endDate = new Date(result.endDate);
+            const successMessage = language === 'en' 
+              ? `✅ Subscription activated successfully!\n\nUser ID: ${result.userId}\nEmail: ${userEmail}\nType: ${type}\nEnd Date: ${endDate.toLocaleDateString()}\n\n✅ The subscription is now active and will be visible in the list.`
+              : `✅ Подписка успешно активирована!\n\nID пользователя: ${result.userId}\nEmail: ${userEmail}\nТип: ${type}\nДата окончания: ${endDate.toLocaleDateString('ru-RU')}\n\n✅ Подписка теперь активна и будет видна в списке.`;
+            
+            alert(successMessage);
+            
+            // Закрываем модалку
+            setShowActivateModal(false);
+            setSelectedUserForSubscription(null);
+            
+            // Обновляем список подписчиков с небольшой задержкой
+            console.log('[Admin] Reloading subscribers list...');
+            await new Promise(resolve => setTimeout(resolve, 500)); // Задержка для синхронизации Firestore
+            
+            // Принудительно обновляем список
+            setIsLoading(true);
+            await loadSubscribers();
+            setIsLoading(false);
+            
+            console.log('[Admin] Subscribers list reloaded');
+            
+            // Проверяем, что подписка видна в списке
+            const updatedSubscribers = subscribers.filter(s => s.id === result.userId);
+            if (updatedSubscribers.length > 0) {
+              const sub = updatedSubscribers[0];
+              console.log('[Admin] ✅ Subscription visible in list:', {
+                id: sub.id,
+                email: sub.email,
+                isActive: sub.subscription.isActive,
+                type: sub.subscription.type
+              });
+            } else {
+              console.warn('[Admin] ⚠️ Subscription not found in list after reload');
+            }
+            
+            // Дополнительная проверка через секунду
+            setTimeout(async () => {
+              const checkDoc = await getDoc(userRef);
+              const checkData = checkDoc.exists() ? checkDoc.data() : {};
+              console.log('[Admin] Final verification after 1 second:', {
+                hasSubscription: !!checkData.subscription,
+                isActive: checkData.subscription?.active,
+                type: checkData.subscription?.type
+              });
+              
+              // Если подписка все еще не видна, предлагаем обновить страницу
+              if (!checkData.subscription || !checkData.subscription.active) {
+                console.warn('[Admin] ⚠️ Subscription may not be visible. Consider refreshing the page.');
+              } else {
+                console.log('[Admin] ✅ Subscription is active and visible!');
+              }
+            }, 1000);
+            
+            return;
+          } else {
+            console.warn('[Admin] API returned error, trying direct method:', result.error);
+            // Продолжаем с прямым методом
+          }
+        } catch (apiError) {
+          console.error('[Admin] API activation failed, trying direct method:', apiError);
+          // Продолжаем с прямым методом
+        }
+      }
+      
+      if (!userId) {
+        throw new Error(language === 'en' ? 'User ID is required' : 'Требуется ID пользователя');
+      }
+
+      // Сначала пытаемся найти пользователя по userId
+      let userRef = doc(db, 'users', userId);
+      let userDoc = await getDoc(userRef);
+      let userData = userDoc.exists() ? userDoc.data() : {};
+      let finalUserId = userId;
+      
+      console.log('[Admin] User document by userId:', { exists: userDoc.exists(), email: userData.email });
+      
+      // Если документ не найден по userId, пытаемся найти по email
+      if (!userDoc.exists() && userEmail) {
+        console.log('[Admin] User not found by userId, searching by email:', userEmail);
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', userEmail), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const foundUserDoc = querySnapshot.docs[0];
+          finalUserId = foundUserDoc.id;
+          userRef = doc(db, 'users', finalUserId);
+          userDoc = await getDoc(userRef);
+          userData = userDoc.exists() ? userDoc.data() : {};
+          console.log('[Admin] Found user by email, new userId:', finalUserId);
+        } else {
+          console.log('[Admin] User not found by email either, will create new document');
+        }
+      }
       
       // Вычисляем дату окончания подписки
       const now = new Date();
-      const endDate = new Date(now);
-      switch (type) {
-        case 'monthly':
-          endDate.setMonth(endDate.getMonth() + 1);
-          break;
-        case '3months':
-          endDate.setMonth(endDate.getMonth() + 3);
-          break;
-        case 'yearly':
-          endDate.setFullYear(endDate.getFullYear() + 1);
-          break;
-        default:
-          endDate.setMonth(endDate.getMonth() + 1);
+      let startDate = now;
+      let endDate = new Date(now);
+      
+      // Проверяем, есть ли активная подписка
+      if (userData.subscription && userData.subscription.endDate) {
+        let existingEndDate = null;
+        if (userData.subscription.endDate.toDate) {
+          existingEndDate = userData.subscription.endDate.toDate();
+        } else if (userData.subscription.endDate.seconds) {
+          existingEndDate = new Date(userData.subscription.endDate.seconds * 1000);
+        } else if (typeof userData.subscription.endDate === 'string') {
+          existingEndDate = new Date(userData.subscription.endDate);
+        }
+        
+        console.log('[Admin] Existing subscription end date:', existingEndDate);
+        
+        if (existingEndDate && existingEndDate > now) {
+          endDate = new Date(existingEndDate);
+          console.log('[Admin] Extending from existing end date');
+          // Сохраняем оригинальную дату начала
+          if (userData.subscription.startDate) {
+            if (userData.subscription.startDate.toDate) {
+              startDate = userData.subscription.startDate.toDate();
+            } else if (userData.subscription.startDate.seconds) {
+              startDate = new Date(userData.subscription.startDate.seconds * 1000);
+            }
+          }
+        }
       }
+      
+      // Добавляем период подписки
+      // Используем более надежный способ: добавляем дни напрямую
+      let subscriptionAmount = 990;
+      const daysToAdd = (() => {
+        switch (type) {
+          case 'monthly':
+            subscriptionAmount = 990;
+            return 30; // 30 дней для месячной подписки
+          case '3months':
+            subscriptionAmount = 2490;
+            return 90; // 90 дней для 3-месячной подписки
+          case 'yearly':
+            subscriptionAmount = 8290;
+            return 365; // 365 дней для годовой подписки
+          default:
+            subscriptionAmount = 990;
+            return 30;
+        }
+      })();
+      
+      endDate.setDate(endDate.getDate() + daysToAdd);
+      console.log(`[Admin] Adding ${daysToAdd} days (${type}): ${endDate.toISOString()}`);
 
       const subscriptionData = {
         active: true,
         type: type,
-        startDate: Timestamp.fromDate(now),
+        startDate: Timestamp.fromDate(startDate),
         endDate: Timestamp.fromDate(endDate),
         paymentId: `manual_${Date.now()}`,
-        amount: 1,
+        amount: subscriptionAmount,
         updatedAt: serverTimestamp()
       };
 
-      // Проверяем, существует ли документ пользователя
-      const userDoc = await getDoc(userRef);
+      console.log('[Admin] Subscription data to save:', {
+        ...subscriptionData,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      // ВАЖНО: Всегда сначала ищем по email, чтобы избежать дубликатов
+      if (!userDoc.exists() && userEmail) {
+        console.log('[Admin] User document not found by userId, searching by email:', userEmail);
+        const usersRef = collection(db, 'users');
+        const emailQuery = query(usersRef, where('email', '==', userEmail), limit(1));
+        const emailQuerySnapshot = await getDocs(emailQuery);
+        
+        if (!emailQuerySnapshot.empty) {
+          const existingUserDoc = emailQuerySnapshot.docs[0];
+          const existingUserId = existingUserDoc.id;
+          console.log('[Admin] ✅ Found existing user by email:', existingUserId, 'using it instead of creating new');
+          userRef = doc(db, 'users', existingUserId);
+          userDoc = await getDoc(userRef);
+          finalUserId = existingUserId;
+        }
+      }
+      
+      // Сохраняем или обновляем подписку
       if (!userDoc.exists()) {
-        // Создаем документ пользователя
-        await setDoc(userRef, {
+        // Создаем новый документ пользователя (только если не найден по email)
+        const newUserData = {
           subscription: subscriptionData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        }, { merge: true });
+        };
+        
+        // Добавляем email и displayName, если они есть
+        if (userEmail) {
+          newUserData.email = userEmail;
+        }
+        if (userDisplayName) {
+          newUserData.displayName = userDisplayName;
+        }
+        
+        await setDoc(userRef, newUserData, { merge: true });
+        console.log('[Admin] Created new user document with subscription');
       } else {
-        // Обновляем подписку
+        // Обновляем существующий документ
         await updateDoc(userRef, {
           subscription: subscriptionData,
           updatedAt: serverTimestamp()
         });
+        console.log('[Admin] Updated subscription in existing user document');
       }
       
-      alert(language === 'en' ? 'Subscription activated!' : 'Подписка активирована!');
+      // Проверяем, что подписка сохранилась
+      const verifyDoc = await getDoc(userRef);
+      const verifyData = verifyDoc.exists() ? verifyDoc.data() : {};
+      console.log('[Admin] Verification - subscription saved:', verifyData.subscription);
+      
+      if (!verifyData.subscription || !verifyData.subscription.active) {
+        throw new Error(language === 'en' 
+          ? 'Subscription was not saved correctly'
+          : 'Подписка не была сохранена корректно');
+      }
+      
+      const successMessage = language === 'en' 
+        ? `Subscription activated successfully!\n\nUser ID: ${finalUserId}\nEmail: ${userEmail || userData.email || 'N/A'}\nType: ${type}\nEnd Date: ${endDate.toLocaleDateString()}`
+        : `Подписка успешно активирована!\n\nID пользователя: ${finalUserId}\nEmail: ${userEmail || userData.email || 'N/A'}\nТип: ${type}\nДата окончания: ${endDate.toLocaleDateString('ru-RU')}`;
+      
+      alert(successMessage);
       setShowActivateModal(false);
       setSelectedUserForSubscription(null);
       await loadSubscribers();
     } catch (error) {
-      console.error('Error activating subscription:', error);
+      console.error('[Admin] Error activating subscription:', error);
+      console.error('[Admin] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        userId,
+        type,
+        selectedUser: selectedUserForSubscription
+      });
       alert((language === 'en' ? 'Error activating subscription: ' : 'Ошибка при активации подписки: ') + error.message);
     }
   };
@@ -469,13 +929,14 @@ export default function AdminSubscriptionsPage() {
                     <th className="px-6 py-4 text-left text-white/60 text-sm font-medium">{language === 'en' ? 'Status' : 'Статус'}</th>
                     <th className="px-6 py-4 text-left text-white/60 text-sm font-medium">{language === 'en' ? 'End Date' : 'Дата окончания'}</th>
                     <th className="px-6 py-4 text-left text-white/60 text-sm font-medium">{language === 'en' ? 'Amount' : 'Сумма'}</th>
+                    <th className="px-6 py-4 text-left text-white/60 text-sm font-medium">{language === 'en' ? 'Payment ID' : 'ID платежа'}</th>
                     <th className="px-6 py-4 text-left text-white/60 text-sm font-medium">{language === 'en' ? 'Actions' : 'Действия'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {filteredSubscribers.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-white/60">
+                      <td colSpan="7" className="px-6 py-8 text-center text-white/60">
                         {language === 'en' ? 'No subscribers found' : 'Подписчики не найдены'}
                       </td>
                     </tr>
@@ -485,6 +946,13 @@ export default function AdminSubscriptionsPage() {
                         <td className="px-6 py-4">
                           <div className="text-white font-medium">{subscriber.displayName}</div>
                           <div className="text-white/60 text-sm">{subscriber.email}</div>
+                          <div className="text-white/40 text-xs mt-1">ID: {subscriber.id}</div>
+                          {subscriber.hasDuplicates && (
+                            <div className="text-yellow-400 text-xs mt-1 flex items-center gap-1">
+                              <span>⚠️</span>
+                              <span>{language === 'en' ? `${subscriber.duplicateCount} accounts` : `${subscriber.duplicateCount} аккаунтов`}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className="bg-white/10 text-white px-3 py-1 rounded-lg text-sm">
@@ -510,8 +978,19 @@ export default function AdminSubscriptionsPage() {
                         <td className="px-6 py-4 text-white/80">
                           {subscriber.subscription.amount} ₽
                         </td>
+                        <td className="px-6 py-4 text-white/60 text-xs">
+                          {subscriber.subscription.paymentId ? (
+                            <span className="font-mono" title={subscriber.subscription.paymentId}>
+                              {subscriber.subscription.paymentId.length > 20 
+                                ? subscriber.subscription.paymentId.substring(0, 20) + '...'
+                                : subscriber.subscription.paymentId}
+                            </span>
+                          ) : (
+                            <span className="text-white/30">-</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4">
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => handleExtendSubscription(subscriber.id, 30)}
                               className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
@@ -519,6 +998,22 @@ export default function AdminSubscriptionsPage() {
                             >
                               +30
                             </button>
+                            <button
+                              onClick={() => handleFixSubscriptionDate(subscriber.id)}
+                              className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg text-sm hover:bg-blue-500/30 transition-colors"
+                              title={language === 'en' ? 'Fix subscription date (set to 1 month from now)' : 'Исправить дату подписки (установить на 1 месяц с сегодня)'}
+                            >
+                              🔧
+                            </button>
+                            {subscriber.hasDuplicates && (
+                              <button
+                                onClick={() => handleMergeDuplicateAccounts(subscriber.email)}
+                                className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-lg text-sm hover:bg-orange-500/30 transition-colors"
+                                title={language === 'en' ? 'Merge duplicate accounts into one' : 'Объединить дубликаты аккаунтов в один'}
+                              >
+                                🔀
+                              </button>
+                            )}
                             {subscriber.subscription.isActive ? (
                               <button
                                 onClick={() => handleDeactivateSubscription(subscriber.id)}
@@ -529,7 +1024,11 @@ export default function AdminSubscriptionsPage() {
                               </button>
                             ) : (
                               <button
-                                onClick={() => handleActivateSubscription(subscriber.id, subscriber.subscription.type)}
+                                onClick={() => {
+                                  setSelectedUserForSubscription(subscriber);
+                                  setSubscriptionType(subscriber.subscription.type || 'monthly');
+                                  setShowActivateModal(true);
+                                }}
                                 className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
                                 title={language === 'en' ? 'Activate subscription' : 'Активировать подписку'}
                               >

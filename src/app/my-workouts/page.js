@@ -156,13 +156,6 @@ export default function MyWorkoutsPage() {
     }
   }, [isLoading, subscriptionLoading, user, router]);
 
-  // Проверка подписки при загрузке страницы (админы имеют доступ без подписки)
-  useEffect(() => {
-    if (!isLoading && !subscriptionLoading && user && !hasSubscription && !isAdmin(user)) {
-      setShowPremiumModal(true);
-    }
-  }, [isLoading, subscriptionLoading, user, hasSubscription]);
-
   if (isLoading || subscriptionLoading) {
     return null; // Убираем загрузочный экран
   }
@@ -171,38 +164,8 @@ export default function MyWorkoutsPage() {
     return null;
   }
 
-  // Если нет подписки и пользователь не админ, показываем модалку и блокируем доступ
-  if (!hasSubscription && !isAdmin(user)) {
-    return (
-      <>
-        <Navigation currentPage="my-workouts" user={user} />
-        <PremiumModal
-          isOpen={showPremiumModal}
-          onClose={() => {
-            setShowPremiumModal(false);
-            router.push('/');
-          }}
-          feature={language === 'en' ? 'My Workouts' : 'Мои тренировки'}
-          requiresAuth={false}
-        />
-        <div className="min-h-screen bg-black pt-20 flex items-center justify-center">
-          <div className="text-center text-white">
-            <p className="text-xl mb-4">
-              {language === 'en' 
-                ? 'This feature requires an active subscription'
-                : 'Эта функция требует активной подписки'}
-            </p>
-            <button
-              onClick={() => router.push('/subscribe')}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-400 hover:to-emerald-400 transition-all"
-            >
-              {language === 'en' ? 'Subscribe Now' : 'Оформить подписку'}
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
+  // Все авторизованные пользователи могут видеть список тренировок
+  // Но открывать их могут только с подпиской (проверка будет при клике)
   
   if (workouts === null) {
     return <p className="text-center mt-10">{TEXTS[language].common.loading}</p>;
