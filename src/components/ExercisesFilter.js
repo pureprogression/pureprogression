@@ -61,34 +61,29 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {/* Тонкие стильные линии фильтра - основной триггер */}
-        <div
+        {/* Иконка круга - индикатор */}
+        <button
           onClick={() => {
             setIsExpanded(!isExpanded);
           }}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
-          className={`relative flex flex-col gap-0.5 cursor-pointer transition-all duration-300 flex-shrink-0 ${
+          className={`relative w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-300 flex-shrink-0 ${
             isExpanded 
               ? "text-white" 
-              : "text-white"
+              : "text-white/70 hover:text-white"
           }`}
           title="Фильтр по группам мышц"
         >
-          <div className={`w-5 h-px transition-all duration-300 ${
-            isExpanded ? "bg-white/20" : "bg-white"
-          }`}></div>
-          <div className={`w-3 h-px transition-all duration-300 ${
-            isExpanded ? "bg-white/20" : "bg-white"
-          }`}></div>
-          <div className={`w-4 h-px transition-all duration-300 ${
-            isExpanded ? "bg-white/20" : "bg-white"
-          }`}></div>
-          
-        </div>
+          {isExpanded ? (
+            <div className="w-4 h-4 rounded-full bg-white transition-all duration-300"></div>
+          ) : (
+            <div className="w-4 h-4 rounded-full border-2 border-current transition-all duration-300"></div>
+          )}
+        </button>
 
-        {/* Раскрывающиеся фильтры в той же строке */}
+        {/* Фильтры с условным отображением */}
         {isExpanded && muscleGroups.map((group, index) => (
           <button
             key={group}

@@ -113,7 +113,7 @@ export async function POST(request) {
     const finalSubscriptionType = metadata.subscription_type || subscriptionType || 'monthly';
     
     console.log(`[Activate From Payment] Subscription type: ${finalSubscriptionType} (metadata: ${metadata.subscription_type}, provided: ${subscriptionType})`);
-    
+
     // Вычисляем дату окончания подписки
     const now = new Date();
     let endDate = new Date(now);
@@ -171,14 +171,14 @@ export async function POST(request) {
     // Используем более надежный способ: добавляем дни напрямую
     const beforeAdd = new Date(endDate);
     const daysToAdd = (() => {
-      switch (finalSubscriptionType) {
-        case 'monthly':
+    switch (finalSubscriptionType) {
+      case 'monthly':
           return 30; // 30 дней для месячной подписки
-        case '3months':
+      case '3months':
           return 90; // 90 дней для 3-месячной подписки
-        case 'yearly':
+      case 'yearly':
           return 365; // 365 дней для годовой подписки
-        default:
+      default:
           return 30;
       }
     })();
@@ -234,7 +234,7 @@ export async function POST(request) {
         userId = existingUserId; // Обновляем userId для дальнейшего использования
       }
     }
-    
+
     if (!userDoc.exists()) {
       // Создаем документ пользователя, если его нет (и не найден по email)
       const userDataToSave = {

@@ -615,20 +615,20 @@ export default function AdminSubscriptionsPage() {
       // Используем более надежный способ: добавляем дни напрямую
       let subscriptionAmount = 990;
       const daysToAdd = (() => {
-        switch (type) {
-          case 'monthly':
+      switch (type) {
+        case 'monthly':
             subscriptionAmount = 990;
             return 30; // 30 дней для месячной подписки
-          case '3months':
+        case '3months':
             subscriptionAmount = 2490;
             return 90; // 90 дней для 3-месячной подписки
-          case 'yearly':
+        case 'yearly':
             subscriptionAmount = 8290;
             return 365; // 365 дней для годовой подписки
-          default:
+        default:
             subscriptionAmount = 990;
             return 30;
-        }
+      }
       })();
       
       endDate.setDate(endDate.getDate() + daysToAdd);

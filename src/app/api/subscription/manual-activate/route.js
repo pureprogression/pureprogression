@@ -38,7 +38,7 @@ export async function POST(request) {
     if (querySnapshot.size > 1) {
       console.warn(`[Manual Activate] ⚠️ Found ${querySnapshot.size} documents with email ${email}, using the first one`);
     }
-    
+
     const userDoc = querySnapshot.docs[0];
     const userId = userDoc.id;
 
@@ -78,16 +78,16 @@ export async function POST(request) {
     // Добавляем период новой подписки
     // Используем более надежный способ: добавляем дни напрямую
     const daysToAdd = (() => {
-      switch (subscriptionType) {
-        case 'monthly':
+    switch (subscriptionType) {
+      case 'monthly':
           return 30; // 30 дней для месячной подписки
-        case '3months':
+      case '3months':
           return 90; // 90 дней для 3-месячной подписки
-        case 'yearly':
+      case 'yearly':
           return 365; // 365 дней для годовой подписки
-        default:
+      default:
           return 30;
-      }
+    }
     })();
     
     endDate.setDate(endDate.getDate() + daysToAdd);

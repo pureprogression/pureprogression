@@ -39,15 +39,15 @@ export default function Home() {
   const handleSaveWorkout = async (workout) => {
     // Если пользователь не авторизован - редирект на авторизацию
     if (!user) {
-      // Сохраняем тренировку в localStorage перед редиректом
-      const workoutToSave = {
-        name: workout.name,
-        description: workout.description || "",
-        exercises: workout.exercises,
-        estimatedDuration: workout.estimatedDuration,
-        savedAt: Date.now()
-      };
-      localStorage.setItem('pending_workout', JSON.stringify(workoutToSave));
+    // Сохраняем тренировку в localStorage перед редиректом
+    const workoutToSave = {
+      name: workout.name,
+      description: workout.description || "",
+      exercises: workout.exercises,
+      estimatedDuration: workout.estimatedDuration,
+      savedAt: Date.now()
+    };
+    localStorage.setItem('pending_workout', JSON.stringify(workoutToSave));
       router.push('/auth?redirect=/subscribe');
       return;
     }

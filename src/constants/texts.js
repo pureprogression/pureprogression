@@ -88,7 +88,9 @@ export const TEXTS = {
       saveWorkout: "Save Workout",
       cancel: "Cancel",
       estimatedDuration: "Estimated Duration",
-      minutes: "minutes"
+      minutes: "minutes",
+      browseTab: "Browse",
+      selectedTab: "My Workout"
     },
 
     // Profile
@@ -377,7 +379,9 @@ export const TEXTS = {
       saveWorkout: "Сохранить тренировку",
       cancel: "Отмена",
       estimatedDuration: "Примерная длительность",
-      minutes: "минут"
+      minutes: "минут",
+      browseTab: "Выбрать",
+      selectedTab: "Моя тренировка"
     },
 
     profile: {

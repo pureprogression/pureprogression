@@ -112,12 +112,12 @@ export function useSubscription() {
               console.log('[useSubscription] Subscription check:', {
                 userId: u.uid,
                 email: u.email,
-                active: sub.active,
-                endDate: endDate.toISOString(),
-                now: now.toISOString(),
-                isActive,
+                  active: sub.active,
+                  endDate: endDate.toISOString(),
+                  now: now.toISOString(),
+                  isActive,
                 type: sub.type
-              });
+                });
               
               setHasSubscription(isActive);
               setSubscription({

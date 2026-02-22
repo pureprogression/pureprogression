@@ -151,7 +151,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [viewModeTransitioning, setViewModeTransitioning] = useState(false);
   const [visibleVersion, setVisibleVersion] = useState(0); // для принудительного перерендера видимости карточек
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
-  const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2', 'grid-4'
+  const [viewMode, setViewMode] = useState('grid-2'); // 'large', 'grid-2', 'grid-4'
   const [pageReloadToken, setPageReloadToken] = useState(0); // триггер для безопасной повторной инициализации текущей страницы
   const [isPageLoading, setIsPageLoading] = useState(false); // индикатор загрузки текущей страницы
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
@@ -1322,54 +1322,34 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     >
       <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden' : ''}`}>
         {/* Навигация по секциям */}
-        <div className="flex justify-center items-center mb-4 h-12">
-          <div className="flex gap-3">
-            {/* Треугольник - Выбрать упражнения */}
+        <div className="flex justify-center items-center mb-6">
+          <div className="flex items-center bg-white/5 rounded-2xl px-2 py-1.5 gap-1">
+            {/* Выбрать упражнения */}
             <button
               onClick={() => setActiveSection("browse")}
-              className={`w-8 h-8 transition-all duration-300 flex items-center justify-center ${
+              className={`relative px-6 py-2.5 rounded-xl transition-all duration-300 font-semibold text-sm ${
                 activeSection === "browse" 
-                  ? "scale-110" 
-                  : "hover:scale-105 opacity-60 hover:opacity-100"
+                  ? "bg-white/20 text-white" 
+                  : "text-white/60 hover:text-white/90"
               }`}
-              title="Выбрать упражнения"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white">
-                <path d="M12 2l8 16H4l8-16z" />
-              </svg>
+              {TEXTS[language].workoutBuilder.browseTab}
             </button>
 
-            {/* Круг - Моя тренировка */}
+            {/* Моя тренировка */}
             <button
               onClick={() => setActiveSection("selected")}
-              className={`relative w-8 h-8 transition-all duration-300 flex items-center justify-center ${
+              className={`relative px-6 py-2.5 rounded-xl transition-all duration-300 font-semibold text-sm ${
                 activeSection === "selected" 
-                  ? "scale-110" 
-                  : "hover:scale-105"
+                  ? "bg-white/20 text-white" 
+                  : "text-white/60 hover:text-white/90"
               }`}
-              title="Моя тренировка"
             >
-              <span
-                className={`transition-opacity duration-300 ${
-                  activeSection === "selected"
-                    ? "opacity-100"
-                    : "opacity-60 hover:opacity-100"
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-6 h-6 text-white"
-                >
-                <circle cx="12" cy="12" r="10" />
-              </svg>
-              </span>
+              {TEXTS[language].workoutBuilder.selectedTab}
               {selectedExercises.length > 0 && (
-                <span className="absolute right-0.5 bottom-0 w-1.5 h-1.5 rounded-full bg-white"></span>
+                <span className="ml-1.5 text-[10px] font-normal text-white/60">
+                  {selectedExercises.length}
+                </span>
               )}
             </button>
           </div>
@@ -1621,7 +1601,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                 
                 {/* Переключатель режимов просмотра - справа */}
                 <div 
-                  className="flex items-center gap-2 bg-white/5 rounded-lg p-1 self-center md:self-auto"
+                  className="flex items-center gap-2 bg-white/5 rounded-lg p-1 ml-auto"
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
