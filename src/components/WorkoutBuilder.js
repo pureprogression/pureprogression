@@ -136,7 +136,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [selectedExercises, setSelectedExercises] = useState(initialWorkout?.exercises || []);
   const { language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filterExpanded, setFilterExpanded] = useState(false);
+  const [filterExpanded, setFilterExpanded] = useState(true);
   const [activeSection, setActiveSection] = useState("browse"); // browse, selected
   const [clickedExercise, setClickedExercise] = useState(null); // для анимации клика
   const [draggedExercise, setDraggedExercise] = useState(null); // для drag & drop
@@ -1321,7 +1321,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       className="min-h-screen bg-black p-4 pt-4 relative"
     >
       <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden' : ''}`}>
-        {/* Навигация по секциям */}
+        {/* Навигация по секциям - вверху */}
         <div className="flex justify-center items-center mb-6">
           <div className="flex items-center bg-white/5 rounded-2xl px-2 py-1.5 gap-1">
             {/* Выбрать упражнения */}
@@ -1587,21 +1587,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
           {/* Секция выбора упражнений */}
           {activeSection === "browse" && (
             <div className="animate-fadeIn">
-              {/* Фильтр и переключатель режимов */}
-              <div className="mb-8 flex flex-col md:flex-row gap-6 md:gap-4 items-start md:items-center overflow-x-hidden">
-                <div className="flex-1 min-w-0">
-                  <ExercisesFilter 
-                    exercises={exercises}
-                    selectedGroup={selectedCategory}
-                    setSelectedGroup={setSelectedCategory}
-                    isExpanded={filterExpanded}
-                    setIsExpanded={setFilterExpanded}
-                  />
-                </div>
-                
-                {/* Переключатель режимов просмотра - справа */}
+              {/* Переключатель режимов - вверху справа */}
+              <div className="mb-4 flex justify-end">
                 <div 
-                  className="flex items-center gap-2 bg-white/5 rounded-lg p-1 ml-auto"
+                  className="flex items-center gap-1 bg-white/5 rounded-md p-0.5 flex-shrink-0"
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
@@ -1615,7 +1604,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       handleViewModeChange('grid-4');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
-                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
+                    className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium transition-all ${
                       viewMode === 'grid-4'
                         ? 'bg-white text-black'
                         : 'text-white/60 hover:text-white'
@@ -1624,11 +1613,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     style={{ touchAction: 'manipulation' }}
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-3.5 h-3.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2.5"
+                      strokeWidth={2.5}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
@@ -1644,7 +1633,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       handleViewModeChange('grid-2');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
-                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
+                    className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium transition-all ${
                       viewMode === 'grid-2'
                         ? 'bg-white text-black'
                         : 'text-white/60 hover:text-white'
@@ -1652,7 +1641,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     title={language === 'ru' ? '2 в ряд' : '2 per row'}
                     style={{ touchAction: 'manipulation' }}
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="7" cy="8" r="2" />
                       <circle cx="17" cy="8" r="2" />
                       <circle cx="7" cy="16" r="2" />
@@ -1666,7 +1655,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       handleViewModeChange('large');
                     }}
                     onTouchStart={(e) => e.stopPropagation()}
-                    className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-all ${
+                    className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium transition-all ${
                       viewMode === 'large'
                         ? 'bg-white text-black'
                         : 'text-white/60 hover:text-white'
@@ -1675,7 +1664,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                     style={{ touchAction: 'manipulation' }}
                   >
                     <svg 
-                      className="w-5 h-5" 
+                      className="w-3.5 h-3.5" 
                       fill="currentColor" 
                       stroke="none" 
                       viewBox="0 0 24 24"
@@ -1686,7 +1675,18 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                 </div>
               </div>
 
-              {/* Простая пагинация вместо Swiper */}
+              {/* Фильтр - между переключателем и карточками */}
+              <div className="mb-6">
+                <ExercisesFilter 
+                  exercises={exercises}
+                  selectedGroup={selectedCategory}
+                  setSelectedGroup={setSelectedCategory}
+                  isExpanded={filterExpanded}
+                  setIsExpanded={setFilterExpanded}
+                />
+              </div>
+
+              {/* Карточки упражнений */}
               <div>
                 {exerciseSlides.length > 0 ? (
                   <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center overflow-y-visible' : ''}`}>
@@ -1908,6 +1908,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                   </div>
                 )}
               </div>
+
             </div>
           )}
         </div>

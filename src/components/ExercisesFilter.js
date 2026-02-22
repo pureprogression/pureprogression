@@ -53,9 +53,9 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
   const handleGroupChange = onGroupChange || setSelectedGroup;
 
   return (
-    <div className="pl-2 pr-4 h-10">
+    <div className="pl-2 pr-4 h-8">
       <div 
-        className="flex gap-2 overflow-x-auto scrollbar-hide h-full items-center min-h-[32px]"
+        className="flex gap-1.5 overflow-x-auto scrollbar-hide h-full items-center min-h-[28px]"
         style={{ maxWidth: 'calc(100vw - 32px)' }}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
@@ -69,7 +69,7 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
-          className={`relative w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-300 flex-shrink-0 ${
+          className={`relative w-7 h-7 flex items-center justify-center cursor-pointer transition-all duration-300 flex-shrink-0 ${
             isExpanded 
               ? "text-white" 
               : "text-white/70 hover:text-white"
@@ -77,9 +77,9 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
           title="Фильтр по группам мышц"
         >
           {isExpanded ? (
-            <div className="w-4 h-4 rounded-full bg-white transition-all duration-300"></div>
+            <div className="w-3.5 h-3.5 rounded-full bg-white transition-all duration-300"></div>
           ) : (
-            <div className="w-4 h-4 rounded-full border-2 border-current transition-all duration-300"></div>
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-current transition-all duration-300"></div>
           )}
         </button>
 
@@ -99,7 +99,7 @@ export default function ExercisesFilter({ selectedGroup, setSelectedGroup, onGro
             onTouchStart={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            className={`px-4 py-1.5 rounded-full whitespace-nowrap transition-all duration-200 text-sm flex-shrink-0 animate-fade-in ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all duration-200 text-xs flex-shrink-0 animate-fade-in ${
               selectedGroup === group 
                 ? "bg-white text-black shadow-[0_2px_8px_rgba(255,255,255,0.2)]" 
                 : "bg-transparent text-white border-0 hover:text-white/90"
