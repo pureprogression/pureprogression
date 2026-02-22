@@ -8,7 +8,7 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, setDoc,
  */
 export async function POST(request) {
   try {
-    const { userId } = await request.json();
+    let { userId } = await request.json();
 
     if (!userId) {
       return NextResponse.json(

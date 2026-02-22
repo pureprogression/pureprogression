@@ -8,7 +8,7 @@ import { doc, updateDoc, getDoc, setDoc, collection, query, where, getDocs, limi
  */
 export async function POST(request) {
   try {
-    const { userId, paymentId, subscriptionType } = await request.json();
+    let { userId, paymentId, subscriptionType } = await request.json();
 
     if (!userId || !paymentId || !subscriptionType) {
       return NextResponse.json(
@@ -126,7 +126,7 @@ export async function POST(request) {
     let userDoc = await getDoc(userRef);
     
     // Если документ не найден, но есть email в metadata, ищем существующий документ с таким email
-    const paymentEmail = metadata.email || metadata.user_email || null;
+    let paymentEmail = metadata.email || metadata.user_email || null;
     if (!userDoc.exists() && paymentEmail) {
       console.log(`[Activate From Payment] User document not found by userId, searching by email: ${paymentEmail}`);
       const usersRef = collection(db, 'users');
@@ -214,8 +214,10 @@ export async function POST(request) {
     
     console.log('Creating subscription:', subscriptionData);
 
-    // Пытаемся получить email из метаданных платежа
-    const paymentEmail = payment.metadata?.email || payment.metadata?.user_email || null;
+    // Пытаемся получить email из метаданных платежа (если еще не получен)
+    if (!paymentEmail) {
+      paymentEmail = payment.metadata?.email || payment.metadata?.user_email || null;
+    }
     
     // ВАЖНО: Всегда сначала ищем по email, чтобы избежать дубликатов
     // Если документ не найден по userId, но есть email - ищем существующий документ по email

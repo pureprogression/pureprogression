@@ -88,7 +88,7 @@ export default function WorkoutHistoryPage() {
                 {TEXTS[language].workoutHistory.completeFirstWorkout}
               </div>
               <button 
-                onClick={() => window.location.href = '/workout-builder'}
+                onClick={() => window.location.href = '/builder'}
                 className="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-400 hover:to-purple-400 transition-all duration-300"
               >
                 {TEXTS[language].workoutHistory.createWorkout}

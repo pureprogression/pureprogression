@@ -190,7 +190,7 @@ export default function MyWorkoutsPage() {
                 {TEXTS[language].workouts.selectExercisesDescription}
               </div>
               <button 
-                onClick={() => window.location.href = '/workout-builder'}
+                onClick={() => window.location.href = '/builder'}
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:from-green-400 hover:to-blue-400 transition-all duration-300"
               >
                 {TEXTS[language].workouts.createWorkout}

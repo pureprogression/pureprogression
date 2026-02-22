@@ -41,6 +41,19 @@ export const TEXTS = {
         subtitle: "Build personalized workouts with video exercises and track your progress",
         getStarted: "Get Started"
       },
+      choice: {
+        title: "Choose Your Path",
+        builder: {
+          title: "Workout Builder",
+          description: "Create your own workouts by selecting exercises from our library",
+          button: "Create Workout"
+        },
+        personal: {
+          title: "Personal Training Program",
+          description: "Get a customized training program designed specifically for you",
+          button: "Get Program"
+        }
+      },
       features: {
         title: "Why Choose PureP?",
         createWorkouts: {
@@ -333,6 +346,19 @@ export const TEXTS = {
         title: "Создайте идеальную тренировку",
         subtitle: "Создавайте персональные тренировки с видео упражнениями и отслеживайте прогресс",
         getStarted: "Начать"
+      },
+      choice: {
+        title: "Выберите свой путь",
+        builder: {
+          title: "Конструктор тренировок",
+          description: "Создавайте свои тренировки, выбирая упражнения из нашей библиотеки",
+          button: "Создать тренировку"
+        },
+        personal: {
+          title: "Персональная программа",
+          description: "Получите индивидуальную программу тренировок, разработанную специально для вас",
+          button: "Получить программу"
+        }
       },
       features: {
         title: "Почему PureP?",
