@@ -10,15 +10,19 @@ export function LanguageProvider({ children }) {
 
   // Загружаем язык из localStorage при инициализации
   useEffect(() => {
+    if (typeof window !== 'undefined') {
     const savedLanguage = localStorage.getItem('language');
     if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ru')) {
       setLanguage(savedLanguage);
+      }
     }
   }, []);
 
   // Сохраняем язык в localStorage при изменении
   useEffect(() => {
+    if (typeof window !== 'undefined') {
     localStorage.setItem('language', language);
+    }
   }, [language]);
 
   const toggleLanguage = useCallback(() => {

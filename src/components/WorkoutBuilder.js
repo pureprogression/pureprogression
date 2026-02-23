@@ -6,6 +6,7 @@ import { exercises, getExerciseTitle } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
+import AIAssistant from "./AIAssistant";
 
 // Упрощенный компонент для видео превью на вкладке круга
 // Загружает все видео сразу, но паузит невидимые для экономии ресурсов
@@ -159,6 +160,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [currentPage, setCurrentPage] = useState(0); // Текущая страница (вместо activeSlideIndex)
   const previousViewModeRef = useRef(null); // Отслеживаем предыдущий режим (null при первой загрузке)
   const videoRefsRef = useRef(new Map()); // Ref для видео элементов: exerciseId -> videoElement
+  const [isClient, setIsClient] = useState(false); // Флаг для клиентского рендеринга
   const swipeStartRef = useRef(null); // Начальная позиция свайпа
   const swipeContainerRef = useRef(null); // Ref для контейнера страниц
   const viewModeChangingRef = useRef(false); // Флаг изменения режима
@@ -223,6 +225,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       console.error("Failed to restore workout draft", e);
     }
   }, [initialWorkout]);
+
+  // Устанавливаем флаг клиента после монтирования для предотвращения ошибок гидратации
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Сохраняем черновик тренировки в localStorage
   useEffect(() => {
@@ -302,11 +309,24 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   }, []);
 
   // Разбиваем упражнения на слайды: все упражнения перемешиваются случайным образом
+  // НО только на клиенте, чтобы избежать ошибок гидратации
   const exerciseSlides = useMemo(() => {
     const { exercisesPerSlide } = viewModeConfig;
     
     if (filteredExercises.length === 0) return [];
     
+    // На сервере используем исходный порядок (без перемешивания)
+    // На клиенте - перемешиваем после гидратации
+    if (!isClient) {
+      // Серверный рендеринг: используем исходный порядок
+      const slides = [];
+      for (let i = 0; i < filteredExercises.length; i += exercisesPerSlide) {
+        slides.push(filteredExercises.slice(i, i + exercisesPerSlide));
+      }
+      return slides;
+    }
+    
+    // Клиентский рендеринг: перемешиваем
     // Проверяем, изменился ли список упражнений (по ID всех упражнений)
     const currentIds = filteredExercises.map(ex => ex.id).join(',');
     const exercisesChanged = currentIds !== lastFilteredIdsRef.current;
@@ -332,7 +352,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     }
     
     return slides;
-  }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray]);
+  }, [filteredExercises.length, viewModeConfig.exercisesPerSlide, viewMode, shuffleArray, isClient, filteredExercises]);
 
   // Обновляем refs для актуальных значений
   useEffect(() => {
@@ -1910,6 +1930,21 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               </div>
 
             </div>
+          )}
+
+          {/* AI Assistant - под карточками упражнений */}
+          {activeSection === "browse" && (
+            <AIAssistant 
+              onAddExercises={(exercisesToAdd) => {
+                // Добавляем упражнения из AI Assistant
+                exercisesToAdd.forEach(exercise => {
+                  if (!selectedExercises.some(ex => ex.id === exercise.id)) {
+                    addExercise(exercise);
+                  }
+                });
+              }}
+              exercises={exercises}
+            />
           )}
         </div>
       </div>

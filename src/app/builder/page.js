@@ -88,10 +88,8 @@ export default function BuilderPage() {
     router.push('/my-workouts');
   };
 
-  if (isLoading || subscriptionLoading) {
-    return null;
-  }
-
+  // Всегда рендерим компонент, даже если загрузка еще идет
+  // Это предотвращает белый экран при долгой загрузке подписки
   return (
     <>
       <Navigation currentPage="workout-builder" user={user} />

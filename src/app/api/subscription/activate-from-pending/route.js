@@ -251,7 +251,7 @@ export async function POST(request) {
 
     // Пытаемся получить email из pendingPayment (делаем это раньше, чтобы использовать в проверке)
     const pendingEmail = pendingPaymentData.email || null;
-    
+
     // Вычисляем дату окончания подписки
     const now = new Date();
     let endDate = new Date(now);

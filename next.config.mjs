@@ -1,19 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Настройка для турбопака
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-  },
   // Оптимизация изображений
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
   },
   // Сжатие
   compress: true,
@@ -21,15 +19,6 @@ const nextConfig = {
   poweredByHeader: false,
   // Размер страниц
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
-  // Настройка для разработки
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: '/api/:path*',
-      },
-    ];
-  },
 };
 
 export default nextConfig;
