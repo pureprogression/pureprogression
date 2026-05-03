@@ -137,7 +137,7 @@ export default function WorkoutPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Пожалуйста, войдите в аккаунт</div>
+        <div className="text-white">Please sign in</div>
       </div>
     );
   }
@@ -145,7 +145,7 @@ export default function WorkoutPage() {
   if (!workout) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Тренировка не найдена</div>
+        <div className="text-white">Workout not found</div>
       </div>
     );
   }

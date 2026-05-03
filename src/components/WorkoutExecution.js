@@ -3,36 +3,21 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { getExerciseTitle } from "@/data/exercises";
 
-// Переводы групп мышц
-const muscleGroupTranslations = {
-  ru: {
-    "back": "Спина",
-    "arms": "Руки",
-    "abs": "Пресс",
-    "core": "Кор",
-    "legs": "Ноги",
-    "glutes": "Ягодицы",
-    "shoulders": "Плечи",
-    "chest": "Грудь"
-  },
-  en: {
-    "back": "Back",
-    "arms": "Arms",
-    "abs": "Abs",
-    "core": "Core",
-    "legs": "Legs",
-    "glutes": "Glutes",
-    "shoulders": "Shoulders",
-    "chest": "Chest"
-  }
+const muscleGroupLabels = {
+  back: "Back",
+  arms: "Arms",
+  abs: "Abs",
+  core: "Core",
+  legs: "Legs",
+  glutes: "Glutes",
+  shoulders: "Shoulders",
+  chest: "Chest",
 };
 
 export default function WorkoutExecution({ workout, onComplete, onCancel, isSaving }) {
   const router = useRouter();
-  const { language } = useLanguage();
   const [workoutResults, setWorkoutResults] = useState({
     exercises: []
   });
@@ -606,10 +591,10 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
               </svg>
             </div>
             <h1 className="text-3xl md:text-4xl font-light text-white mb-3 tracking-wide">
-              Тренировка выполнена
+              Workout complete
           </h1>
             <p className="text-white/60 text-sm">
-              Отличная работа!
+              Great work!
             </p>
           </div>
           
@@ -617,7 +602,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             onClick={handleGoToWorkouts}
             className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-white/90 transition-all duration-300"
           >
-            Вернуться к тренировкам
+            Back to workouts
           </button>
         </div>
       </div>
@@ -648,7 +633,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                   ? 'bg-white text-black'
                   : 'text-white/60 hover:text-white'
               }`}
-              title="Список"
+              title="List"
             >
               <svg
                 className="w-5 h-5"
@@ -670,7 +655,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                   ? 'bg-white text-black'
                   : 'text-white/60 hover:text-white'
               }`}
-              title="Крупный вид"
+              title="Large view"
             >
               <svg
                 className="w-5 h-5"
@@ -688,7 +673,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                   ? 'bg-white text-black'
                   : 'text-white/60 hover:text-white'
               }`}
-              title="4 в ряд"
+              title="Grid (4 per row)"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="7" cy="8" r="2" />
@@ -702,7 +687,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-white/70 text-xs">
-            {workoutResults.exercises.filter(ex => ex.completedSets > 0).length} / {workoutResults.exercises.length} выполнено
+            {workoutResults.exercises.filter(ex => ex.completedSets > 0).length} / {workoutResults.exercises.length} completed
           </span>
           <span className="text-white/70 text-xs">
             {Math.round((workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100)}%
@@ -738,7 +723,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-white/40 text-xs font-medium">#{index + 1}</span>
                         <h3 className={`text-white font-semibold text-sm md:text-base ${isCompleted ? 'text-green-400' : ''}`}>
-                          {getExerciseTitle(exercise, language)}
+                          {getExerciseTitle(exercise, "en")}
                         </h3>
                       </div>
                       {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
@@ -748,15 +733,15 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                               key={idx}
                               className="text-white/50 text-xs px-1 py-0.5 rounded bg-white/5"
                             >
-                              {muscleGroupTranslations[language]?.[group] || group}
+                              {muscleGroupLabels[group] || group}
                             </span>
                           ))}
                         </div>
                       )}
                       <div className="flex items-center gap-1.5 text-xs text-white/60">
-                        <span>{exercise.sets || 3} подходов</span>
+                        <span>{exercise.sets || 3} sets</span>
                         <span>•</span>
-                        <span>{exercise.reps || 12} повторений</span>
+                        <span>{exercise.reps || 12} reps</span>
                       </div>
                     </div>
 
@@ -882,12 +867,12 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                         {viewMode === 'large' && (
                           <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10">
                             <h3 className={`text-white font-medium text-sm mb-2 line-clamp-2 ${isCompleted ? 'text-green-400' : ''}`}>
-                              {getExerciseTitle(exercise, language)}
+                              {getExerciseTitle(exercise, "en")}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-white/70 mb-2">
-                              <span>{exercise.sets || 3} подходов</span>
+                              <span>{exercise.sets || 3} sets</span>
                 <span>•</span>
-                              <span>{exercise.reps || 12} повторений</span>
+                              <span>{exercise.reps || 12} reps</span>
               </div>
                             {/* Кнопка завершения тренировки в режиме large */}
                             {allExercisesCompleted && (
@@ -898,7 +883,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                                 }}
                                 className="w-full bg-white text-black py-2 px-4 rounded-lg font-medium hover:bg-white/90 transition-all duration-300 mt-2"
                               >
-                                Завершить тренировку
+                                Complete workout
                               </button>
                             )}
             </div>
@@ -944,7 +929,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-white/60">Нет упражнений</p>
+            <p className="text-white/60">No exercises</p>
           </div>
         )}
         </div>
@@ -957,7 +942,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
             disabled={isSaving}
             className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-white/90 transition-all duration-300 disabled:opacity-50"
           >
-            {isSaving ? 'Сохранение...' : 'Завершить тренировку'}
+            {isSaving ? "Saving..." : "Complete workout"}
           </button>
         </div>
       )}

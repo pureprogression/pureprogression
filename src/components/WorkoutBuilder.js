@@ -8,9 +8,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
 import { MAX_WORKOUT_EXERCISES } from "@/constants/workoutLimits";
 
-const INSTAGRAM_URL =
-  "https://www.instagram.com/pureprogression_?igsh=MXV4c3B3dDhxYW1vNg%3D%3D&utm_source=qr";
-
 // Упрощенный компонент для видео превью на вкладке круга
 // Загружает все видео сразу, но паузит невидимые для экономии ресурсов
 const LazyVideoPreview = memo(({ src, poster, exerciseId }) => {
@@ -1724,7 +1721,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               {/* Карточки упражнений */}
               <div>
                 {exerciseSlides.length > 0 ? (
-                  <>
                   <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center overflow-y-visible' : ''}`}>
                     {/* Контейнер для страниц */}
                     <div 
@@ -1947,36 +1943,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       </div>
                     </div>
                   </div>
-
-                  <div className="mx-auto mt-6 flex w-full min-w-0 max-w-full flex-col items-center overflow-x-hidden border-t border-white/10 pt-5 pb-2">
-                    <a
-                      href={INSTAGRAM_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
-                      aria-label={
-                        language === "ru"
-                          ? "Pure.Progression в Instagram"
-                          : "Pure.Progression on Instagram"
-                      }
-                    >
-                      <svg
-                        className="block h-[22px] w-[22px] shrink-0"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                        <circle cx="12" cy="12" r="4" />
-                        <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
-                      </svg>
-                    </a>
-                  </div>
-                  </>
                 ) : (
                   <div className="text-center py-12">
                     <p className="text-white/60">

@@ -10,6 +10,9 @@ import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ReviewsModal from "./ReviewsModal";
 
+const INSTAGRAM_URL =
+  "https://www.instagram.com/pureprogression_?igsh=MXV4c3B3dDhxYW1vNg%3D%3D&utm_source=qr";
+
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -304,10 +307,37 @@ export default function Navigation({ currentPage = "home", user = null, disableS
             </div>
 
             {/* Подвал */}
-            <div className="pt-6 pb-4 border-t border-white/10">
+            <div className="pt-6 pb-4 border-t border-white/10 flex flex-col items-center gap-3">
               <p className="text-white/40 text-xs text-center font-light">
                 Pure.Progression
               </p>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+                aria-label={
+                  language === "ru"
+                    ? "Pure.Progression в Instagram"
+                    : "Pure.Progression on Instagram"
+                }
+              >
+                <svg
+                  className="block h-[22px] w-[22px] shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+                </svg>
+              </a>
             </div>
           </nav>
         </div>
