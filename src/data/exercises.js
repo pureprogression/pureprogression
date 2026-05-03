@@ -1,7 +1,7 @@
 const ASSETS_BASE_URL = process.env.NEXT_PUBLIC_ASSETS_BASE_URL || "https://pub-24028780ba564e299106a5335d66f54c.r2.dev";
 
 // Функция для получения названия упражнения в зависимости от языка
-export const getExerciseTitle = (exercise, language = 'ru') => {
+export const getExerciseTitle = (exercise, language = 'en') => {
   if (language === 'en' && exercise.titleEn) {
     return exercise.titleEn;
   }

@@ -6,6 +6,7 @@ import { Navigation } from "swiper/modules";
 import { doc, setDoc, deleteDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import PremiumModal from "./PremiumModal";
 import LazyVideo from "./LazyVideo";
@@ -196,6 +197,7 @@ export default function ExercisesSlider({
 }) {
   const swiperRef = useRef(null);
   const router = useRouter();
+  const { language } = useLanguage();
   const { hasSubscription } = useSubscription();
   const [showFavoritesLimitModal, setShowFavoritesLimitModal] = useState(false);
   const gridRef = useRef(null);
@@ -640,13 +642,15 @@ export default function ExercisesSlider({
         onClose={() => setShowFavoritesLimitModal(false)}
         onUpgrade={() => {
           setShowFavoritesLimitModal(false);
-          router.push('/subscribe');
+          router.push("/auth");
         }}
-        feature=""
-        requiresAuth={false}
-        customMessage={typeof window !== 'undefined' && (window.navigator.language === 'ru' || window.navigator.language.startsWith('ru'))
-          ? 'Бесплатные пользователи могут добавить максимум 5 упражнений в избранное. Оформите подписку для неограниченного доступа!'
-          : 'Free users can add up to 5 exercises to favorites. Subscribe for unlimited access!'}
+        feature={language === "en" ? "favorites" : "избранным"}
+        requiresAuth
+        customMessage={
+          language === "en"
+            ? "Without an account you can save up to 5 exercises to favorites. Sign in for unlimited favorites."
+            : "Без аккаунта в избранном можно хранить до 5 упражнений. Войдите — избранное без ограничений."
+        }
       />
     </div>
   );

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { checkUserSubscription } from '@/lib/payments';
 
 export function useSubscription() {
   const [user, setUser] = useState(null);
@@ -303,9 +302,10 @@ export function useSubscription() {
     }
   };
 
+  // Полный доступ для любого авторизованного пользователя (оплата временно отключена).
   return {
     user,
-    hasSubscription,
+    hasSubscription: Boolean(user),
     subscription,
     isLoading
   };

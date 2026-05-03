@@ -23,7 +23,7 @@ export default function FinalCTASection() {
 
   const handleGetStarted = () => {
     if (user) {
-      router.push('/subscribe');
+      router.push("/");
     } else {
       router.push('/auth');
     }

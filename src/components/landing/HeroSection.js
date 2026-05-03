@@ -25,7 +25,7 @@ export default function HeroSection() {
 
   const handleGetStarted = () => {
     if (user) {
-      router.push('/subscribe');
+      router.push("/");
     } else {
       router.push('/auth');
     }

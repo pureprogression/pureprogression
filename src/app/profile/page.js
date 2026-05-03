@@ -8,11 +8,8 @@ import Navigation from "@/components/Navigation";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useRouter } from "next/navigation";
-
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user: subscriptionUser, hasSubscription, subscription } = useSubscription();
+  const { user: subscriptionUser } = useSubscription();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [stats, setStats] = useState({
@@ -187,56 +184,15 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Текущий план / Подписка */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4">
-            {hasSubscription && subscription ? (
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <div>
-                    <div className="text-green-400 font-medium text-sm flex items-center gap-2">
-                      <span>✓</span>
-                      <span>{language === 'en' ? 'Active Subscription' : 'Активная подписка'}</span>
-                    </div>
-                    <div className="text-gray-400 text-xs mt-1">
-                      {subscription.type === 'monthly' && (language === 'en' ? 'Monthly plan' : 'Месячный план')}
-                      {subscription.type === '3months' && (language === 'en' ? '3 months plan' : 'План на 3 месяца')}
-                      {subscription.type === 'yearly' && (language === 'en' ? 'Yearly plan' : 'Годовой план')}
-                    </div>
-                  </div>
-                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-3 py-1">
-                    <span className="text-green-400 text-xs font-medium">PREMIUM</span>
-                  </div>
-                </div>
-                {subscription.expiresAt && (
-                  <div className="text-gray-400 text-xs mb-3">
-                    {language === 'en' ? 'Expires:' : 'Истекает:'} {new Date(subscription.expiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </div>
-                )}
-                <button
-                  onClick={() => router.push('/renew-subscription')}
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-green-400 transition-all"
-                >
-                  {language === 'en' ? 'Renew Subscription' : 'Продлить подписку'}
-                </button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-white font-medium text-sm">{TEXTS[language].profile.freePlan}</div>
-                  <div className="text-gray-400 text-xs">{TEXTS[language].profile.limitedFeatures}</div>
-                </div>
-                <button 
-                  onClick={() => router.push('/subscribe')}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-3 rounded-lg font-medium text-sm hover:from-green-400 hover:to-emerald-400 transition-all duration-300"
-                >
-                  {language === 'en' ? 'Subscribe' : 'Оформить подписку'}
-                </button>
-              </div>
-            )}
+            <div className="text-green-400 font-medium text-sm flex items-center gap-2">
+              <span>✓</span>
+              <span>
+                {language === "en"
+                  ? "Full access: save and run workouts"
+                  : "Полный доступ: сохранение и выполнение тренировок"}
+              </span>
+            </div>
           </div>
 
           {/* Статистика активности временно скрыта перед релизом */}

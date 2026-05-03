@@ -11,9 +11,13 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
   
   if (!isOpen) return null;
 
-  const handleSubscribe = () => {
+  const handlePrimary = () => {
     onClose();
-    router.push('/subscribe');
+    if (onUpgrade) {
+      onUpgrade();
+      return;
+    }
+    router.push("/");
   };
 
   return (
@@ -45,7 +49,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
             <h2 className="text-xl font-bold text-white mb-3">
               {requiresAuth 
                 ? (language === 'en' ? 'Sign In Required' : 'Требуется авторизация')
-                : (language === 'en' ? 'Premium Subscription Required' : 'Требуется подписка')
+                : (language === 'en' ? 'Account required' : 'Нужен аккаунт')
               }
             </h2>
             <p className="text-white/80 text-sm leading-relaxed">
@@ -55,8 +59,8 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
                       ? `To access ${feature}, please sign in to your account.`
                       : `Для доступа к ${feature}, пожалуйста, войдите в свой аккаунт.`)
                   : (language === 'en'
-                      ? `To access ${feature}, you need an active subscription. Subscribe now to get full access!`
-                      : `Для доступа к ${feature} требуется активная подписка. Оформите подписку прямо сейчас!`)
+                      ? `Sign in to use ${feature}.`
+                      : `Войдите в аккаунт, чтобы пользоваться ${feature}.`)
               )}
             </p>
           </div>
@@ -82,10 +86,10 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
             ) : (
               <>
                 <button
-                  onClick={handleSubscribe}
+                  onClick={handlePrimary}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-6 rounded-lg font-medium hover:from-green-400 hover:to-emerald-400 transition-all duration-300"
                 >
-                  {language === 'en' ? 'Subscribe Now' : 'Оформить подписку'}
+                  {language === 'en' ? 'Continue' : 'Продолжить'}
                 </button>
                 
                 <button

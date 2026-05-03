@@ -8,22 +8,16 @@ import { auth, isAdmin } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
-import DonationModal from "./DonationModal";
 import ReviewsModal from "./ReviewsModal";
-import PremiumModal from "./PremiumModal";
-import { useSubscription } from "@/hooks/useSubscription";
 
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { hasSubscription } = useSubscription();
 
   useEffect(() => {
     setMounted(true);
@@ -58,29 +52,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
       setIsMenuOpen(false);
       return;
     }
-    // Админы имеют доступ без подписки
-    if (!hasSubscription && !isAdmin(user)) {
-      router.push('/subscribe');
-      setIsMenuOpen(false);
-      return;
-    }
     router.push('/my-workouts');
-    setIsMenuOpen(false);
-  };
-
-  const handlePremiumClick = () => {
-    if (!user) {
-      router.push('/auth?redirect=/profile');
-      setIsMenuOpen(false);
-      return;
-    }
-    // Всегда ведем на страницу профиля
-    router.push('/profile');
-    setIsMenuOpen(false);
-  };
-
-  const handleArticlesClick = () => {
-    router.push('/articles');
     setIsMenuOpen(false);
   };
 
@@ -201,36 +173,12 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   </li>
                 )}
 
-                {/* Premium */}
-                <li>
-                  <button
-                    onClick={handlePremiumClick}
-                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-green-500/20 transition-all duration-200 text-center font-medium border border-green-500/30 hover:border-green-500/60"
-                  >
-                    <span>{language === 'en' ? 'Premium' : 'Premium'}</span>
-                  </button>
-                </li>
-
-                {/* Статьи - временно отключено */}
-                <li>
-                  <button
-                    disabled
-                    className="w-full flex items-center justify-center p-4 rounded-xl text-white/40 cursor-not-allowed transition-all duration-200 text-center font-medium"
-                  >
-                    <span>{TEXTS[language].navigation.articles}</span>
-                  </button>
-                </li>
-
-                {/* My Workouts - для всех пользователей */}
+                {/* My Workouts */}
                 {user && (
                   <li>
                     <button
                       onClick={handleMyWorkoutsClick}
-                      className={`w-full flex items-center justify-center p-4 rounded-xl transition-all duration-200 text-center font-medium ${
-                        hasSubscription || isAdmin(user)
-                          ? 'text-white hover:bg-white/5'
-                          : 'text-white/70 hover:bg-white/5 cursor-pointer'
-                      }`}
+                      className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                     >
                       <span>{TEXTS[language].navigation.myWorkouts}</span>
                     </button>
@@ -310,19 +258,6 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                   </button>
                 </li>
 
-                {/* Донаты */}
-                <li>
-                  <button
-                    onClick={() => {
-                      setIsDonationModalOpen(true);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
-                  >
-                    <span>{language === 'en' ? 'Support Project' : 'Поддержать проект'}</span>
-                  </button>
-                </li>
-
                 {/* Отзывы */}
                 <li>
                   <button
@@ -378,28 +313,10 @@ export default function Navigation({ currentPage = "home", user = null, disableS
         </div>
       </motion.div>
 
-      {/* Модалка донатов */}
-      <DonationModal 
-        isOpen={isDonationModalOpen} 
-        onClose={() => setIsDonationModalOpen(false)} 
-      />
-
       {/* Модалка отзывов */}
       <ReviewsModal 
         isOpen={isReviewsModalOpen} 
         onClose={() => setIsReviewsModalOpen(false)} 
-      />
-
-      {/* Модалка подписки */}
-      <PremiumModal
-        isOpen={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        onUpgrade={() => {
-          setShowPremiumModal(false);
-          router.push('/subscribe');
-        }}
-        feature={language === 'en' ? 'this feature' : 'этой функции'}
-        requiresAuth={false}
       />
     </>
   );

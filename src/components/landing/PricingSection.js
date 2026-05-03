@@ -51,7 +51,7 @@ export default function PricingSection() {
 
   const handleSubscribe = (planType) => {
     if (user) {
-      router.push(`/subscribe?plan=${planType}`);
+      router.push("/");
     } else {
       router.push('/auth');
     }

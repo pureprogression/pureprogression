@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db, isAdmin } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import Navigation from "@/components/Navigation";
 import WorkoutsList from "@/components/WorkoutsList";
-import PremiumModal from "@/components/PremiumModal";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackWorkoutCreated } from "@/lib/analytics";
+import { MAX_WORKOUT_EXERCISES } from "@/constants/workoutLimits";
 
 export default function MyWorkoutsPage() {
   const { user, hasSubscription, isLoading: subscriptionLoading } = useSubscription();
@@ -18,8 +18,6 @@ export default function MyWorkoutsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { language } = useLanguage();
   const router = useRouter();
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
-
   // Закрываем меню Navigation при загрузке страницы
   useEffect(() => {
     const cleanup = () => {
@@ -66,23 +64,30 @@ export default function MyWorkoutsPage() {
     if (!user || subscriptionLoading) return;
 
     const pendingWorkoutStr = typeof window !== 'undefined' && localStorage.getItem('pending_workout');
-    if (pendingWorkoutStr && (hasSubscription || isAdmin(user))) {
+    if (pendingWorkoutStr && hasSubscription) {
       const savePendingWorkout = async () => {
         try {
           const pendingWorkout = JSON.parse(pendingWorkoutStr);
           console.log('[My Workouts] Saving pending workout:', pendingWorkout);
 
+          const exercises = Array.isArray(pendingWorkout.exercises)
+            ? pendingWorkout.exercises.slice(0, MAX_WORKOUT_EXERCISES)
+            : [];
+
           const workoutData = {
             name: pendingWorkout.name,
             description: pendingWorkout.description || "",
-            exercises: pendingWorkout.exercises,
+            exercises,
             userId: user.uid,
             createdAt: serverTimestamp(),
-            estimatedDuration: pendingWorkout.estimatedDuration
+            estimatedDuration:
+              typeof pendingWorkout.estimatedDuration === "number"
+                ? pendingWorkout.estimatedDuration
+                : exercises.length * 3,
           };
 
           await addDoc(collection(db, 'workouts'), workoutData);
-          trackWorkoutCreated(pendingWorkout.exercises.length);
+          trackWorkoutCreated(exercises.length);
           
           // Удаляем из localStorage после успешного сохранения
           localStorage.removeItem('pending_workout');
@@ -190,7 +195,7 @@ export default function MyWorkoutsPage() {
                 {TEXTS[language].workouts.selectExercisesDescription}
               </div>
               <button 
-                onClick={() => window.location.href = '/builder'}
+                onClick={() => { window.location.href = "/"; }}
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:from-green-400 hover:to-blue-400 transition-all duration-300"
               >
                 {TEXTS[language].workouts.createWorkout}

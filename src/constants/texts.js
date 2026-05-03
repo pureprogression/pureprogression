@@ -102,8 +102,9 @@ export const TEXTS = {
       cancel: "Cancel",
       estimatedDuration: "Estimated Duration",
       minutes: "minutes",
-      browseTab: "Browse",
-      selectedTab: "My Workout"
+      browseTab: "Library",
+      selectedTab: "My Workout",
+      maxExercisesOnSave: "Please reduce your workout to 15 exercises or fewer before saving."
     },
 
     // Profile
@@ -406,8 +407,9 @@ export const TEXTS = {
       cancel: "Отмена",
       estimatedDuration: "Примерная длительность",
       minutes: "минут",
-      browseTab: "Выбрать",
-      selectedTab: "Моя тренировка"
+      browseTab: "Библиотека",
+      selectedTab: "Моя тренировка",
+      maxExercisesOnSave: "Сохраните тренировку с не более чем 15 упражнениями."
     },
 
     profile: {

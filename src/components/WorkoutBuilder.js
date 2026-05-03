@@ -6,7 +6,10 @@ import { exercises, getExerciseTitle } from "@/data/exercises";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ExercisesFilter from "./ExercisesFilter";
-import AIAssistant from "./AIAssistant";
+import { MAX_WORKOUT_EXERCISES } from "@/constants/workoutLimits";
+
+const INSTAGRAM_URL =
+  "https://www.instagram.com/pureprogression_?igsh=MXV4c3B3dDhxYW1vNg%3D%3D&utm_source=qr";
 
 // Упрощенный компонент для видео превью на вкладке круга
 // Загружает все видео сразу, но паузит невидимые для экономии ресурсов
@@ -137,7 +140,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [selectedExercises, setSelectedExercises] = useState(initialWorkout?.exercises || []);
   const { language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filterExpanded, setFilterExpanded] = useState(true);
+  const [filterExpanded, setFilterExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState("browse"); // browse, selected
   const [clickedExercise, setClickedExercise] = useState(null); // для анимации клика
   const [draggedExercise, setDraggedExercise] = useState(null); // для drag & drop
@@ -152,7 +155,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [viewModeTransitioning, setViewModeTransitioning] = useState(false);
   const [visibleVersion, setVisibleVersion] = useState(0); // для принудительного перерендера видимости карточек
   const [expandedBrowseId, setExpandedBrowseId] = useState(null);
-  const [viewMode, setViewMode] = useState('grid-2'); // 'large', 'grid-2', 'grid-4'
+  const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2' (4), 'grid-4' (8 карточек)
   const [pageReloadToken, setPageReloadToken] = useState(0); // триггер для безопасной повторной инициализации текущей страницы
   const [isPageLoading, setIsPageLoading] = useState(false); // индикатор загрузки текущей страницы
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
@@ -1059,12 +1062,14 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
   // Добавляем упражнение в тренировку
   const addExercise = useCallback((exercise) => {
-    // Проверяем, не добавлено ли уже это упражнение
     setSelectedExercises(prev => {
       if (prev.some(ex => ex.id === exercise.id)) {
-        return prev; // Уже добавлено, ничего не делаем
+        return prev;
       }
-      
+      if (prev.length >= MAX_WORKOUT_EXERCISES) {
+        return prev;
+      }
+
       const exerciseWithSettings = {
         ...exercise,
         sets: 3,
@@ -1314,6 +1319,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       console.log("Добавьте хотя бы одно упражнение");
       return;
     }
+    if (selectedExercises.length > MAX_WORKOUT_EXERCISES) {
+      alert(TEXTS[language].workoutBuilder.maxExercisesOnSave);
+      return;
+    }
 
     const workout = {
       // Убираем id - пусть Firestore сам создаст ID
@@ -1367,7 +1376,13 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
             >
               {TEXTS[language].workoutBuilder.selectedTab}
               {selectedExercises.length > 0 && (
-                <span className="ml-1.5 text-[10px] font-normal text-white/60">
+                <span
+                  className={`ml-1.5 text-[10px] font-normal ${
+                    selectedExercises.length >= MAX_WORKOUT_EXERCISES
+                      ? "text-red-500"
+                      : "text-white/60"
+                  }`}
+                >
                   {selectedExercises.length}
                 </span>
               )}
@@ -1709,6 +1724,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               {/* Карточки упражнений */}
               <div>
                 {exerciseSlides.length > 0 ? (
+                  <>
                   <div className={`relative ${viewMode === 'large' ? 'overflow-x-hidden w-full flex items-center justify-center overflow-y-visible' : ''}`}>
                     {/* Контейнер для страниц */}
                     <div 
@@ -1753,20 +1769,29 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         }`}>
                           {slideExercises.map((exercise) => {
                       const isSelected = selectedExercises.some(ex => ex.id === exercise.id);
+                      const cannotAddMore =
+                        !isSelected &&
+                        selectedExercises.length >= MAX_WORKOUT_EXERCISES;
                       return (
                         <motion.div
                           key={exercise.id}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                        className={`exercise-card relative rounded-xl overflow-hidden cursor-pointer group ${
+                        className={`exercise-card relative rounded-xl overflow-hidden group ${
+                          cannotAddMore
+                            ? "cursor-not-allowed opacity-45"
+                            : "cursor-pointer"
+                        } ${
                           viewMode === 'large' 
                             ? 'w-full max-w-[250px] mx-auto aspect-[9/16]'
                             : viewMode === 'grid-4'
                             ? 'aspect-[9/16]'
                             : 'aspect-[9/16] w-full h-full'
                         } ${filterTransitioning ? "filter-transitioning" : ""} ${
-                          isSelected ? '' : 'hover:ring-1 hover:ring-white/30'
+                          isSelected || cannotAddMore
+                            ? ""
+                            : "hover:ring-1 hover:ring-white/30"
                         }`}
                         data-exercise-id={exercise.id}
                         data-selected={isSelected}
@@ -1786,7 +1811,9 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                                 card.setAttribute('data-show-ring', 'false');
                                 card.setAttribute('data-selected', 'false');
                               }
-                            } else {
+                            } else if (
+                              selectedExercises.length < MAX_WORKOUT_EXERCISES
+                            ) {
                               addExercise(exercise);
                               // Показываем ring только если видео загружено
                               const card = document.querySelector(`[data-exercise-id="${exercise.id}"]`);
@@ -1920,6 +1947,36 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                       </div>
                     </div>
                   </div>
+
+                  <div className="mx-auto mt-6 flex w-full min-w-0 max-w-full flex-col items-center overflow-x-hidden border-t border-white/10 pt-5 pb-2">
+                    <a
+                      href={INSTAGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/65 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+                      aria-label={
+                        language === "ru"
+                          ? "Pure.Progression в Instagram"
+                          : "Pure.Progression on Instagram"
+                      }
+                    >
+                      <svg
+                        className="block h-[22px] w-[22px] shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+                      </svg>
+                    </a>
+                  </div>
+                  </>
                 ) : (
                   <div className="text-center py-12">
                     <p className="text-white/60">
@@ -1930,21 +1987,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
               </div>
 
             </div>
-          )}
-
-          {/* AI Assistant - под карточками упражнений */}
-          {activeSection === "browse" && (
-            <AIAssistant 
-              onAddExercises={(exercisesToAdd) => {
-                // Добавляем упражнения из AI Assistant
-                exercisesToAdd.forEach(exercise => {
-                  if (!selectedExercises.some(ex => ex.id === exercise.id)) {
-                    addExercise(exercise);
-                  }
-                });
-              }}
-              exercises={exercises}
-            />
           )}
         </div>
       </div>
