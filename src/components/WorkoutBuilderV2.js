@@ -183,7 +183,7 @@ export default function WorkoutBuilderV2({ onSave, onCancel, isSaving = false })
                       onClick={() => !isSelected && addExercise(exercise)}
                       className={`relative aspect-[9/16] rounded-lg overflow-hidden cursor-pointer ${
                         isSelected 
-                          ? 'opacity-50 cursor-not-allowed ring-2 ring-green-500' 
+                          ? 'opacity-50 cursor-not-allowed ring-2 ring-brand-500' 
                           : 'hover:ring-2 hover:ring-white/30'
                       }`}
                     >
@@ -197,8 +197,8 @@ export default function WorkoutBuilderV2({ onSave, onCancel, isSaving = false })
                         showInfo={true}
                       />
                       {isSelected && (
-                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                          <div className="bg-green-500 rounded-full p-2">
+                        <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                          <div className="bg-brand-500 rounded-full p-2">
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>

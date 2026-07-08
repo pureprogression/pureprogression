@@ -695,7 +695,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
         </div>
         <div className="w-full bg-white/15 rounded-full h-1.5">
           <div 
-            className="bg-green-500 h-1.5 rounded-full transition-all duration-500 ease-out"
+            className="bg-brand-500 h-1.5 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${(workoutResults.exercises.filter(ex => ex.completedSets > 0).length / workoutResults.exercises.length) * 100}%` }}
           ></div>
         </div>
@@ -714,7 +714,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                   key={exercise.id || index}
                   onClick={() => handleToggleExercise(index)}
                   className={`bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
-                    isCompleted ? 'ring-1 ring-green-500/50 bg-green-500/10' : 'hover:bg-white/10'
+                    isCompleted ? 'ring-1 ring-brand-500/50 bg-brand-500/10' : 'hover:bg-white/10'
                   }`}
                 >
                   <div className="flex flex-row items-center gap-3 p-2 md:p-2.5">
@@ -722,7 +722,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                     <div className="flex-1 flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-white/40 text-xs font-medium">#{index + 1}</span>
-                        <h3 className={`text-white font-semibold text-sm md:text-base ${isCompleted ? 'text-green-400' : ''}`}>
+                        <h3 className={`text-white font-semibold text-sm md:text-base ${isCompleted ? 'text-brand-400' : ''}`}>
                           {getExerciseTitle(exercise, "en")}
                         </h3>
                       </div>
@@ -758,8 +758,8 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                         preload="metadata"
                       />
                       {isCompleted && (
-                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -866,7 +866,7 @@ export default function WorkoutExecution({ workout, onComplete, onCancel, isSavi
                         {/* Информация об упражнении для режима large */}
                         {viewMode === 'large' && (
                           <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent z-10">
-                            <h3 className={`text-white font-medium text-sm mb-2 line-clamp-2 ${isCompleted ? 'text-green-400' : ''}`}>
+                            <h3 className={`text-white font-medium text-sm mb-2 line-clamp-2 ${isCompleted ? 'text-brand-400' : ''}`}>
                               {getExerciseTitle(exercise, "en")}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-white/70 mb-2">

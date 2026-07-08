@@ -121,8 +121,8 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
                     disabled={isSubmitting}
                     className={`w-6 h-6 rounded flex items-center justify-center transition-all ${
                       task.completed === true
-                        ? 'bg-green-500 text-white'
-                        : 'bg-white/10 text-gray-400 hover:bg-green-500/20 hover:text-green-400'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-white/10 text-gray-400 hover:bg-brand-500/20 hover:text-brand-400'
                     } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title={language === 'ru' ? 'Выполнено' : 'Completed'}
                   >
@@ -150,7 +150,7 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
                     <p
                       className={`text-sm flex-1 ${
                         task.completed === true 
-                          ? 'text-green-400 line-through' 
+                          ? 'text-brand-400 line-through' 
                           : task.completed === false
                           ? 'text-red-400'
                           : 'text-white'
@@ -295,7 +295,7 @@ export default function WeeklyPlanCard({ day, dayIndex, planId, userId, isCurren
         <div className="mb-4">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>
-              <span className="text-green-400">{completedTasks}</span> / 
+              <span className="text-brand-400">{completedTasks}</span> / 
               <span className="text-red-400 mx-1">{failedTasks}</span> / 
               <span className="text-gray-400">{totalTasks}</span> {TEXTS[language].weeklyPlan.ofTasksCompleted}
             </span>

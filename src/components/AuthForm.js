@@ -6,6 +6,8 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  signOut,
   GoogleAuthProvider,
   sendPasswordResetEmail,
   confirmPasswordReset,
@@ -17,6 +19,7 @@ import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, ge
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { trackRegistration, trackLogin } from "@/lib/analytics";
+import { syncGoogleUserDocument } from "@/lib/syncGoogleUser";
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
@@ -320,101 +323,45 @@ export default function AuthForm() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setAuthError(null);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      // ВАЖНО: Всегда используем документ с правильным uid (из Firebase Auth)
-      const userDocRef = doc(db, 'users', user.uid);
-      let userDoc = await getDoc(userDocRef);
-      
-      // Всегда проверяем наличие других документов с таким email (для удаления дубликатов)
-      let existingUserData = null;
-      const oldDocsToDelete = [];
-      if (user.email) {
-        const usersRef = collection(db, 'users');
-        const emailQuery = query(usersRef, where('email', '==', user.email));
-        const emailQuerySnapshot = await getDocs(emailQuery);
-        
-        // Находим все документы с таким email, кроме текущего
-        for (const docSnapshot of emailQuerySnapshot.docs) {
-          if (docSnapshot.id !== user.uid) {
-            oldDocsToDelete.push(docSnapshot);
-            // Сохраняем данные первого найденного документа для копирования
-            if (!existingUserData) {
-              existingUserData = docSnapshot.data();
-              console.log(`[Auth] Found existing user document with email ${user.email}, userId: ${docSnapshot.id}, will copy data to document with uid ${user.uid}`);
-            }
-          }
-        }
-        
-        if (oldDocsToDelete.length > 0) {
-          console.log(`[Auth] Found ${oldDocsToDelete.length} old document(s) with email ${user.email}, will delete after copying data`);
-        }
+      if (auth.currentUser) {
+        await signOut(auth);
       }
-      
-      // Создаем документ с правильным uid, копируя данные из существующего если есть
-      if (!userDoc.exists()) {
-        const newUserData = {
-          email: user.email,
-          displayName: user.displayName || existingUserData?.displayName || null,
-          createdAt: existingUserData?.createdAt || new Date(),
-          updatedAt: new Date()
-        };
-        
-        // Копируем подписку из существующего документа, если она есть
-        if (existingUserData?.subscription) {
-          newUserData.subscription = existingUserData.subscription;
-          console.log(`[Auth] ✅ Copied subscription from existing document to new document with uid ${user.uid}`);
-        }
-        
-        await setDoc(userDocRef, newUserData);
-        
-        // Удаляем все старые документы после копирования данных
-        if (oldDocsToDelete.length > 0) {
-          console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
-          for (const oldDoc of oldDocsToDelete) {
-            await deleteDoc(oldDoc.ref);
-            console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
+
+      // В Chrome popup надёжнее redirect и стабильнее показывает выбор аккаунта
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        await syncGoogleUserDocument(result.user, {
+          isNewUser:
+            result.user.metadata.creationTime === result.user.metadata.lastSignInTime,
+        });
+      } catch (popupError) {
+        const useRedirect =
+          popupError?.code === "auth/popup-blocked" ||
+          popupError?.code === "auth/operation-not-supported-in-this-environment";
+
+        if (!useRedirect) {
+          if (popupError?.code === "auth/popup-closed-by-user") {
+            return;
           }
+          throw popupError;
         }
-        
-        trackRegistration('google');
-      } else {
-        // Обновляем email и displayName, если они изменились
-        const existingData = userDoc.data();
-        const updates = {};
-        if (user.email && existingData.email !== user.email) {
-          updates.email = user.email;
-        }
-        if (user.displayName && existingData.displayName !== user.displayName) {
-          updates.displayName = user.displayName;
-        }
-        
-        // Если нет подписки, но есть в другом документе с таким email - копируем
-        if (!existingData.subscription && existingUserData?.subscription) {
-          updates.subscription = existingUserData.subscription;
-          console.log(`[Auth] ✅ Copied subscription from existing document to current document`);
-        }
-        
-        if (Object.keys(updates).length > 0) {
-          updates.updatedAt = new Date();
-          await updateDoc(userDocRef, updates);
-        }
-        
-        // Удаляем все старые документы с таким email
-        if (oldDocsToDelete.length > 0) {
-          console.log(`[Auth] Deleting ${oldDocsToDelete.length} old user document(s)`);
-          for (const oldDoc of oldDocsToDelete) {
-            await deleteDoc(oldDoc.ref);
-            console.log(`[Auth] ✅ Deleted old document with id ${oldDoc.id}`);
-          }
-        }
-        
-        trackLogin('google');
+
+        await signInWithRedirect(auth, googleProvider);
       }
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error("Google sign in error:", error);
+
+      if (error?.code === "auth/popup-closed-by-user") {
+        return;
+      }
+
+      setAuthError(
+        language === "en"
+          ? "Google sign-in failed. Try again or allow popups for this site."
+          : "Не удалось войти через Google. Попробуйте снова или разрешите всплывающие окна для сайта."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -513,8 +460,8 @@ export default function AuthForm() {
         <div className="p-8 w-full max-w-sm mx-4 text-center">
           {verificationStatus === 'success' ? (
             <>
-              <div className="w-12 h-12 mx-auto rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 mx-auto rounded-full bg-brand-500/20 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -582,8 +529,8 @@ export default function AuthForm() {
         <div className="p-8 w-full max-w-sm mx-4">
           {resetEmailSent ? (
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 mx-auto rounded-full bg-brand-500/20 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -672,8 +619,8 @@ export default function AuthForm() {
         <div className="p-8 w-full max-w-sm mx-4">
           {resetEmailSent ? (
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 mx-auto rounded-full bg-brand-500/20 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -750,16 +697,15 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex justify-center items-center min-h-screen px-4">
       <form 
         onSubmit={handleSubmit} 
-        className="p-8 w-full max-w-sm mx-4"
+        className="w-full max-w-sm p-6 sm:p-8 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl"
         autoComplete="off"
         data-form-type="other"
       >
-        {/* Minimal header */}
         <div className="text-center mb-6">
-          <h2 className="text-white text-xl font-semibold">
+          <h2 className="text-white text-xl font-semibold tracking-tight">
             {isSignUp ? TEXTS[language].auth.signUp : TEXTS[language].auth.signIn}
           </h2>
         </div>
@@ -837,7 +783,7 @@ export default function AuthForm() {
             <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          <span>{language === 'en' ? 'Continue with Google' : 'Войти через Google'}</span>
+          <span>{TEXTS[language].auth.continueWithGoogle}</span>
         </button>
 
         <div className="text-center space-y-2">

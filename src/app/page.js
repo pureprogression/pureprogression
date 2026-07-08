@@ -3,18 +3,21 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navigation from "@/components/Navigation";
+import HomeIntro from "@/components/home/HomeIntro";
 import WorkoutBuilder from "@/components/WorkoutBuilder";
-import { db } from "@/lib/firebase";
+import { db, isAdmin } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { trackWorkoutCreated } from "@/lib/analytics";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useSubscription();
+  const { user, hasSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [restoredWorkout, setRestoredWorkout] = useState(null);
+
+  const showIntro = !hasSubscription && (!user || !isAdmin(user));
 
   useEffect(() => {
     setIsLoading(false);
@@ -40,7 +43,20 @@ export default function HomePage() {
         savedAt: Date.now(),
       };
       localStorage.setItem("pending_workout", JSON.stringify(workoutToSave));
-      router.push("/auth");
+      router.push("/auth?redirect=/subscribe");
+      return;
+    }
+
+    if (!hasSubscription) {
+      const workoutToSave = {
+        name: workout.name,
+        description: workout.description || "",
+        exercises: workout.exercises,
+        estimatedDuration: workout.estimatedDuration,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem("pending_workout", JSON.stringify(workoutToSave));
+      router.push("/subscribe");
       return;
     }
 
@@ -76,12 +92,17 @@ export default function HomePage() {
   return (
     <>
       <Navigation currentPage="home" user={user} />
-      <WorkoutBuilder
-        onSave={handleSaveWorkout}
-        onCancel={handleCancel}
-        isSaving={isSaving}
-        initialWorkout={restoredWorkout}
-      />
+      {showIntro && (
+        <HomeIntro user={user} onGetAccess={user ? () => router.push("/subscribe") : undefined} />
+      )}
+      <div id="workout-builder">
+        <WorkoutBuilder
+          onSave={handleSaveWorkout}
+          onCancel={handleCancel}
+          isSaving={isSaving}
+          initialWorkout={restoredWorkout}
+        />
+      </div>
     </>
   );
 }

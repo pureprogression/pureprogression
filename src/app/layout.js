@@ -1,6 +1,7 @@
 import { Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { Analytics } from '@vercel/analytics/react';
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -76,9 +77,11 @@ export default function RootLayout({ children }) {
         <GoogleAnalytics GA_TRACKING_ID={process.env.NEXT_PUBLIC_GA_ID} />
         <ErrorBoundary>
           <LanguageProvider>
-            <div className="page-container">
-              {children}
-            </div>
+            <SubscriptionProvider>
+              <div className="page-container">
+                {children}
+              </div>
+            </SubscriptionProvider>
           </LanguageProvider>
         </ErrorBoundary>
         <Analytics />

@@ -15,6 +15,7 @@ export const TEXTS = {
       trainingProgram: "Training Program",
       adminPanel: "Admin Panel",
       subscriptions: "Subscriptions",
+      getAccess: "Get Full Access",
       articles: "Useful Materials",
       logout: "Logout"
     },
@@ -31,11 +32,27 @@ export const TEXTS = {
       alreadyHaveAccount: "Already have an account?",
       dontHaveAccount: "Don't have an account?",
       signInHere: "Sign in here",
-      signUpHere: "Sign up here"
+      signUpHere: "Sign up here",
+      redirectSubscribe: "Sign in to continue to subscription",
+      redirectWorkout: "Sign in — your workout will be saved after payment",
+      continueWithGoogle: "Continue with Google"
     },
 
     // Main page
     home: {
+      intro: {
+        brand: "Pure.Progression",
+        title: "Train smarter. Build your workout.",
+        subtitle: "Video exercise library, personal workout builder, and free guides — all in one place",
+        openBuilder: "Open workout builder",
+        allGuides: "Guides & articles",
+        guidesTitle: "Start with a guide",
+        valueVideo: "Video for every exercise",
+        valueBuilder: "Build your workout",
+        valueGuides: "Free guides",
+        freeToTry: "Try the builder free — subscribe to save workouts",
+        scrollHint: "Builder below",
+      },
       hero: {
         title: "Create Your Perfect Workout",
         subtitle: "Build personalized workouts with video exercises and track your progress",
@@ -116,7 +133,12 @@ export const TEXTS = {
       upgrade: "Upgrade",
       activity: "Activity",
       completedWorkouts: "Completed Workouts",
-      completedExercises: "Completed Exercises"
+      completedExercises: "Completed Exercises",
+      subscriptionActive: "Active subscription",
+      subscriptionInactive: "Free plan",
+      subscriptionInactiveHint: "Subscribe to save workouts and get full access",
+      manageSubscription: "Manage subscription",
+      getFullAccess: "Get full access"
     },
 
     // Workout History
@@ -268,12 +290,31 @@ export const TEXTS = {
 
     // Subscription
     subscription: {
-      title: "Choose Your Plan",
-      subtitle: "Get full access to Workout Builder and My Workouts",
-      workoutWillBeSaved: "✓ Your workout will be saved automatically after payment",
-      subscribeNow: "Subscribe Now",
+      title: "Unlock Full Access",
+      subtitle: "Save workouts, unlimited favorites, and train with video guides",
+      choosePlan: "Choose your plan",
+      perMonth: "~{price}/mo",
+      workoutWillBeSaved: "Your workout is ready — it will be saved right after payment",
+      homeBanner: "Subscribe to save workouts and get full access",
+      homeBannerCta: "View plans",
+      subscribeNow: "Get Full Access",
       processing: "Processing...",
-      paymentInfo: "Payment is processed securely through YooKassa. Your subscription will be activated immediately after payment.",
+      paymentInfo: "Secure card payment · Cancel anytime",
+      selectedPlan: "Selected",
+      bestValue: "Best value",
+      popular: "Popular",
+      savePercent: "Save {percent}%",
+      paymentSuccessTitle: "You're in!",
+      paymentSuccessReceived: "Payment received",
+      paymentSuccessSubtitle: "Your subscription is active. Let's train.",
+      paymentSuccessPending: "Activating your subscription...",
+      paymentSuccessTimeout: "Payment is processing. Access will unlock in a few minutes.",
+      paymentSuccessWorkouts: "Go to My Workouts",
+      paymentSuccessBuilder: "Back to Builder",
+      noSubscriptionTitle: "No active subscription",
+      noSubscriptionSubtitle: "Subscribe to save workouts and unlock all features",
+      favoritesLimitTitle: "Favorites limit reached",
+      favoritesLimitMessage: "Free plan includes up to 5 favorites. Subscribe for unlimited favorites and full access.",
       features: {
         title: "What You Get",
         createWorkouts: {
@@ -324,6 +365,7 @@ export const TEXTS = {
       trainingProgram: "Программа тренировок",
       adminPanel: "Админ-панель",
       subscriptions: "Подписки",
+      getAccess: "Получить доступ",
       articles: "Полезные материалы",
       logout: "Выйти"
     },
@@ -339,10 +381,26 @@ export const TEXTS = {
       alreadyHaveAccount: "Уже есть аккаунт?",
       dontHaveAccount: "Нет аккаунта?",
       signInHere: "Войти здесь",
-      signUpHere: "Зарегистрироваться здесь"
+      signUpHere: "Зарегистрироваться здесь",
+      redirectSubscribe: "Войдите, чтобы оформить подписку",
+      redirectWorkout: "Войдите — тренировка сохранится после оплаты",
+      continueWithGoogle: "Продолжить через Google"
     },
 
     home: {
+      intro: {
+        brand: "Pure.Progression",
+        title: "Тренируйся умнее. Собери свою тренировку.",
+        subtitle: "Видео-библиотека упражнений, конструктор тренировок и бесплатные гайды — в одном месте",
+        openBuilder: "Открыть конструктор",
+        allGuides: "Гайды и статьи",
+        guidesTitle: "Начни с гайда",
+        valueVideo: "Видео к каждому упражнению",
+        valueBuilder: "Собери тренировку",
+        valueGuides: "Бесплатные гайды",
+        freeToTry: "Конструктор бесплатно — подписка для сохранения тренировок",
+        scrollHint: "Конструктор ниже",
+      },
       hero: {
         title: "Создайте идеальную тренировку",
         subtitle: "Создавайте персональные тренировки с видео упражнениями и отслеживайте прогресс",
@@ -420,7 +478,12 @@ export const TEXTS = {
       upgrade: "Апгрейд",
       activity: "Активность",
       completedWorkouts: "Выполнено тренировок",
-      completedExercises: "Выполнено упражнений"
+      completedExercises: "Выполнено упражнений",
+      subscriptionActive: "Подписка активна",
+      subscriptionInactive: "Бесплатный план",
+      subscriptionInactiveHint: "Оформите подписку, чтобы сохранять тренировки",
+      manageSubscription: "Управление подпиской",
+      getFullAccess: "Получить доступ"
     },
 
     workoutHistory: {
@@ -566,12 +629,31 @@ export const TEXTS = {
     },
 
     subscription: {
-      title: "Выберите план подписки",
-      subtitle: "Получите полный доступ к Конструктору тренировок и Моим тренировкам",
-      workoutWillBeSaved: "✓ Ваша тренировка будет автоматически сохранена после оплаты",
-      subscribeNow: "Оформить подписку",
+      title: "Полный доступ",
+      subtitle: "Сохраняйте тренировки, безлимитное избранное и видео по каждому упражнению",
+      choosePlan: "Выберите план",
+      perMonth: "~{price}/мес",
+      workoutWillBeSaved: "Тренировка готова — сохранится сразу после оплаты",
+      homeBanner: "Оформите подписку, чтобы сохранять тренировки",
+      homeBannerCta: "Смотреть планы",
+      subscribeNow: "Получить доступ",
       processing: "Обработка...",
-      paymentInfo: "Оплата обрабатывается безопасно через Юкассу. Ваша подписка будет активирована сразу после оплаты.",
+      paymentInfo: "Безопасная оплата картой · Отмена в любой момент",
+      selectedPlan: "Выбрано",
+      bestValue: "Выгоднее всего",
+      popular: "Популярный",
+      savePercent: "Экономия {percent}%",
+      paymentSuccessTitle: "Добро пожаловать!",
+      paymentSuccessReceived: "Оплата получена",
+      paymentSuccessSubtitle: "Подписка активна. Можно тренироваться.",
+      paymentSuccessPending: "Активируем подписку...",
+      paymentSuccessTimeout: "Оплата обрабатывается. Доступ откроется в течение нескольких минут.",
+      paymentSuccessWorkouts: "К моим тренировкам",
+      paymentSuccessBuilder: "В конструктор",
+      noSubscriptionTitle: "Нет активной подписки",
+      noSubscriptionSubtitle: "Оформите подписку, чтобы сохранять тренировки и открыть все функции",
+      favoritesLimitTitle: "Лимит избранного",
+      favoritesLimitMessage: "На бесплатном плане — до 5 упражнений в избранном. Оформите подписку для безлимитного избранного и полного доступа.",
       features: {
         title: "Что вы получаете",
         createWorkouts: {

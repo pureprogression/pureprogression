@@ -175,7 +175,7 @@ export default function ReviewsModal({ isOpen, onClose }) {
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   className="mb-6"
                 >
-                  <div className="w-12 h-12 mx-auto bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 mx-auto bg-brand-500 rounded-full flex items-center justify-center">
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}

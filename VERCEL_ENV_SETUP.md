@@ -1,6 +1,29 @@
 # Настройка переменных окружения на Vercel
 
-## Проблема: "Payment configuration missing"
+### Lava.top (подписки)
+
+1. **`LAVA_API_KEY`** — API key из lava.top → Интеграции → Public API
+2. **`LAVA_WEBHOOK_SECRET`** — ключ для webhook (тип «API key вашего сервиса»)
+
+Цены и offer ID **подтягиваются автоматически** из lava.top (GET `/api/v2/products`).  
+В кабинете Lava создайте **4 подписки** (1 / 3 / 6 / 12 мес.) с ценами в RUB, USD, EUR.
+
+Отдельно вписывать `LAVA_OFFER_ID_*` **не нужно**.
+
+**Webhook URL в lava.top** (нужно два webhook на один адрес):
+
+`https://pure-progression.com/api/payments/lava/webhook`
+
+- Тип «Результат платежа» — первый платёж по подписке
+- Тип «Регулярный платеж» — продления
+
+После оплаты настройте redirect в lava.top на:
+
+`https://pure-progression.com/payment/success?type=subscription`
+
+---
+
+## Проблема: "Payment configuration missing" (YooKassa, legacy)
 
 Эта ошибка возникает, когда не настроены переменные окружения для YooKassa на Vercel.
 

@@ -181,7 +181,7 @@ export default function RequestPlanPage() {
                         <span className={`px-3 py-1 rounded-full text-xs ${
                           request.status === 'new' ? 'bg-yellow-500/20 text-yellow-400' :
                           request.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-green-500/20 text-green-400'
+                          'bg-brand-500/20 text-brand-400'
                         }`}>
                           {getStatusText(request.status)}
                         </span>

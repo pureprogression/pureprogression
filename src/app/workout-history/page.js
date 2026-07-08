@@ -121,7 +121,7 @@ export default function WorkoutHistoryPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-green-400 text-sm font-medium">
+                    <div className="text-brand-400 text-sm font-medium">
                       ✓ Completed
                     </div>
                   </div>

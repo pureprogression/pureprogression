@@ -203,12 +203,15 @@ export default function FavoritesPage() {
               
               {/* Индикатор количества избранных для бесплатных пользователей */}
               {!hasSubscription && (
-                <div className="text-white/80 text-sm">
-                  {language === 'ru' 
+                <button
+                  type="button"
+                  onClick={() => router.push("/subscribe")}
+                  className="text-brand-400/90 hover:text-brand-400 text-sm underline-offset-2 hover:underline transition-colors"
+                >
+                  {language === "ru"
                     ? `Избранное: ${favorites.length}/5`
-                    : `Favorites: ${favorites.length}/5`
-                  }
-                </div>
+                    : `Favorites: ${favorites.length}/5`}
+                </button>
               )}
             </div>
           </div>

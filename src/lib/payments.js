@@ -98,36 +98,44 @@ export async function checkPaymentStatus(paymentId) {
   }
 }
 
-// Функция для создания подписки через Юкассу
-export async function createSubscription(userId, subscriptionType = 'monthly') {
-  const subscriptionPlans = {
-    monthly: { amount: 990, description: 'Подписка на 1 месяц' },
-    '3months': { amount: 2490, description: 'Подписка на 3 месяца' },
-    yearly: { amount: 8290, description: 'Подписка на 1 год' }
-  };
+// Функция для создания подписки через Lava.top
+export async function createSubscription(
+  userId,
+  subscriptionType,
+  email,
+  currency = "RUB",
+  buyerLanguage = "EN",
+  { offerId, periodicity } = {}
+) {
+  if (!email) {
+    throw new Error("Email is required for subscription");
+  }
 
-  const plan = subscriptionPlans[subscriptionType];
-  if (!plan) {
-    throw new Error(`Invalid subscription type: ${subscriptionType}`);
+  const buyerEmail = String(email).trim().toLowerCase();
+  if (!offerId || !periodicity) {
+    throw new Error("offerId and periodicity are required");
   }
 
   try {
-    const response = await fetch('/api/payments/create-subscription', {
-      method: 'POST',
+    const response = await fetch("/api/payments/lava/create-subscription", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userId: userId,
-        subscriptionType: subscriptionType,
-        amount: plan.amount,
-        description: plan.description
-      })
+        userId,
+        email: buyerEmail,
+        subscriptionType,
+        currency,
+        buyerLanguage,
+        offerId,
+        periodicity,
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Subscription creation failed');
+      throw new Error(errorData.error || errorData.details || 'Subscription creation failed');
     }
 
     const paymentData = await response.json();

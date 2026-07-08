@@ -179,24 +179,25 @@ export default function MyWorkoutsPage() {
   return (
     <>
       <Navigation currentPage="my-workouts" user={user} />
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-app">
         <div className="max-w-[1200px] mx-auto p-4 pt-20">
         {workouts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">{TEXTS[language].workouts.noWorkouts}</div>
-            <div className="text-gray-500 text-sm mb-6">
+          <div className="text-center py-16 px-4">
+            <p className="text-white/70 text-lg mb-2">{TEXTS[language].workouts.noWorkouts}</p>
+            <p className="text-white/40 text-sm mb-8 max-w-sm mx-auto">
               {TEXTS[language].workouts.createFirstWorkout}
-            </div>
-            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-lg p-6 max-w-md mx-auto">
-              <div className="text-green-400 text-sm font-medium mb-2">
-                🏋️‍♂️ {TEXTS[language].workouts.createWorkout}
-              </div>
-              <div className="text-gray-300 text-sm mb-4">
+            </p>
+            <div className="rounded-2xl border border-brand-500/25 bg-brand-500/5 p-6 max-w-md mx-auto">
+              <p className="text-brand-400 text-sm font-semibold mb-2">
+                {TEXTS[language].workouts.createWorkout}
+              </p>
+              <p className="text-white/50 text-sm mb-5">
                 {TEXTS[language].workouts.selectExercisesDescription}
-              </div>
-              <button 
-                onClick={() => { window.location.href = "/"; }}
-                className="bg-gradient-to-r from-green-500 to-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:from-green-400 hover:to-blue-400 transition-all duration-300"
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="w-full py-3 rounded-xl bg-brand-500 text-black font-bold hover:bg-brand-400 transition-colors"
               >
                 {TEXTS[language].workouts.createWorkout}
               </button>

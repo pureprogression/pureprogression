@@ -9,6 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import PremiumModal from "./PremiumModal";
+import { TEXTS } from "@/constants/texts";
 import LazyVideo from "./LazyVideo";
 
 import "swiper/css";
@@ -642,15 +643,12 @@ export default function ExercisesSlider({
         onClose={() => setShowFavoritesLimitModal(false)}
         onUpgrade={() => {
           setShowFavoritesLimitModal(false);
-          router.push("/auth");
+          router.push("/subscribe");
         }}
-        feature={language === "en" ? "favorites" : "избранным"}
-        requiresAuth
-        customMessage={
-          language === "en"
-            ? "Without an account you can save up to 5 exercises to favorites. Sign in for unlimited favorites."
-            : "Без аккаунта в избранном можно хранить до 5 упражнений. Войдите — избранное без ограничений."
-        }
+        customTitle={TEXTS[language].subscription.favoritesLimitTitle}
+        customMessage={TEXTS[language].subscription.favoritesLimitMessage}
+        primaryLabel={TEXTS[language].subscription.subscribeNow}
+        variant="subscribe"
       />
     </div>
   );

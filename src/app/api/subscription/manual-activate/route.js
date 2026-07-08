@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serv
 /**
  * API endpoint для ручной активации подписки администратором
  * POST /api/subscription/manual-activate
- * Body: { email: string, subscriptionType: 'monthly' | '3months' | 'yearly' }
+ * Body: { email: string, subscriptionType: 'monthly' | '3months' | '6months' | '12months' }
  */
 export async function POST(request) {
   try {
@@ -82,9 +82,12 @@ export async function POST(request) {
       case 'monthly':
           return 30; // 30 дней для месячной подписки
       case '3months':
-          return 90; // 90 дней для 3-месячной подписки
+          return 90;
+      case '6months':
+          return 180;
+      case '12months':
       case 'yearly':
-          return 365; // 365 дней для годовой подписки
+          return 365;
       default:
           return 30;
     }
@@ -115,6 +118,10 @@ export async function POST(request) {
       case '3months':
         subscriptionAmount = 2490;
         break;
+      case '6months':
+        subscriptionAmount = 4490;
+        break;
+      case '12months':
       case 'yearly':
         subscriptionAmount = 8290;
         break;

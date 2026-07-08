@@ -787,9 +787,9 @@ export default function AdminSubscriptionsPage() {
               <div className="text-white/60 text-sm mb-1">{language === 'en' ? 'Total' : 'Всего'}</div>
               <div className="text-2xl font-bold text-white">{stats.total}</div>
             </div>
-            <div className="bg-green-500/10 backdrop-blur-sm rounded-xl p-4 border border-green-500/20">
-              <div className="text-green-400/60 text-sm mb-1">{language === 'en' ? 'Active' : 'Активных'}</div>
-              <div className="text-2xl font-bold text-green-400">{stats.active}</div>
+            <div className="bg-brand-500/10 backdrop-blur-sm rounded-xl p-4 border border-brand-500/20">
+              <div className="text-brand-400/60 text-sm mb-1">{language === 'en' ? 'Active' : 'Активных'}</div>
+              <div className="text-2xl font-bold text-brand-400">{stats.active}</div>
             </div>
             <div className="bg-red-500/10 backdrop-blur-sm rounded-xl p-4 border border-red-500/20">
               <div className="text-red-400/60 text-sm mb-1">{language === 'en' ? 'Expired' : 'Истекших'}</div>
@@ -837,11 +837,11 @@ export default function AdminSubscriptionsPage() {
                       handleSearchUser();
                     }
                   }}
-                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-green-500"
+                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-brand-500"
                 />
                 <button
                   onClick={handleSearchUser}
-                  className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                  className="px-4 py-2 bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition-colors"
                 >
                   {language === 'en' ? 'Search' : 'Найти'}
                 </button>
@@ -868,7 +868,7 @@ export default function AdminSubscriptionsPage() {
                             <div className="text-xs mt-1">
                               <span className={`px-2 py-0.5 rounded ${
                                 hasSubscription.subscription.isActive
-                                  ? 'bg-green-500/20 text-green-400'
+                                  ? 'bg-brand-500/20 text-brand-400'
                                   : 'bg-red-500/20 text-red-400'
                               }`}>
                                 {hasSubscription.subscription.isActive 
@@ -897,7 +897,7 @@ export default function AdminSubscriptionsPage() {
                     onClick={() => setFilter(f)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       filter === f
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-brand-500 text-white'
                         : 'bg-white/10 text-white/60 hover:bg-white/20'
                     }`}
                   >
@@ -964,7 +964,7 @@ export default function AdminSubscriptionsPage() {
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
                             subscriber.subscription.isActive
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                              ? 'bg-brand-500/20 text-brand-400 border border-brand-500/50'
                               : 'bg-red-500/20 text-red-400 border border-red-500/50'
                           }`}>
                             {subscriber.subscription.isActive 
@@ -993,7 +993,7 @@ export default function AdminSubscriptionsPage() {
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => handleExtendSubscription(subscriber.id, 30)}
-                              className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
+                              className="bg-brand-500/20 text-brand-400 px-3 py-1 rounded-lg text-sm hover:bg-brand-500/30 transition-colors"
                               title={language === 'en' ? 'Extend 30 days' : 'Продлить на 30 дней'}
                             >
                               +30
@@ -1029,7 +1029,7 @@ export default function AdminSubscriptionsPage() {
                                   setSubscriptionType(subscriber.subscription.type || 'monthly');
                                   setShowActivateModal(true);
                                 }}
-                                className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm hover:bg-green-500/30 transition-colors"
+                                className="bg-brand-500/20 text-brand-400 px-3 py-1 rounded-lg text-sm hover:bg-brand-500/30 transition-colors"
                                 title={language === 'en' ? 'Activate subscription' : 'Активировать подписку'}
                               >
                                 ▶
@@ -1084,7 +1084,7 @@ export default function AdminSubscriptionsPage() {
                     onClick={() => setSubscriptionType(type)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       subscriptionType === type
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-brand-500 text-white'
                         : 'bg-white/10 text-white/60 hover:bg-white/20'
                     }`}
                   >
@@ -1108,7 +1108,7 @@ export default function AdminSubscriptionsPage() {
               </button>
               <button
                 onClick={() => handleActivateSubscription(selectedUserForSubscription.id, subscriptionType)}
-                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-400 transition-colors"
+                className="flex-1 bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-400 transition-colors"
               >
                 {language === 'en' ? 'Activate' : 'Активировать'}
               </button>

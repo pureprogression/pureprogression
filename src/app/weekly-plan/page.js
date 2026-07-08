@@ -240,7 +240,7 @@ export default function WeeklyPlanPage() {
               />
             </div>
             <p className="text-gray-400 text-sm">
-              <span className="text-green-400">{progress.completed}</span> {language === 'ru' ? 'выполнено' : 'completed'} / 
+              <span className="text-brand-400">{progress.completed}</span> {language === 'ru' ? 'выполнено' : 'completed'} / 
               <span className="text-red-400 mx-1">{progress.failed}</span> {language === 'ru' ? 'не выполнено' : 'not completed'} / 
               <span className="text-gray-400">{progress.total}</span> {language === 'ru' ? 'всего' : 'total'}
             </p>

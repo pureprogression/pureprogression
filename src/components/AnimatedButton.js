@@ -43,7 +43,7 @@ export default function AnimatedButton({
   const baseClasses = "relative overflow-hidden font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variantClasses = {
-    primary: "bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-400 hover:to-blue-400",
+    primary: "bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-400 hover:to-brand-300",
     secondary: "bg-white/10 text-white border border-white/20 hover:bg-white/20",
     danger: "bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-400 hover:to-pink-400",
     ghost: "text-white hover:bg-white/10"

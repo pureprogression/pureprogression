@@ -8,6 +8,7 @@ import { auth, isAdmin } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import ReviewsModal from "./ReviewsModal";
 
 const INSTAGRAM_URL =
@@ -19,6 +20,7 @@ export default function Navigation({ currentPage = "home", user = null, disableS
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
+  const { hasSubscription, isLoading: subscriptionLoading } = useSubscription();
   const [isLanguageChanging, setIsLanguageChanging] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -100,6 +102,23 @@ export default function Navigation({ currentPage = "home", user = null, disableS
     }
     setIsMenuOpen(false);
   };
+
+  const handleSubscribeClick = () => {
+    router.push("/subscribe");
+    setIsMenuOpen(false);
+  };
+
+  const handleArticlesClick = () => {
+    router.push("/articles");
+    setIsMenuOpen(false);
+  };
+
+  const showSubscribeCta =
+    user &&
+    !subscriptionLoading &&
+    !hasSubscription &&
+    !isAdmin(user) &&
+    currentPage !== "subscribe";
 
   const handleHomeClick = () => {
     router.push('/');
@@ -184,6 +203,26 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                       className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
                     >
                       <span>{TEXTS[language].navigation.myWorkouts}</span>
+                    </button>
+                  </li>
+                )}
+
+                <li>
+                  <button
+                    onClick={handleArticlesClick}
+                    className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
+                  >
+                    <span>{TEXTS[language].navigation.articles}</span>
+                  </button>
+                </li>
+
+                {showSubscribeCta && (
+                  <li>
+                    <button
+                      onClick={handleSubscribeClick}
+                      className="w-full flex items-center justify-center p-4 rounded-xl text-brand-400 hover:bg-brand-500/10 transition-all duration-200 text-center font-semibold border border-brand-500/30"
+                    >
+                      <span>{TEXTS[language].navigation.getAccess}</span>
                     </button>
                   </li>
                 )}

@@ -521,8 +521,8 @@ export default function AdminWeeklyPlansPage() {
                     </div>
                     
                     {selectedUser && (
-                      <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-3">
-                        <p className="text-green-400 text-sm">
+                      <div className="bg-brand-500/20 border border-brand-500/50 rounded-lg p-3">
+                        <p className="text-brand-400 text-sm">
                           {language === 'ru' ? 'Выбран:' : 'Selected:'} {selectedUser.displayName || selectedUser.email}
                         </p>
                         <button
@@ -795,7 +795,7 @@ export default function AdminWeeklyPlansPage() {
                   <div key={plan.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        plan.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                        plan.status === 'active' ? 'bg-brand-500/20 text-brand-400' : 'bg-gray-500/20 text-gray-400'
                       }`}>
                         {plan.status === 'active' ? TEXTS[language].weeklyPlan.active : TEXTS[language].weeklyPlan.completed}
                       </span>
@@ -864,7 +864,7 @@ export default function AdminWeeklyPlansPage() {
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             request.status === 'new' ? 'bg-yellow-500/20 text-yellow-400' :
                             request.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-green-500/20 text-green-400'
+                            'bg-brand-500/20 text-brand-400'
                           }`}>
                             {request.status === 'new' ? TEXTS[language].planRequest.statusNew :
                              request.status === 'in_progress' ? TEXTS[language].planRequest.statusInProgress :
@@ -938,7 +938,7 @@ export default function AdminWeeklyPlansPage() {
                                   }
                                 }
                               }}
-                              className="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
+                              className="px-3 py-1.5 bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition-colors text-sm"
                             >
                               {language === 'ru' ? 'Создать план' : 'Create Plan'}
                             </button>
@@ -1093,7 +1093,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                     </div>
                     {totalTasks > 0 && (
                       <span className="text-gray-400 text-sm">
-                        <span className="text-green-400">{completedTasks}</span> / 
+                        <span className="text-brand-400">{completedTasks}</span> / 
                         <span className="text-red-400 mx-1">{failedTasks}</span> / 
                         <span className="text-gray-400">{totalTasks}</span>
                       </span>
@@ -1124,7 +1124,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                 <div className="flex items-start gap-3">
                                   <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
                                     task.completed === true
-                                      ? 'bg-green-500 border-green-500'
+                                      ? 'bg-brand-500 border-brand-500'
                                       : task.completed === false
                                       ? 'bg-red-500 border-red-500'
                                       : 'border-gray-400'
@@ -1143,7 +1143,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                   <div className="flex-1">
                                     <p className={`text-sm ${
                                       task.completed === true 
-                                        ? 'text-green-400 line-through' 
+                                        ? 'text-brand-400 line-through' 
                                         : task.completed === false
                                         ? 'text-red-400'
                                         : 'text-white'
@@ -1182,7 +1182,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                 <div className="flex items-start gap-3">
                                   <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
                                     task.completed === true
-                                      ? 'bg-green-500 border-green-500'
+                                      ? 'bg-brand-500 border-brand-500'
                                       : task.completed === false
                                       ? 'bg-red-500 border-red-500'
                                       : 'border-gray-400'
@@ -1201,7 +1201,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                   <div className="flex-1">
                                     <p className={`text-sm ${
                                       task.completed === true 
-                                        ? 'text-green-400 line-through' 
+                                        ? 'text-brand-400 line-through' 
                                         : task.completed === false
                                         ? 'text-red-400'
                                         : 'text-white'
@@ -1240,7 +1240,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                 <div className="flex items-start gap-3">
                                   <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
                                     task.completed === true
-                                      ? 'bg-green-500 border-green-500'
+                                      ? 'bg-brand-500 border-brand-500'
                                       : task.completed === false
                                       ? 'bg-red-500 border-red-500'
                                       : 'border-gray-400'
@@ -1259,7 +1259,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                                   <div className="flex-1">
                                     <p className={`text-sm ${
                                       task.completed === true 
-                                        ? 'text-green-400 line-through' 
+                                        ? 'text-brand-400 line-through' 
                                         : task.completed === false
                                         ? 'text-red-400'
                                         : 'text-white'
@@ -1294,7 +1294,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                           <div className="flex items-start gap-3">
                             <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
                               task.completed === true
-                                ? 'bg-green-500 border-green-500'
+                                ? 'bg-brand-500 border-brand-500'
                                 : task.completed === false
                                 ? 'bg-red-500 border-red-500'
                                 : 'border-gray-400'
@@ -1313,7 +1313,7 @@ function PlanViewModal({ plan, users, onClose, language }) {
                             <div className="flex-1">
                               <p className={`text-sm ${
                                 task.completed === true 
-                                  ? 'text-green-400 line-through' 
+                                  ? 'text-brand-400 line-through' 
                                   : task.completed === false
                                   ? 'text-red-400'
                                   : 'text-white'
@@ -1426,7 +1426,7 @@ function RequestViewModal({ request, users, onClose, language }) {
               <span className={`px-3 py-1 rounded-full text-sm ${
                 request.status === 'new' ? 'bg-yellow-500/20 text-yellow-400' :
                 request.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' :
-                'bg-green-500/20 text-green-400'
+                'bg-brand-500/20 text-brand-400'
               }`}>
                 {request.status === 'new' ? (language === 'ru' ? 'Новый' : 'New') :
                  request.status === 'in_progress' ? (language === 'ru' ? 'В работе' : 'In Progress') :

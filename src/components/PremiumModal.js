@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "this feature", requiresAuth = false, customMessage }) {
+export default function PremiumModal({
+  isOpen,
+  onClose,
+  onUpgrade,
+  feature = "this feature",
+  requiresAuth = false,
+  customMessage,
+  customTitle,
+  primaryLabel,
+  variant = "default",
+}) {
   const { language } = useLanguage();
   const router = useRouter();
   
@@ -39,18 +49,32 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
         >
           {/* Icon */}
           <div className="text-center mb-4">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <div className="w-4 h-4 rounded-full bg-white" />
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                variant === "subscribe" ? "bg-brand-500/20" : "bg-white/20"
+              }`}
+            >
+              {variant === "subscribe" ? (
+                <svg className="w-6 h-6 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-white" />
+              )}
             </div>
           </div>
 
           {/* Content */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-3">
-              {requiresAuth 
-                ? (language === 'en' ? 'Sign In Required' : 'Требуется авторизация')
-                : (language === 'en' ? 'Account required' : 'Нужен аккаунт')
-              }
+              {customTitle ||
+                (requiresAuth
+                  ? language === "en"
+                    ? "Sign In Required"
+                    : "Требуется авторизация"
+                  : language === "en"
+                    ? "Account required"
+                    : "Нужен аккаунт")}
             </h2>
             <p className="text-white/80 text-sm leading-relaxed">
               {customMessage || (
@@ -73,7 +97,7 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
                   onClick={onUpgrade}
                   className="w-full bg-white/15 text-white py-3 px-6 rounded-lg font-medium hover:bg-white/25 transition-all duration-300"
                 >
-                  {language === 'en' ? 'Sign In' : 'Войти'}
+                  {primaryLabel || (language === "en" ? "Sign In" : "Войти")}
                 </button>
                 
                 <button
@@ -87,9 +111,13 @@ export default function PremiumModal({ isOpen, onClose, onUpgrade, feature = "th
               <>
                 <button
                   onClick={handlePrimary}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-6 rounded-lg font-medium hover:from-green-400 hover:to-emerald-400 transition-all duration-300"
+                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 ${
+                    variant === "subscribe"
+                      ? "bg-brand-500 text-black hover:bg-brand-400 shadow-[0_4px_20px_rgba(56,189,248,0.3)]"
+                      : "bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-400 hover:to-brand-300"
+                  }`}
                 >
-                  {language === 'en' ? 'Continue' : 'Продолжить'}
+                  {primaryLabel || (language === "en" ? "Continue" : "Продолжить")}
                 </button>
                 
                 <button

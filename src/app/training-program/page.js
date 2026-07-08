@@ -415,7 +415,7 @@ export default function TrainingProgramPage() {
                       >
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
                           task.completed === true 
-                            ? 'bg-green-500 border-green-500' 
+                            ? 'bg-brand-500 border-brand-500' 
                             : task.completed === false
                             ? 'bg-red-500 border-red-500'
                             : 'border-white/30'

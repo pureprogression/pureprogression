@@ -534,7 +534,7 @@ export default function TrainingProgramPage() {
                             <div className="flex items-center gap-3 mb-2">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
                                 program.status === 'active' 
-                                  ? 'bg-green-500/20 text-green-400' 
+                                  ? 'bg-brand-500/20 text-brand-400' 
                                   : 'bg-gray-500/20 text-gray-400'
                               }`}>
                                 {program.status === 'active' 
@@ -611,7 +611,7 @@ export default function TrainingProgramPage() {
                 </div>
                 {selectedUser && (
                   <div className="mt-2">
-                    <p className="text-green-400 text-sm">
+                    <p className="text-brand-400 text-sm">
                       {language === 'ru' ? 'Выбрано:' : 'Selected:'} {selectedUser.email}
                     </p>
                     {selectedUser.displayName && (

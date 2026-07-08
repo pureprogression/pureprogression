@@ -137,7 +137,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [selectedExercises, setSelectedExercises] = useState(initialWorkout?.exercises || []);
   const { language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filterExpanded, setFilterExpanded] = useState(false);
+  const [filterExpanded, setFilterExpanded] = useState(true);
   const [activeSection, setActiveSection] = useState("browse"); // browse, selected
   const [clickedExercise, setClickedExercise] = useState(null); // для анимации клика
   const [draggedExercise, setDraggedExercise] = useState(null); // для drag & drop
@@ -155,6 +155,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   const [viewMode, setViewMode] = useState('grid-4'); // 'large', 'grid-2' (4), 'grid-4' (8 карточек)
   const [pageReloadToken, setPageReloadToken] = useState(0); // триггер для безопасной повторной инициализации текущей страницы
   const [isPageLoading, setIsPageLoading] = useState(false); // индикатор загрузки текущей страницы
+  const [loadedVideoIds, setLoadedVideoIds] = useState(() => new Set());
   const shuffledExercisesRef = useRef(null); // Храним перемешанный порядок упражнений
   const lastFilteredIdsRef = useRef(''); // Отслеживаем изменение списка упражнений по ID
   const [currentPage, setCurrentPage] = useState(0); // Текущая страница (вместо activeSlideIndex)
@@ -455,7 +456,12 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
   // Сбрасываем страницу при изменении фильтра
   useEffect(() => {
     setCurrentPage(0);
+    setLoadedVideoIds(new Set());
   }, [selectedCategory]);
+
+  useEffect(() => {
+    setLoadedVideoIds(new Set());
+  }, [currentPage, viewMode, pageReloadToken]);
 
   // Определяем видимые страницы (текущая + соседние ±1)
   const visiblePages = useMemo(() => {
@@ -517,100 +523,75 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
         videos.forEach((video) => {
           const dataSrc = video.getAttribute('data-src');
-          
-          // Проверяем, если видео уже было загружено ранее (при возврате на вкладку browse)
-          if (video.src && video.readyState >= 2) {
-            // Видео уже загружено, показываем его сразу
+          const card = video.closest('.exercise-card');
+          if (!dataSrc || !card) return;
+
+          const revealVideo = () => {
+            const exerciseId = card.getAttribute('data-exercise-id');
+            if (card.getAttribute('data-video-loaded') === 'true') return;
+
+            card.setAttribute('data-video-loaded', 'true');
+            if (exerciseId) {
+              setLoadedVideoIds((prev) => {
+                if (prev.has(exerciseId)) return prev;
+                const next = new Set(prev);
+                next.add(exerciseId);
+                return next;
+              });
+            }
             loadedCount++;
-            video.style.opacity = '1';
-            const card = video.closest('.exercise-card');
-            if (card) {
-              card.style.opacity = '1';
-              card.style.pointerEvents = 'auto';
-              card.setAttribute('data-video-loaded', 'true');
-              
-              // Как только первое видео появилось — убираем индикатор
-              if (loadedCount === 1) {
-                setIsPageLoading(false);
-              }
+
+            if (loadedCount === 1) {
+              setIsPageLoading(false);
+            }
 
             const isSelected = card.getAttribute('data-selected') === 'true';
             if (isSelected) {
               const timeoutId = setTimeout(() => {
                 card.setAttribute('data-show-ring', 'true');
-                card.offsetHeight;
                 timeoutRefsRef.current.delete(timeoutId);
               }, 50);
               timeoutRefsRef.current.add(timeoutId);
             }
-            
-            const timeoutId2 = setTimeout(() => {
-              const infoElements = card.querySelectorAll('[data-exercise-info]');
-              infoElements.forEach(el => {
-                el.style.opacity = '1';
-                el.style.transition = 'opacity 0.3s ease-out';
-              });
-              timeoutRefsRef.current.delete(timeoutId2);
-            }, 50);
-            timeoutRefsRef.current.add(timeoutId2);
-          }
-          video.play().catch(() => {});
-        } else if (dataSrc && !video.src) {
-          // Видео еще не загружено, загружаем его
-          video.src = dataSrc;
-          video.preload = 'auto';
-          video.load();
-          
-          const showVideo = () => {
-            loadedCount++;
-            video.style.opacity = '1';
-            const card = video.closest('.exercise-card');
-            if (card) {
-              // Показываем карточку вместе с видео
-              card.style.opacity = '1';
-              card.style.pointerEvents = 'auto';
-              
-              // Сохраняем флаг что видео загружено
-              card.setAttribute('data-video-loaded', 'true');
 
-              // Как только первое видео появилось — убираем индикатор
-              if (loadedCount === 1) {
-                setIsPageLoading(false);
-              }
-              
-              // Показываем выделение только после загрузки видео, если упражнение выбрано
-              const isSelected = card.getAttribute('data-selected') === 'true';
-              if (isSelected) {
-                // Небольшая задержка для плавного появления выделения после видео
-                const timeoutId = setTimeout(() => {
-                  card.setAttribute('data-show-ring', 'true');
-                  timeoutRefsRef.current.delete(timeoutId);
-                }, 100);
-                timeoutRefsRef.current.add(timeoutId);
-              }
-              
-              // Показываем информацию об упражнении (группы мышц, названия) с небольшой задержкой
-              const timeoutId2 = setTimeout(() => {
-                const infoElements = card.querySelectorAll('[data-exercise-info]');
-                infoElements.forEach(el => {
-                  el.style.opacity = '1';
-                  el.style.transition = 'opacity 0.3s ease-out';
-                });
-                timeoutRefsRef.current.delete(timeoutId2);
-              }, 100);
-              timeoutRefsRef.current.add(timeoutId2);
-            }
             video.play().catch(() => {});
           };
-          
-          if (video.readyState >= 2) {
-            showVideo();
-          } else {
-            video.addEventListener('canplay', showVideo, { once: true });
-            video.addEventListener('loadeddata', showVideo, { once: true });
+
+          if (card.getAttribute('data-video-loaded') === 'true') {
+            loadedCount++;
+            if (loadedCount === 1) {
+              setIsPageLoading(false);
+            }
+            video.play().catch(() => {});
+            return;
           }
-        }
-      });
+
+          if (video.src && video.readyState >= 2) {
+            revealVideo();
+            return;
+          }
+
+          if (!video.src) {
+            video.src = dataSrc;
+            video.preload = 'auto';
+            video.load();
+          }
+
+          if (video.readyState >= 2) {
+            revealVideo();
+          } else {
+            const onReady = () => revealVideo();
+            video.addEventListener('loadeddata', onReady, { once: true });
+            video.addEventListener('canplay', onReady, { once: true });
+            video.addEventListener('canplaythrough', onReady, { once: true });
+
+            const fallbackId = setTimeout(() => {
+              revealVideo();
+              timeoutRefsRef.current.delete(fallbackId);
+            }, 8000);
+            timeoutRefsRef.current.add(fallbackId);
+          }
+        });
       } catch (error) {
         console.error('Error loading current page videos:', error);
         setIsPageLoading(false);
@@ -618,6 +599,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     };
     
     loadCurrentPage();
+    
+    // DOM может появиться чуть позже первого paint (AnimatePresence)
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(loadCurrentPage);
+    });
     
     // Intersection Observer для предзагрузки соседних страниц (текущая ±1)
     let observer;
@@ -717,6 +703,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
     timeoutRefsRef.current.add(cleanupTimeoutId);
 
     return () => {
+      cancelAnimationFrame(rafId);
       // Очищаем все таймеры
       timeoutRefsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
       timeoutRefsRef.current.clear();
@@ -758,12 +745,11 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       const videos = currentPageElement.querySelectorAll('video');
       const loadedCards = currentPageElement.querySelectorAll('.exercise-card[data-video-loaded="true"]');
 
-      // Если на странице есть видео, но ни одно не помечено как загруженное,
-      // считаем, что что-то пошло не так и мягко триггерим повторную инициализацию
-      if (videos.length > 0 && loadedCards.length === 0) {
+      // Если часть видео так и не загрузилась — повторная инициализация
+      if (videos.length > 0 && loadedCards.length < videos.length) {
         setPageReloadToken((prev) => prev + 1);
       }
-    }, 2500);
+    }, 3000);
 
     return () => window.clearTimeout(timeoutId);
   }, [currentPage, activeSection, exerciseSlides.length]);
@@ -887,26 +873,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
       window.removeEventListener('pageshow', handleVisibilityOrShow);
     };
   }, [activeSection, exerciseSlides.length]);
-
-  // Убеждаемся что информация остается видимой при выделении карточки и переключении режима
-  useEffect(() => {
-    // Используем requestAnimationFrame для оптимизации DOM операций
-    const rafId = requestAnimationFrame(() => {
-      // Проверяем все карточки с загруженным видео и показываем информацию
-      const cards = document.querySelectorAll('.exercise-card[data-video-loaded="true"]');
-      cards.forEach(card => {
-        const infoElements = card.querySelectorAll('[data-exercise-info]');
-        infoElements.forEach(el => {
-          if (el.style.opacity !== '1') {
-            el.style.opacity = '1';
-            el.style.transition = 'opacity 0.3s ease-out';
-          }
-        });
-      });
-    });
-    
-    return () => cancelAnimationFrame(rafId);
-  }, [selectedExercises, currentPage, viewMode]);
 
   // Синхронизируем data-selected и data-show-ring с состоянием selectedExercises
   useEffect(() => {
@@ -1344,7 +1310,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
 
   return (
     <div 
-      className="min-h-screen bg-black p-4 pt-4 relative"
+      className="min-h-screen p-4 pt-4 relative"
     >
       <div className={`max-w-7xl mx-auto ${viewMode === 'large' ? 'workout-builder-large-container overflow-x-hidden' : ''}`}>
         {/* Навигация по секциям - вверху */}
@@ -1769,11 +1735,8 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         !isSelected &&
                         selectedExercises.length >= MAX_WORKOUT_EXERCISES;
                       return (
-                        <motion.div
+                        <div
                           key={exercise.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
                         className={`exercise-card relative rounded-xl overflow-hidden group ${
                           cannotAddMore
                             ? "cursor-not-allowed opacity-45"
@@ -1792,11 +1755,10 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         data-exercise-id={exercise.id}
                         data-selected={isSelected}
                         data-show-ring="false"
-                        data-video-loaded="false"
-                        style={{ 
-                          transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s ease-out',
-                          opacity: 0, // Скрываем карточку до появления видео
-                          borderRadius: '0.75rem' // Явно задаем border-radius для плавного перехода
+                        data-video-loaded={loadedVideoIds.has(exercise.id) ? 'true' : 'false'}
+                        style={{
+                          transition: 'border-radius 0.2s ease-out',
+                          borderRadius: '0.75rem',
                         }}
                           onClick={() => {
                             if (isSelected) {
@@ -1843,10 +1805,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                             key={`video-${exercise.id}`}
                             data-src={exercise.video}
                             className="w-full h-full object-cover"
-                            style={{ 
-                              opacity: 0,
-                              transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}
                             autoPlay={false}
                             muted
                             loop
@@ -1865,7 +1823,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                           <div 
                             data-exercise-info
                             className="absolute inset-x-0 bottom-0 px-3 pb-3 pt-6 bg-gradient-to-t from-black/85 via-black/60 to-transparent z-10 pointer-events-none flex flex-col items-center md:items-start"
-                            style={{ opacity: 0, transition: 'opacity 0.3s ease-out' }} // Скрываем до появления видео
                           >
                             <h3 className="text-white/90 text-xs md:text-sm font-medium tracking-wide mb-1.5 max-w-[90%] line-clamp-2 text-center md:text-left">
                               {getExerciseTitle(exercise, language)}
@@ -1890,7 +1847,6 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                           <div
                             data-exercise-info
                             className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5 pt-4 bg-gradient-to-t from-black/70 via-black/40 to-transparent z-10 pointer-events-none"
-                            style={{ opacity: 0, transition: 'opacity 0.3s ease-out' }} // Скрываем до появления видео
                           >
                             <div className="flex flex-wrap gap-1">
                               {exercise.muscleGroups.slice(0, 3).map((group, idx) => (
@@ -1906,7 +1862,7 @@ export default function WorkoutBuilder({ onSave, onCancel, isSaving = false, ini
                         )}
 
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                         </div>

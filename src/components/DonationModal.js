@@ -101,8 +101,8 @@ export default function DonationModal({ isOpen, onClose }) {
         >
           {/* Заголовок */}
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-2xl">💚</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-brand-400 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="text-2xl">✨</span>
             </div>
             <h2 className="text-xl font-bold text-white mb-3">
               {language === 'en' ? 'Make a Difference' : 'Внесите вклад'}
