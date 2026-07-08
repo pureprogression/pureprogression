@@ -260,25 +260,23 @@ export default function ProfilePage() {
               {cancelMessage && (
                 <p className="text-brand-300/90 text-sm mb-3">{cancelMessage}</p>
               )}
-              <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/subscription")}
+                className="text-left text-white/60 text-sm hover:text-white underline-offset-2 hover:underline"
+              >
+                {profileTexts.manageSubscription}
+              </button>
+              {!isCancellationScheduled && (
                 <button
                   type="button"
-                  onClick={() => router.push("/subscription")}
-                  className="text-left text-white/60 text-sm hover:text-white underline-offset-2 hover:underline"
+                  onClick={handleCancelSubscription}
+                  disabled={isCancelling}
+                  className="mt-2 block text-left text-white/45 text-xs hover:text-white/70 disabled:opacity-50 transition-colors"
                 >
-                  {profileTexts.manageSubscription}
+                  {isCancelling ? TEXTS[language].common.loading : profileTexts.cancelSubscription}
                 </button>
-                {!isCancellationScheduled && (
-                  <button
-                    type="button"
-                    onClick={handleCancelSubscription}
-                    disabled={isCancelling}
-                    className="w-full py-3 rounded-xl border border-white/15 text-white/80 text-sm font-medium hover:bg-white/5 disabled:opacity-50 transition-colors"
-                  >
-                    {isCancelling ? TEXTS[language].common.loading : profileTexts.cancelSubscription}
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 mb-4">
