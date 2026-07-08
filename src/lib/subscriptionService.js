@@ -76,22 +76,32 @@ export async function activateOrExtendSubscription({
   const now = new Date();
   const durationMonths = getPlanDurationMonths(subscriptionType);
   const buyerEmail = normalizeBuyerEmail(email);
+  const existing = userDoc.exists ? userDoc.data().subscription : null;
+  const paymentKey = contractId || paymentId || null;
+
+  // Не продлевать повторно ту же оплату (webhook + sync + refresh)
+  if (existing?.active && paymentKey) {
+    const sameContract =
+      (contractId && existing.lavaContractId === contractId) ||
+      (contractId && existing.paymentId === contractId) ||
+      (paymentId && existing.paymentId === paymentId);
+    if (sameContract) {
+      return { userId: resolvedUserId, subscription: existing, action: "already_active" };
+    }
+  }
 
   let startDate = now;
   let endDate = addMonths(now, durationMonths);
 
-  if (userDoc.exists) {
-    const existing = userDoc.data().subscription;
-    if (existing?.endDate) {
-      let currentEnd = existing.endDate;
-      if (currentEnd?.toDate) currentEnd = currentEnd.toDate();
-      else if (currentEnd?.seconds) currentEnd = new Date(currentEnd.seconds * 1000);
-      else if (typeof currentEnd === "string") currentEnd = new Date(currentEnd);
+  if (userDoc.exists && existing?.endDate) {
+    let currentEnd = existing.endDate;
+    if (currentEnd?.toDate) currentEnd = currentEnd.toDate();
+    else if (currentEnd?.seconds) currentEnd = new Date(currentEnd.seconds * 1000);
+    else if (typeof currentEnd === "string") currentEnd = new Date(currentEnd);
 
-      if (!Number.isNaN(currentEnd?.getTime?.()) && currentEnd > now) {
-        startDate = existing.startDate?.toDate?.() || existing.startDate || now;
-        endDate = addMonths(currentEnd, durationMonths);
-      }
+    if (!Number.isNaN(currentEnd?.getTime?.()) && currentEnd > now) {
+      startDate = existing.startDate?.toDate?.() || existing.startDate || now;
+      endDate = addMonths(currentEnd, durationMonths);
     }
   }
 
