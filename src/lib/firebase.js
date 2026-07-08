@@ -497,11 +497,10 @@ export const deleteWeeklyPlan = async (planId) => {
 export const isAdmin = (user) => {
   if (!user || !user.email) return false;
   
-  // Список админских email
+  // Список админских email (только env; makspolun временно убран для теста Lava)
   const adminEmails = [
     process.env.NEXT_PUBLIC_ADMIN_EMAIL,
-    'makspolun@gmail.com'
-  ].filter(Boolean); // Убираем undefined/null значения
+  ].filter(Boolean);
   
   // Для отладки (только в development, но не логируем каждый раз)
   // Логирование убрано, чтобы не засорять консоль
