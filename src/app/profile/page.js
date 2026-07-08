@@ -9,16 +9,33 @@ import Navigation from "@/components/Navigation";
 import { TEXTS } from "@/constants/texts";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { getBuyerEmail } from "@/lib/buyerEmail";
+
+function formatProfileDate(date, language) {
+  if (!date) return "";
+  let dateObj = date;
+  if (date.toDate) dateObj = date.toDate();
+  else if (date.seconds) dateObj = new Date(date.seconds * 1000);
+  else if (typeof date === "string") dateObj = new Date(date);
+  if (Number.isNaN(dateObj?.getTime?.())) return "";
+  return dateObj.toLocaleDateString(language === "ru" ? "ru-RU" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user: subscriptionUser, hasSubscription } = useSubscription();
+  const { user: subscriptionUser, hasSubscription, subscription } = useSubscription();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState("");
   const { language } = useLanguage();
   const profileTexts = TEXTS[language].profile;
 
@@ -85,6 +102,58 @@ export default function ProfilePage() {
       setIsSavingName(false);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    if (!user) return;
+
+    const buyerEmail = getBuyerEmail(user);
+    if (!buyerEmail) {
+      alert(profileTexts.cancelError);
+      return;
+    }
+
+    if (!window.confirm(profileTexts.cancelConfirm)) return;
+
+    setIsCancelling(true);
+    setCancelMessage("");
+
+    try {
+      const response = await fetch("/api/payments/lava/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          email: buyerEmail,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || profileTexts.cancelError);
+      }
+
+      const accessDate = formatProfileDate(
+        data.accessUntil || subscription?.expiresAt,
+        language
+      );
+      setCancelMessage(
+        profileTexts.cancelSuccess.replace("{date}", accessDate)
+      );
+      await loadUserData(user.uid);
+    } catch (error) {
+      console.error("Cancel subscription error:", error);
+      alert(error.message || profileTexts.cancelError);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const isCancellationScheduled = Boolean(subscription?.cancelledAt);
+  const accessUntilLabel = formatProfileDate(
+    subscription?.expiresAt || subscription?.endDate,
+    language
+  );
 
   if (isLoading) {
     return (
@@ -183,13 +252,33 @@ export default function ProfilePage() {
                 <span className="w-2 h-2 rounded-full bg-brand-400" />
                 <p className="text-brand-400 font-semibold text-sm">{profileTexts.subscriptionActive}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => router.push("/subscription")}
-                className="text-white/60 text-sm hover:text-white underline-offset-2 hover:underline"
-              >
-                {profileTexts.manageSubscription}
-              </button>
+              {isCancellationScheduled && accessUntilLabel && (
+                <p className="text-white/55 text-sm mb-3">
+                  {profileTexts.cancelledNotice.replace("{date}", accessUntilLabel)}
+                </p>
+              )}
+              {cancelMessage && (
+                <p className="text-brand-300/90 text-sm mb-3">{cancelMessage}</p>
+              )}
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/subscription")}
+                  className="text-left text-white/60 text-sm hover:text-white underline-offset-2 hover:underline"
+                >
+                  {profileTexts.manageSubscription}
+                </button>
+                {!isCancellationScheduled && (
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelling}
+                    className="w-full py-3 rounded-xl border border-white/15 text-white/80 text-sm font-medium hover:bg-white/5 disabled:opacity-50 transition-colors"
+                  >
+                    {isCancelling ? TEXTS[language].common.loading : profileTexts.cancelSubscription}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 mb-4">

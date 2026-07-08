@@ -92,3 +92,37 @@ export function isLavaPaymentCompleted(invoice) {
 
   return false;
 }
+
+export async function fetchLavaSubscriptions(buyerEmail) {
+  const params = new URLSearchParams({
+    buyerEmail,
+    size: "20",
+  });
+  return lavaApiFetch(`/api/v1/subscriptions?${params.toString()}`);
+}
+
+export async function cancelLavaSubscription({ contractId, email }) {
+  const apiKey = process.env.LAVA_API_KEY;
+  if (!apiKey) {
+    throw new Error("LAVA_API_KEY is not configured");
+  }
+
+  const params = new URLSearchParams({ contractId, email });
+  const response = await fetch(
+    `${LAVA_API_BASE}/api/v1/subscriptions?${params.toString()}`,
+    {
+      method: "DELETE",
+      headers: { "X-Api-Key": apiKey },
+      cache: "no-store",
+    }
+  );
+
+  if (response.status === 204) {
+    return { success: true };
+  }
+
+  const data = await response.json().catch(() => ({}));
+  throw new Error(
+    data.error || data.message || `Lava cancel failed (${response.status})`
+  );
+}

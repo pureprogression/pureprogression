@@ -138,7 +138,13 @@ export const TEXTS = {
       subscriptionInactive: "Free plan",
       subscriptionInactiveHint: "Subscribe to save workouts and get full access",
       manageSubscription: "Manage subscription",
-      getFullAccess: "Get full access"
+      getFullAccess: "Get full access",
+      cancelSubscription: "Cancel auto-renewal",
+      cancelConfirm:
+        "Cancel auto-renewal? You will keep access until the end of the paid period. No further charges.",
+      cancelSuccess: "Auto-renewal cancelled. Access until {date}.",
+      cancelError: "Could not cancel subscription. Try again or contact support.",
+      cancelledNotice: "Auto-renewal cancelled · access until {date}",
     },
 
     // Workout History
@@ -483,7 +489,13 @@ export const TEXTS = {
       subscriptionInactive: "Бесплатный план",
       subscriptionInactiveHint: "Оформите подписку, чтобы сохранять тренировки",
       manageSubscription: "Управление подпиской",
-      getFullAccess: "Получить доступ"
+      getFullAccess: "Получить доступ",
+      cancelSubscription: "Отменить автопродление",
+      cancelConfirm:
+        "Отменить автопродление? Доступ сохранится до конца оплаченного периода. Следующие списания не будут.",
+      cancelSuccess: "Автопродление отменено. Доступ до {date}.",
+      cancelError: "Не удалось отменить подписку. Попробуйте снова или напишите в поддержку.",
+      cancelledNotice: "Автопродление отменено · доступ до {date}",
     },
 
     workoutHistory: {
