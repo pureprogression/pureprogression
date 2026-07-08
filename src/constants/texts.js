@@ -16,6 +16,7 @@ export const TEXTS = {
       adminPanel: "Admin Panel",
       subscriptions: "Subscriptions",
       getAccess: "Get Full Access",
+      telegramChat: "Chat with me",
       articles: "Useful Materials",
       logout: "Logout"
     },
@@ -344,6 +345,10 @@ export const TEXTS = {
         unlimitedAccess: {
           title: "Unlimited Access",
           description: "Create and save unlimited workouts"
+        },
+        telegramChat: {
+          title: "Telegram Chat with Me",
+          description: "Ask questions about workouts and get personal guidance in Telegram"
         }
       }
     },
@@ -378,6 +383,7 @@ export const TEXTS = {
       adminPanel: "Админ-панель",
       subscriptions: "Подписки",
       getAccess: "Получить доступ",
+      telegramChat: "Чат со мной",
       articles: "Полезные материалы",
       logout: "Выйти"
     },
@@ -695,6 +701,10 @@ export const TEXTS = {
         unlimitedAccess: {
           title: "Неограниченный доступ",
           description: "Создавайте и сохраняйте неограниченное количество тренировок"
+        },
+        telegramChat: {
+          title: "Чат со мной в Telegram",
+          description: "Задавайте вопросы по тренировкам и получайте личные рекомендации в Telegram"
         }
       }
     },

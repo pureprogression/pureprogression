@@ -13,6 +13,7 @@ import ReviewsModal from "./ReviewsModal";
 
 const INSTAGRAM_URL =
   "https://www.instagram.com/pureprogression_?igsh=MXV4c3B3dDhxYW1vNg%3D%3D&utm_source=qr";
+const TELEGRAM_URL = "https://t.me/pureprogression";
 
 export default function Navigation({ currentPage = "home", user = null, disableSwipe = false }) {
   const router = useRouter();
@@ -110,6 +111,11 @@ export default function Navigation({ currentPage = "home", user = null, disableS
 
   const handleArticlesClick = () => {
     router.push("/articles");
+    setIsMenuOpen(false);
+  };
+
+  const handleTelegramChatClick = () => {
+    window.open(TELEGRAM_URL, "_blank", "noopener,noreferrer");
     setIsMenuOpen(false);
   };
 
@@ -215,6 +221,17 @@ export default function Navigation({ currentPage = "home", user = null, disableS
                     <span>{TEXTS[language].navigation.articles}</span>
                   </button>
                 </li>
+
+                {user && hasSubscription && (
+                  <li>
+                    <button
+                      onClick={handleTelegramChatClick}
+                      className="w-full flex items-center justify-center p-4 rounded-xl text-white hover:bg-white/5 transition-all duration-200 text-center font-medium"
+                    >
+                      <span>{TEXTS[language].navigation.telegramChat}</span>
+                    </button>
+                  </li>
+                )}
 
                 {showSubscribeCta && (
                   <li>

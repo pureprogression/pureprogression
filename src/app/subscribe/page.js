@@ -307,6 +307,7 @@ export default function SubscribePage() {
     texts.features.videoGuides,
     texts.features.trackProgress,
     texts.features.unlimitedAccess,
+    texts.features.telegramChat,
   ];
 
   const ctaLabel = isProcessing
