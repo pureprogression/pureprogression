@@ -497,18 +497,12 @@ export const deleteWeeklyPlan = async (planId) => {
 export const isAdmin = (user) => {
   if (!user || !user.email) return false;
   
-  // Список админских email (только env; makspolun временно убран для теста Lava)
   const adminEmails = [
     process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+    "makspolun@gmail.com",
   ].filter(Boolean);
-  
-  // Для отладки (только в development, но не логируем каждый раз)
-  // Логирование убрано, чтобы не засорять консоль
-  
-  if (adminEmails.length === 0) {
-    console.warn('[Admin Check] NEXT_PUBLIC_ADMIN_EMAIL не установлен в переменных окружения');
-    return false;
-  }
+
+  if (adminEmails.length === 0) return false;
   
   // Проверяем, есть ли email пользователя в списке админов
   return adminEmails.some(adminEmail => 
