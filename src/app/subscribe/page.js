@@ -426,13 +426,6 @@ export default function SubscribePage() {
               {ctaLabel}
             </button>
             <p className="text-center text-white/35 text-xs mt-3">{texts.paymentInfo}</p>
-            <button
-              type="button"
-              onClick={() => router.push("/payment/success?type=subscription")}
-              className="mt-2 w-full text-center text-brand-400/90 text-xs hover:text-brand-300 transition-colors"
-            >
-              {texts.alreadyPaid}
-            </button>
             {isAdmin(user) && (
               <p className="text-center text-amber-400/70 text-[11px] mt-3 px-2 leading-relaxed">
                 {language === "en"
@@ -461,13 +454,6 @@ export default function SubscribePage() {
             {ctaLabel}
           </button>
           <p className="text-center text-white/30 text-[10px] mt-2">{texts.paymentInfo}</p>
-          <button
-            type="button"
-            onClick={() => router.push("/payment/success?type=subscription")}
-            className="mt-1.5 w-full text-center text-brand-400/90 text-[10px]"
-          >
-            {texts.alreadyPaid}
-          </button>
         </div>
       </div>
     </>
