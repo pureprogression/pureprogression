@@ -124,6 +124,12 @@ export const TEXTS = {
       maxExercisesOnSave: "Please reduce your workout to 15 exercises or fewer before saving."
     },
 
+    articlesPage: {
+      premiumBadge: "Premium",
+      premiumUnlock: "Full guide available with subscription",
+      getAccess: "Get full access",
+    },
+
     // Profile
     profile: {
       title: "Profile",
@@ -474,6 +480,12 @@ export const TEXTS = {
       browseTab: "Библиотека",
       selectedTab: "Моя тренировка",
       maxExercisesOnSave: "Сохраните тренировку с не более чем 15 упражнениями."
+    },
+
+    articlesPage: {
+      premiumBadge: "Подписка",
+      premiumUnlock: "Полная статья доступна по подписке",
+      getAccess: "Получить доступ",
     },
 
     profile: {

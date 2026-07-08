@@ -4,12 +4,13 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TEXTS } from "@/constants/texts";
-import { getFeaturedArticles } from "@/constants/articles";
+import { getFeaturedArticles, canAccessArticle } from "@/constants/articles";
 
-export default function HomeIntro({ user = null, onGetAccess }) {
+export default function HomeIntro({ user = null, hasSubscription = false, onGetAccess }) {
   const router = useRouter();
   const { language } = useLanguage();
   const t = TEXTS[language].home.intro;
+  const articleTexts = TEXTS[language].articlesPage;
   const featured = getFeaturedArticles(2);
 
   const scrollToBuilder = () => {
@@ -121,11 +122,18 @@ export default function HomeIntro({ user = null, onGetAccess }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {featured.map((article, index) => (
+          {featured.map((article, index) => {
+            const locked = !canAccessArticle(article, hasSubscription);
+            const goSubscribe = () => {
+              if (user) router.push("/subscribe");
+              else router.push("/auth?redirect=/subscribe");
+            };
+
+            return (
             <motion.button
               key={article.slug}
               type="button"
-              onClick={() => router.push(`/articles/${article.slug}`)}
+              onClick={() => (locked ? goSubscribe() : router.push(`/articles/${article.slug}`))}
               className="relative text-left rounded-2xl overflow-hidden h-36 group border border-white/8"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -136,16 +144,30 @@ export default function HomeIntro({ user = null, onGetAccess }) {
                 style={{ backgroundImage: `url(${article.image})` }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              {locked && <div className="absolute inset-0 bg-black/20" />}
               <div className="relative h-full flex flex-col justify-end p-4">
-                <span className="text-white/50 text-[10px] font-medium mb-1 uppercase tracking-wide">
-                  {language === "en" ? article.categoryEn : article.category}
-                </span>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-white/50 text-[10px] font-medium uppercase tracking-wide">
+                    {language === "en" ? article.categoryEn : article.category}
+                  </span>
+                  {locked && (
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-white/70 px-1.5 py-0.5 rounded bg-white/15">
+                      {articleTexts.premiumBadge}
+                    </span>
+                  )}
+                </div>
                 <p className="text-white text-sm font-medium line-clamp-2 leading-snug">
                   {language === "en" ? article.titleEn : article.title}
                 </p>
+                {locked && (
+                  <p className="text-brand-300 text-xs font-medium mt-1.5">
+                    {articleTexts.getAccess} →
+                  </p>
+                )}
               </div>
             </motion.button>
-          ))}
+            );
+          })}
         </div>
       </div>
 

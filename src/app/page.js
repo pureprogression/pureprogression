@@ -93,7 +93,11 @@ export default function HomePage() {
     <>
       <Navigation currentPage="home" user={user} />
       {showIntro && (
-        <HomeIntro user={user} onGetAccess={user ? () => router.push("/subscribe") : undefined} />
+        <HomeIntro
+          user={user}
+          hasSubscription={hasSubscription}
+          onGetAccess={user ? () => router.push("/subscribe") : undefined}
+        />
       )}
       <div id="workout-builder">
         <WorkoutBuilder

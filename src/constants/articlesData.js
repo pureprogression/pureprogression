@@ -132,7 +132,7 @@ export const ARTICLES_BY_SLUG = {
       </ol>
       <p>Within 2–3 weeks you'll see real progress in reps and movement quality — that's the motivation that lasts.</p>
     `,
-    isPremium: false,
+    isPremium: true,
   },
 
   "build-first-workout": {
@@ -396,7 +396,7 @@ export const ARTICLES_BY_SLUG = {
       <p>Log your sets in workouts and review trends every 2 weeks. If strength stalls 3+ weeks despite consistent training, it's usually sleep or protein — not the "wrong program."</p>
       <p>Pick one habit this week — e.g. protein at breakfast. Add a second next week. That's how nutrition becomes a system, not a crash diet.</p>
     `,
-    isPremium: false,
+    isPremium: true,
   },
 
   "recovery-importance": {
@@ -528,6 +528,6 @@ export const ARTICLES_BY_SLUG = {
       </ol>
       <p>Train smart — your body will respond with steady progress instead of burnout after a month.</p>
     `,
-    isPremium: false,
+    isPremium: true,
   },
 };

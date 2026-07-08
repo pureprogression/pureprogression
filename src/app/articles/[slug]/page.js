@@ -4,15 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
+import ArticlePaywall from "@/components/articles/ArticlePaywall";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { getArticleBySlug } from "@/constants/articles";
+import { getArticleBySlug, canAccessArticle } from "@/constants/articles";
+import { TEXTS } from "@/constants/texts";
 
 export default function ArticlePage() {
   const router = useRouter();
   const params = useParams();
   const { user, hasSubscription } = useSubscription();
   const { language } = useLanguage();
+  const articleTexts = TEXTS[language].articlesPage;
   const [mounted, setMounted] = useState(false);
   const [article, setArticle] = useState(null);
 
@@ -28,7 +31,7 @@ export default function ArticlePage() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-app flex items-center justify-center">
-        <div className="text-white">Загрузка...</div>
+        <div className="text-white">{language === "en" ? "Loading..." : "Загрузка..."}</div>
       </div>
     );
   }
@@ -40,13 +43,13 @@ export default function ArticlePage() {
         <div className="min-h-screen bg-app pt-20 pb-20 flex items-center justify-center">
           <div className="text-center">
             <p className="text-white/60 mb-4">
-              {language === 'en' ? 'Article not found' : 'Статья не найдена'}
+              {language === "en" ? "Article not found" : "Статья не найдена"}
             </p>
             <button
-              onClick={() => router.push('/articles')}
+              onClick={() => router.push("/articles")}
               className="text-brand-400 hover:text-brand-300"
             >
-              {language === 'en' ? 'Back to articles' : 'Вернуться к статьям'}
+              {language === "en" ? "Back to articles" : "Вернуться к статьям"}
             </button>
           </div>
         </div>
@@ -54,71 +57,80 @@ export default function ArticlePage() {
     );
   }
 
+  const locked = !canAccessArticle(article, hasSubscription);
+  const title = language === "en" ? article.titleEn : article.title;
+  const excerpt = language === "en" ? article.excerptEn : article.excerpt;
+
   return (
     <>
       <Navigation currentPage="articles" user={user} />
       <div className="min-h-screen bg-app pt-20 pb-20">
         <div className="max-w-3xl mx-auto px-4">
-          {/* Кнопка назад */}
           <button
-            onClick={() => router.push('/articles')}
+            onClick={() => router.push("/articles")}
             className="text-white/60 hover:text-white mb-6 flex items-center gap-2 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span>{language === 'en' ? 'Back to articles' : 'Вернуться к статьям'}</span>
+            <span>{language === "en" ? "Back to articles" : "Вернуться к статьям"}</span>
           </button>
 
-          {/* Hero-баннер с изображением */}
           <motion.div
             className="relative rounded-xl overflow-hidden mb-8 h-64 md:h-80"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Фоновое изображение */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${article.image})` }}
             />
-            
-            {/* Затемнение */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" />
-            
-            {/* Контент поверх изображения */}
             <div className="relative h-full flex flex-col justify-end p-6 md:p-8">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
                 <span className="text-brand-400 text-xs font-medium px-2 py-1 rounded bg-brand-500/20 backdrop-blur-sm">
-                  {language === 'en' ? article.categoryEn : article.category}
+                  {language === "en" ? article.categoryEn : article.category}
                 </span>
+                {article.isPremium && (
+                  <span className="text-white/80 text-xs font-medium px-2 py-1 rounded bg-white/15 backdrop-blur-sm">
+                    {articleTexts.premiumBadge}
+                  </span>
+                )}
                 <span className="text-white/60 text-xs">
-                  {article.readTime} {language === 'en' ? 'min read' : 'мин чтения'}
+                  {article.readTime} {language === "en" ? "min read" : "мин чтения"}
                 </span>
               </div>
-              <h1 className="text-2xl md:text-4xl font-bold text-white">
-                {language === 'en' ? article.titleEn : article.title}
-              </h1>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">{title}</h1>
             </div>
           </motion.div>
 
-          {/* Содержание статьи */}
-          <motion.article
-            className="max-w-none"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div 
-              className="article-content text-white/90 leading-relaxed space-y-6"
-              dangerouslySetInnerHTML={{ 
-                __html: language === 'en' ? article.contentEn : article.content 
-              }}
-            />
-          </motion.article>
+          {locked ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <p className="text-white/75 text-lg leading-relaxed mb-6">{excerpt}</p>
+              <ArticlePaywall />
+            </motion.div>
+          ) : (
+            <motion.article
+              className="max-w-none"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div
+                className="article-content text-white/90 leading-relaxed space-y-6"
+                dangerouslySetInnerHTML={{
+                  __html: language === "en" ? article.contentEn : article.content,
+                }}
+              />
+            </motion.article>
+          )}
         </div>
       </div>
     </>
   );
 }
-

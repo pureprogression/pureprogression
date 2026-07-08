@@ -42,6 +42,12 @@ export function getArticleBySlug(slug) {
   return ARTICLES_BY_SLUG[slug] || null;
 }
 
+export function canAccessArticle(article, hasSubscription) {
+  if (!article) return false;
+  if (!article.isPremium) return true;
+  return Boolean(hasSubscription);
+}
+
 export function getFeaturedArticles(limit = 2) {
   const prioritySlugs = ["build-first-workout", "how-to-start-training"];
   const all = getArticlesForDisplay();
