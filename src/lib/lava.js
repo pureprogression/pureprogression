@@ -65,3 +65,30 @@ export async function createLavaInvoice({
     body: JSON.stringify(body),
   });
 }
+
+export async function fetchLavaInvoice(invoiceId) {
+  if (!invoiceId) {
+    throw new Error("invoiceId is required");
+  }
+  return lavaApiFetch(`/api/v1/invoices/${invoiceId}`);
+}
+
+const COMPLETED_PAYMENT_STATUSES = new Set([
+  "COMPLETED",
+  "SUCCESS",
+  "SUBSCRIPTION-ACTIVE",
+  "ACTIVE",
+  "PAID",
+]);
+
+export function isLavaPaymentCompleted(invoice) {
+  if (!invoice) return false;
+
+  const status = String(invoice.status || "").toUpperCase();
+  const subscriptionStatus = String(invoice.subscriptionStatus || "").toUpperCase();
+
+  if (COMPLETED_PAYMENT_STATUSES.has(status)) return true;
+  if (subscriptionStatus === "ACTIVE") return true;
+
+  return false;
+}

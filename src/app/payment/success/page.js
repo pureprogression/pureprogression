@@ -28,6 +28,41 @@ export default function PaymentSuccessPage() {
   }, []);
 
   useEffect(() => {
+    if (!user || subscriptionLoading || hasSubscription || activated) return;
+
+    const contractId = localStorage.getItem("last_subscription_payment_id");
+    let attempts = 0;
+    const maxAttempts = 15;
+
+    const syncPendingPayment = async () => {
+      try {
+        await fetch("/api/payments/lava/sync-pending", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.uid,
+            contractId: contractId || undefined,
+          }),
+        });
+      } catch (error) {
+        console.error("[Payment Success] Lava sync failed:", error);
+      }
+    };
+
+    syncPendingPayment();
+    const interval = setInterval(() => {
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        return;
+      }
+      syncPendingPayment();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [user, subscriptionLoading, hasSubscription, activated]);
+
+  useEffect(() => {
     if (!user || subscriptionLoading) return;
 
     const savePendingWorkout = async () => {

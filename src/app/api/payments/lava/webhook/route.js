@@ -48,6 +48,12 @@ function getUserId(payload) {
   return payload?.clientUtm?.utm_campaign || null;
 }
 
+function isFailedPaymentStatus(status) {
+  if (!status) return false;
+  const normalized = String(status).toUpperCase();
+  return ["FAILED", "CANCELLED", "CANCELED"].includes(normalized);
+}
+
 export async function POST(request) {
   try {
     if (!verifyWebhookAuth(request)) {
@@ -73,10 +79,7 @@ export async function POST(request) {
       userId,
     });
 
-    if (
-      eventType === "payment.success" &&
-      status === "subscription-active"
-    ) {
+    if (eventType === "payment.success" && !isFailedPaymentStatus(status)) {
       await activateOrExtendSubscription({
         userId,
         email,
