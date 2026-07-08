@@ -1,24 +1,14 @@
-import { db } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  Timestamp,
-} from "firebase/firestore";
+import { getAdminDb, adminFieldValue, adminTimestamp } from "@/lib/firebaseAdmin";
 import { getPlanDurationMonths } from "@/constants/lavaSubscription";
+import { normalizeBuyerEmail } from "@/lib/buyerEmail";
 
 function toTimestamp(value) {
   if (!value) return null;
-  if (value instanceof Timestamp) return value;
+  if (value instanceof adminTimestamp) return value;
+  if (value?.toDate) return value;
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return Timestamp.fromDate(date);
+  return adminTimestamp.fromDate(date);
 }
 
 export function addMonths(date, months) {
@@ -28,21 +18,36 @@ export function addMonths(date, months) {
 }
 
 export async function findUserIdByEmail(email) {
-  if (!email) return null;
-  const usersRef = collection(db, "users");
-  const q = query(usersRef, where("email", "==", email));
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) return null;
-  return snapshot.docs[0].id;
+  const normalized = normalizeBuyerEmail(email);
+  if (!normalized) return null;
+
+  const db = getAdminDb();
+  const queries = [normalized];
+  if (email && String(email).trim() !== normalized) {
+    queries.push(String(email).trim());
+  }
+
+  for (const candidate of queries) {
+    const snapshot = await db
+      .collection("users")
+      .where("email", "==", candidate)
+      .limit(1)
+      .get();
+    if (!snapshot.empty) return snapshot.docs[0].id;
+  }
+
+  return null;
 }
 
 async function resolveUserId({ userId, email, contractId }) {
   if (userId) return userId;
 
   if (contractId) {
-    const pendingRef = doc(db, "pendingLavaPayments", contractId);
-    const pendingDoc = await getDoc(pendingRef);
-    if (pendingDoc.exists()) {
+    const pendingDoc = await getAdminDb()
+      .collection("pendingLavaPayments")
+      .doc(contractId)
+      .get();
+    if (pendingDoc.exists) {
       return pendingDoc.data().userId || null;
     }
   }
@@ -65,15 +70,17 @@ export async function activateOrExtendSubscription({
     throw new Error(`User not found for email: ${email || "unknown"}`);
   }
 
-  const userRef = doc(db, "users", resolvedUserId);
-  const userDoc = await getDoc(userRef);
+  const db = getAdminDb();
+  const userRef = db.collection("users").doc(resolvedUserId);
+  const userDoc = await userRef.get();
   const now = new Date();
   const durationMonths = getPlanDurationMonths(subscriptionType);
+  const buyerEmail = normalizeBuyerEmail(email);
 
   let startDate = now;
   let endDate = addMonths(now, durationMonths);
 
-  if (userDoc.exists()) {
+  if (userDoc.exists) {
     const existing = userDoc.data().subscription;
     if (existing?.endDate) {
       let currentEnd = existing.endDate;
@@ -98,35 +105,35 @@ export async function activateOrExtendSubscription({
     lavaParentContractId: parentContractId || null,
     amount: amount ?? null,
     provider,
-    updatedAt: serverTimestamp(),
+    updatedAt: adminFieldValue.serverTimestamp(),
   };
 
-  if (!userDoc.exists()) {
-    await setDoc(
-      userRef,
+  if (!userDoc.exists) {
+    await userRef.set(
       {
-        email: email || null,
+        email: buyerEmail || null,
         subscription: subscriptionData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: adminFieldValue.serverTimestamp(),
+        updatedAt: adminFieldValue.serverTimestamp(),
       },
       { merge: true }
     );
   } else {
-    await updateDoc(userRef, {
-      ...(email ? { email } : {}),
-      subscription: subscriptionData,
-      updatedAt: serverTimestamp(),
-    });
+    await userRef.set(
+      {
+        ...(buyerEmail ? { email: buyerEmail } : {}),
+        subscription: subscriptionData,
+        updatedAt: adminFieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
   }
 
   if (contractId) {
-    const pendingRef = doc(db, "pendingLavaPayments", contractId);
-    await setDoc(
-      pendingRef,
+    await db.collection("pendingLavaPayments").doc(contractId).set(
       {
         processed: true,
-        processedAt: serverTimestamp(),
+        processedAt: adminFieldValue.serverTimestamp(),
         userId: resolvedUserId,
       },
       { merge: true }
@@ -142,22 +149,23 @@ export async function deactivateSubscription({ userId, email, willExpireAt }) {
     throw new Error(`User not found for cancellation: ${email || "unknown"}`);
   }
 
-  const userRef = doc(db, "users", resolvedUserId);
-  const userDoc = await getDoc(userRef);
-  if (!userDoc.exists()) return { userId: resolvedUserId };
+  const db = getAdminDb();
+  const userRef = db.collection("users").doc(resolvedUserId);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) return { userId: resolvedUserId };
 
   const existing = userDoc.data().subscription || {};
   const expireDate = willExpireAt ? new Date(willExpireAt) : new Date();
 
-  await updateDoc(userRef, {
+  await userRef.update({
     subscription: {
       ...existing,
       active: expireDate > new Date(),
-      cancelledAt: serverTimestamp(),
+      cancelledAt: adminFieldValue.serverTimestamp(),
       endDate: toTimestamp(expireDate),
-      updatedAt: serverTimestamp(),
+      updatedAt: adminFieldValue.serverTimestamp(),
     },
-    updatedAt: serverTimestamp(),
+    updatedAt: adminFieldValue.serverTimestamp(),
   });
 
   return { userId: resolvedUserId };

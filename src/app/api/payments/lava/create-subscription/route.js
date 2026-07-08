@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { createLavaInvoice } from "@/lib/lava";
+import { getAdminDb, adminFieldValue } from "@/lib/firebaseAdmin";
 import { normalizeBuyerEmail } from "@/lib/buyerEmail";
 import {
   getPlanDurationMonths,
@@ -70,7 +69,7 @@ export async function POST(request) {
     }
 
     if (invoice.id) {
-      await setDoc(doc(db, "pendingLavaPayments", invoice.id), {
+      await getAdminDb().collection("pendingLavaPayments").doc(invoice.id).set({
         userId,
         email: buyerEmail,
         subscriptionType: resolvedType,
@@ -78,7 +77,7 @@ export async function POST(request) {
         periodicity,
         currency,
         durationMonths: getPlanDurationMonths(resolvedType),
-        createdAt: serverTimestamp(),
+        createdAt: adminFieldValue.serverTimestamp(),
         processed: false,
       });
     }

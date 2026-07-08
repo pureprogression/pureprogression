@@ -27,7 +27,7 @@ export async function syncGoogleUserDocument(user, { isNewUser = false } = {}) {
 
   if (!userDoc.exists()) {
     const newUserData = {
-      email: user.email,
+      email: user.email?.toLowerCase() || null,
       displayName: user.displayName || existingUserData?.displayName || null,
       createdAt: existingUserData?.createdAt || new Date(),
       updatedAt: new Date(),
@@ -49,7 +49,9 @@ export async function syncGoogleUserDocument(user, { isNewUser = false } = {}) {
 
   const existingData = userDoc.data();
   const updates = {};
-  if (user.email && existingData.email !== user.email) updates.email = user.email;
+  if (user.email && existingData.email !== user.email.toLowerCase()) {
+    updates.email = user.email.toLowerCase();
+  }
   if (user.displayName && existingData.displayName !== user.displayName) {
     updates.displayName = user.displayName;
   }

@@ -14,6 +14,7 @@
     "@react-three/fiber": "^9.3.0",
     "@vercel/analytics": "^1.5.0",
     "firebase": "^12.3.0",
+    "firebase-admin": "^14.1.0",
     "framer-motion": "^12.23.19",
     "gsap": "^3.13.0",
     "next": "^16.0.10",

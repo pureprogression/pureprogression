@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { syncLavaPaymentForUser } from '@/lib/syncLavaPayment';
 
 export function useSubscriptionState() {
   const [user, setUser] = useState(null);
@@ -9,11 +10,24 @@ export function useSubscriptionState() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const subscriptionUnsubRef = useRef(null);
+  const lavaSyncAttemptedRef = useRef(false);
+
+  const trySyncLavaPayment = async (authUser) => {
+    if (!authUser || lavaSyncAttemptedRef.current) return;
+    lavaSyncAttemptedRef.current = true;
+
+    try {
+      await syncLavaPaymentForUser(authUser);
+    } catch (error) {
+      console.warn('[useSubscription] Lava payment sync failed:', error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged(async (u) => {
       setUser(u);
       setIsAuthReady(true);
+      lavaSyncAttemptedRef.current = false;
 
       if (subscriptionUnsubRef.current) {
         subscriptionUnsubRef.current();
@@ -29,6 +43,7 @@ export function useSubscriptionState() {
         
         // Загружаем подписку из Firebase, передаем email из Auth на случай если его нет в документе
         await loadSubscription(u.uid, u.email);
+        void trySyncLavaPayment(u);
         
         // Подписываемся на изменения подписки
         const userRef = doc(db, 'users', u.uid);

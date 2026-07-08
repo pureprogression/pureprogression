@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { cancelLavaSubscription, fetchLavaSubscriptions } from "@/lib/lava";
 import { normalizeBuyerEmail } from "@/lib/buyerEmail";
 import { deactivateSubscription } from "@/lib/subscriptionService";
@@ -58,10 +57,10 @@ export async function POST(request) {
       );
     }
 
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
+    const userRef = getAdminDb().collection("users").doc(userId);
+    const userDoc = await userRef.get();
 
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
